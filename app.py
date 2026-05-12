@@ -94,7 +94,7 @@ with st.sidebar:
     # İşte burası 'menu' değişkeninin doğduğu yer:
     menu = st.radio(
         "Lütfen bir departman seçin:",
-        ["🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)"]
+        ["🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)"])
     st.divider()
     st.info("Ozan Şahin Sicim | JUNIOR AI v2.0")
 
