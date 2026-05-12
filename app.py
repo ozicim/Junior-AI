@@ -305,3 +305,36 @@ else:
                             st.warning(f"**Gerekçe:** {soru['analiz']}")
             else:
                 st.error("Sınav formatı bozuk. Lütfen sıfırlayıp tekrar başlatın.")
+                # app.py içinde sekmelerin olduğu kısma ekle
+tab_dilekce = st.tabs(["Dilekçe Yaz"]) # Mevcut sekmelerine ekle
+
+with tab_dilekce:
+    st.subheader("⚖️ Dilekçe Taslağı Oluştur")
+    st.info("AI tarafından oluşturulan taslaklar bilgilendirme amaçlıdır, avukat kontrolü şarttır.")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        d_konu = st.text_input("Dilekçe Konusu", placeholder="Örn: Alacak Davası, Şikayet Dilekçesi")
+        d_taraflar = st.text_area("Taraflar", placeholder="Davacı: Ad Soyad (TC)\nDavalı: Ad Soyad/Kurum")
+    with col2:
+        d_olay = st.text_area("Olayın Özeti", placeholder="Olayları kronolojik ve kısa özetleyin...")
+        d_talep = st.text_area("Talepleriniz", placeholder="Neyin yapılmasını istiyorsunuz?")
+
+    if st.button("📝 Dilekçeyi Hazırla"):
+        if d_konu and d_olay:
+            with st.spinner("Hukuki metin dokunuyor..."):
+                metin = DilekceEngine.dilekce_olustur(MY_API_KEY, d_konu, d_taraflar, d_olay, d_talep)
+                st.session_state.son_dilekce = metin
+                st.markdown("### Dilekçe Önizleme")
+                st.text_area("", value=metin, height=400)
+                
+                # Word İndirme Butonu
+                word_data = DilekceEngine.word_dosyasi_yap(metin)
+                st.download_button(
+                    label="📥 Word Olarak İndir",
+                    data=word_data,
+                    file_name=f"{d_konu}_taslak.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+        else:
+            st.warning("Lütfen en azından konu ve olay özetini doldurun.")
