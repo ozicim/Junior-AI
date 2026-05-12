@@ -265,6 +265,29 @@ elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce
             st.warning("Lütfen önce bir ders notu yükleyin.")
         else:
             st.warning("Lütfen bir soru girin.")
+            st.header("🎓 Akademik Asistan")
+              # --- YENİ DOSYA YÜKLEME ALANI ---
+            uploaded_file = st.file_uploader("Yeni Not Yükle (PDF)", type="pdf")
+     # ... mevcut yükleme kodların ...
+
+            st.markdown("---") # Araya bir çizgi çekelim
+
+    # --- KÜTÜPHANEM / ARŞİV BÖLÜMÜ ---
+            st.subheader("📚 Dijital Kütüphanem")
+    
+            with st.expander("Daha Önce Tarattığın Notları Gör", expanded=False):
+                mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
+        
+                if mevcut_notlar:
+                    st.write(f"Toplam {len(mevcut_notlar)} adet notun kayıtlı:")
+                    for not_adi in mevcut_notlar:
+                        col_n, col_b = st.columns([4, 1])
+                        col_n.markdown(f"📄 **{not_adi}**")
+                        if col_b.button("Seç", key=not_adi):
+                            st.session_state.secili_not = not_adi
+                            st.success(f"{not_adi} seçildi, şimdi soru sorabilirsin!")
+            else:
+                st.info("Henüz yüklü notun yok ustam. İlk notunu yukarıdan yükleyebilirsin."
     with tab_sinav:
         st.markdown("#### 📝 Pratik Çalışma")
         sinav_konusu = st.text_input("Sınav Konusu", placeholder="Örn: Ceza Hukuku Genel Hükümler")
