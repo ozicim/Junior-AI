@@ -289,7 +289,7 @@ elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce
                         st.session_state.secili_not = not_adi
                         st.success(f"{not_adi} seçildi, şimdi soru sorabilirsin!")
         else:
-            st.info("Henüz yüklü notun yok ustam. İlk notunu yukarıdan yükleyebilirsin."
+            st.info("Henüz yüklü notun yok ustam. İlk notunu yukarıdan yükleyebilirsin.")
         
     with tab_sinav:
         st.markdown("#### 📝 Pratik Çalışma")
