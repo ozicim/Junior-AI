@@ -105,6 +105,21 @@ class AkademikEngine:
         except Exception as e:
             print(f"Silme hatası: {e}")
             return False
+            
+            @classmethod
+    def not_icerigi_getir(cls, dosya_adi):
+        """Firestore'dan belirtilen dosyanın metin içeriğini getirir."""
+        try:
+            from firebase_admin import firestore
+            db = firestore.client()
+            docs = db.collection("ders_notlari").where("dosya_adi", "==", dosya_adi).stream()
+            for doc in docs:
+                veri = doc.to_dict()
+                return veri.get("metin", "") # Metni geri döndür
+            return ""
+        except Exception as e:
+            print(f"Metin çekme hatası: {e}")
+            return ""
 
     @classmethod
     def dosyadan_metin_cikar(cls, yuklenen_dosya):
