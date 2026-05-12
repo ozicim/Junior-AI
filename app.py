@@ -3,8 +3,6 @@ import firebase_admin
 from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine
 from dilekce_engine import DilekceEngine
-
-
 from akademik_sinav_modu import AkademikSinavEngine
 
 
