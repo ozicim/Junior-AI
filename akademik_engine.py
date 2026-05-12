@@ -11,8 +11,20 @@ class AkademikEngine:
     @classmethod
     def veritabanini_baslat(cls):
         if not firebase_admin._apps:
-            cred = credentials.Certificate("firebase-anahtar.json")
-            firebase_admin.initialize_app(cred)
+            # DİKKAT: Artık dosya yolu değil, Secrets içindeki sözlüğü veriyoruz
+            try:
+                # Streamlit secrets içindeki bilgileri bir sözlük (dict) olarak alıyoruz
+                firebase_info = dict(st.secrets["firebase_credentials"])
+                
+                # private_key içindeki \n karakterlerini düzeltmemiz gerekebilir
+                if "private_key" in firebase_info:
+                    firebase_info["private_key"] = firebase_info["private_key"].replace("\\n", "\n")
+                
+                cred = credentials.Certificate(firebase_info)
+                firebase_admin.initialize_app(cred)
+            except Exception as e:
+                st.error(f"Secrets üzerinden Firebase başlatılamadı: {e}")
+                
         if not cls.db:
             cls.db = firestore.client()
 
