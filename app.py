@@ -366,37 +366,48 @@ elif menu == "🎓 Akademi (Ders Notları)":
             else:
                 st.warning("Lütfen bir soru girin.")
 
-        # --- DİJİTAL KİTAP OKUMA EKRANI ---
         if st.session_state.hoca_sayfalar:
             st.markdown("---")
-            st.markdown("### 📖 Hoca'nın Notları")
+            
+            # Başlık ve İndirme Butonunu yan yana koyalım
+            col_baslik, col_indir = st.columns([3, 1])
+            with col_baslik:
+                st.markdown("### 📖 Hoca'nın Notu")
+            with col_indir:
+                # Tüm sayfaları birleştirip indirilebilir metin haline getiriyoruz
+                tam_metin = "\n\n".join(st.session_state.hoca_sayfalar)
+                st.download_button(
+                    label="📥 Notu İndir (.txt)",
+                    data=tam_metin,
+                    file_name=f"Junilex_Hoca_Notu_{aktif_not}.txt",
+                    mime="text/plain",
+                    use_container_width=True
+                )
             
             aktif = st.session_state.hoca_aktif_sayfa
             toplam_sayfa = len(st.session_state.hoca_sayfalar)
             
-            # Estetik Kutu (Sayfadan Ayrışmasını Sağlar)
+            # Estetik Kitap Sayfası
             with st.container(border=True):
-                # Sayfa içeriğini gösterir (Markdown destekli)
                 st.markdown(st.session_state.hoca_sayfalar[aktif])
                 
-            st.write("") # Görsel boşluk
+            st.write("") 
             
-            # Sayfa Değiştirme Butonları (3 Sütunlu Tasarım)
+            # Sayfa Navigasyonu
             col_sol, col_orta, col_sag = st.columns([1, 2, 1])
             
             with col_sol:
-                if aktif > 0: # Eğer 1. sayfada değilsek Geri butonu çıksın
-                    if st.button("⬅️ Önceki Sayfa", key="btn_geri", use_container_width=True):
+                if aktif > 0:
+                    if st.button("⬅️ Önceki", key="btn_geri", use_container_width=True):
                         st.session_state.hoca_aktif_sayfa -= 1
                         st.rerun()
                         
             with col_orta:
-                # Sayfa numarası ortalanmış ve vurgulu
-                st.markdown(f"<div style='text-align: center; font-weight: bold; color: #4CAF50; padding-top: 10px;'>Sayfa {aktif + 1} / {toplam_sayfa}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='text-align: center; font-weight: bold; color: #4CAF50;'>Sayfa {aktif + 1} / {toplam_sayfa}</div>", unsafe_allow_html=True)
                 
             with col_sag:
-                if aktif < toplam_sayfa - 1: # Eğer son sayfada değilsek İleri butonu çıksın
-                    if st.button("Sonraki Sayfa ➡️", key="btn_ileri", use_container_width=True):
+                if aktif < toplam_sayfa - 1:
+                    if st.button("Sonraki ➡️", key="btn_ileri", use_container_width=True):
                         st.session_state.hoca_aktif_sayfa += 1
                         st.rerun()
     # ==========================================
