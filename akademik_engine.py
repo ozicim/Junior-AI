@@ -2,6 +2,7 @@ import google.generativeai as genai
 import firebase_admin
 import PyPDF2
 import io
+import streamlit as st
 from firebase_admin import credentials, firestore
 
 class AkademikEngine:
