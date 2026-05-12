@@ -200,8 +200,8 @@ if "Adliye" in menu:
 
 # --- MOD 2: AKADEMİ ---
 elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce şartı koy!
-    st.header("Akademi Bölümü")
-    tab_lib, tab_hoca, tab_sinav = st.tabs(["📂 Ders Notları", "👨‍🏫 JUNIOR AI Hoca", "📝 Sınav Modu"])
+        st.header("Akademi Bölümü")
+        tab_lib, tab_hoca, tab_sinav = st.tabs(["📂 Ders Notları", "👨‍🏫 JUNIOR AI Hoca", "📝 Sınav Modu"])
     else:
             st.warning("Lütfen bir soru girin.")
             st.header("🎓 Akademik Asistan")
