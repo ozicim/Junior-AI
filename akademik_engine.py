@@ -5,7 +5,6 @@ import io
 import streamlit as st
 from firebase_admin import credentials, firestore
 
-
 class AkademikEngine:
     db = None
     
@@ -76,15 +75,12 @@ class AkademikEngine:
         try:
             from firebase_admin import firestore 
             db = firestore.client()
-        
             docs = db.collection("ders_notlari").stream()
-        
             not_listesi = []
             for doc in docs:
                 veri = doc.to_dict()
                 if "dosya_adi" in veri:
                     not_listesi.append(veri["dosya_adi"])
-        
             return list(set(not_listesi))
         except Exception as e:
             print(f"Hata: {e}")
@@ -106,7 +102,7 @@ class AkademikEngine:
             print(f"Silme hatası: {e}")
             return False
             
-            @classmethod
+    @classmethod
     def not_icerigi_getir(cls, dosya_adi):
         """Firestore'dan belirtilen dosyanın metin içeriğini getirir."""
         try:
