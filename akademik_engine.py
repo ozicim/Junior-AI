@@ -69,6 +69,25 @@ class AkademikEngine:
             return list(set(not_listesi)) # <-- Girinti düzeltildi
         except Exception as e:
             return []
+            @classmethod
+    def not_sil(cls, dosya_adi):
+        """Firestore'dan belirtilen isimdeki ders notunu siler."""
+        try:
+            from firebase_admin import firestore
+            db = firestore.client()
+            
+            # Veritabanında o isimdeki dosyayı arıyoruz
+            docs = db.collection("ders_notlari").where("dosya_adi", "==", dosya_adi).stream()
+            
+            silindi_mi = False
+            for doc in docs:
+                doc.reference.delete() # Dosyayı imha et
+                silindi_mi = True
+                
+            return silindi_mi
+        except Exception as e:
+            print(f"Silme hatası: {e}")
+            return False
 
     @classmethod
     def dosyadan_metin_cikar(cls, yuklenen_dosya):
