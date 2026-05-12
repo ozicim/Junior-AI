@@ -280,10 +280,10 @@ elif menu == "🎓 Akademi (Ders Notları)":
                     if basarili:
                         st.success(f"'{not_adi}' arşivden silindi!")
                         st.rerun() # Sayfayı ANINDA yenile ki dosya listeden kaybolsun
-        else:
-            st.error("Silinirken bir hata oluştu.")
-        else:
-            st.info("Henüz yüklü notun yok.")
+                else:
+                    st.error("Silinirken bir hata oluştu.")
+                else:
+                    st.info("Henüz yüklü notun yok.")
 
         st.markdown("---")
 
