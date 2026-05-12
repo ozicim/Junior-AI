@@ -328,7 +328,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
 
         if st.button("Hocam Anlatır mısınız?"):
             if soru:
-                with st.spinner("Hocanız notları inceliyor ve mütalaayı yazıyor... ⏳"):
+                with st.spinner("Hocanız notları inceliyor... ⏳"):
                     not_metni = st.session_state.get('islenmis_not')
                     
                     if not not_metni:
@@ -347,7 +347,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                         
                         for p in paragraflar:
                             # Her sayfa yaklaşık 1200 karakter olsun (Okuma kolaylığı için)
-                            if len(suanki_sayfa) + len(p) > 1200:
+                            if len(suanki_sayfa) + len(p) > 2000:
                                 sayfalar.append(suanki_sayfa.strip())
                                 suanki_sayfa = p + "\n\n"
                             else:
@@ -369,7 +369,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
         # --- DİJİTAL KİTAP OKUMA EKRANI ---
         if st.session_state.hoca_sayfalar:
             st.markdown("---")
-            st.markdown("### 📖 Hoca'nın Mütalaası")
+            st.markdown("### 📖 Hoca'nın Notları")
             
             aktif = st.session_state.hoca_aktif_sayfa
             toplam_sayfa = len(st.session_state.hoca_sayfalar)
