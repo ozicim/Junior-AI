@@ -312,17 +312,23 @@ elif menu == "🎓 Akademi (Ders Notları)":
 
         st.markdown("---")
 
+       # --- 3. KISIM: SORU SORMA ALANI (DİJİTAL KİTAP MODU) ---
         st.subheader("❓ Notlara Soru Sor")
         
-        # Kullanıcıya şu an hangi dosyanın okunduğunu gösterelim
         aktif_not = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
         st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not}")
         
         soru = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı", key="akademi_soru_kutusu_1")
         
+        # Kitap Sayfalarını Tutacağımız Hafıza (Session State)
+        if "hoca_sayfalar" not in st.session_state:
+            st.session_state.hoca_sayfalar = []
+        if "hoca_aktif_sayfa" not in st.session_state:
+            st.session_state.hoca_aktif_sayfa = 0
+
         if st.button("Hocam Anlatır mısınız?"):
             if soru:
-                with st.spinner("Hocanız notları inceliyor... ⏳"):
+                with st.spinner("Hocanız notları inceliyor ve mütalaayı yazıyor... ⏳"):
                     not_metni = st.session_state.get('islenmis_not')
                     
                     if not not_metni:
@@ -331,14 +337,68 @@ elif menu == "🎓 Akademi (Ders Notları)":
                         not_metni = str(not_metni)
                         
                     try:
+                        # 1. AI'dan Tam Cevabı Al
                         cevap = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
-                        st.success("🎓 JUNIOR AI Hoca Yanıtladı:")
-                        st.write(cevap)
+                        
+                        # 2. Cevabı Sayfalara Böl (Fermanı Kitaba Çevirme İşlemi)
+                        paragraflar = cevap.split('\n\n')
+                        sayfalar = []
+                        suanki_sayfa = ""
+                        
+                        for p in paragraflar:
+                            # Her sayfa yaklaşık 1200 karakter olsun (Okuma kolaylığı için)
+                            if len(suanki_sayfa) + len(p) > 1200:
+                                sayfalar.append(suanki_sayfa.strip())
+                                suanki_sayfa = p + "\n\n"
+                            else:
+                                suanki_sayfa += p + "\n\n"
+                                
+                        # Kalan son kısmı da son sayfa olarak ekle
+                        if suanki_sayfa.strip():
+                            sayfalar.append(suanki_sayfa.strip())
+                            
+                        # Hafızaya Kaydet ve Sayfayı 1. Sayfaya Sıfırla
+                        st.session_state.hoca_sayfalar = sayfalar
+                        st.session_state.hoca_aktif_sayfa = 0
+                        
                     except Exception as e:
                         st.error(f"Hoca cevaplarken bir sorun oluştu: {e}")
             else:
                 st.warning("Lütfen bir soru girin.")
 
+        # --- DİJİTAL KİTAP OKUMA EKRANI ---
+        if st.session_state.hoca_sayfalar:
+            st.markdown("---")
+            st.markdown("### 📖 Hoca'nın Mütalaası")
+            
+            aktif = st.session_state.hoca_aktif_sayfa
+            toplam_sayfa = len(st.session_state.hoca_sayfalar)
+            
+            # Estetik Kutu (Sayfadan Ayrışmasını Sağlar)
+            with st.container(border=True):
+                # Sayfa içeriğini gösterir (Markdown destekli)
+                st.markdown(st.session_state.hoca_sayfalar[aktif])
+                
+            st.write("") # Görsel boşluk
+            
+            # Sayfa Değiştirme Butonları (3 Sütunlu Tasarım)
+            col_sol, col_orta, col_sag = st.columns([1, 2, 1])
+            
+            with col_sol:
+                if aktif > 0: # Eğer 1. sayfada değilsek Geri butonu çıksın
+                    if st.button("⬅️ Önceki Sayfa", key="btn_geri", use_container_width=True):
+                        st.session_state.hoca_aktif_sayfa -= 1
+                        st.rerun()
+                        
+            with col_orta:
+                # Sayfa numarası ortalanmış ve vurgulu
+                st.markdown(f"<div style='text-align: center; font-weight: bold; color: #4CAF50; padding-top: 10px;'>Sayfa {aktif + 1} / {toplam_sayfa}</div>", unsafe_allow_html=True)
+                
+            with col_sag:
+                if aktif < toplam_sayfa - 1: # Eğer son sayfada değilsek İleri butonu çıksın
+                    if st.button("Sonraki Sayfa ➡️", key="btn_ileri", use_container_width=True):
+                        st.session_state.hoca_aktif_sayfa += 1
+                        st.rerun()
     # ==========================================
     # 3. SEKME: SINAV MODU
     # ==========================================
