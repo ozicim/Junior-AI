@@ -19,6 +19,16 @@ st.set_page_config(page_title="JUNIOR AI", page_icon="⚖️", layout="centered"
 
 # --- API ANAHTARINI BURAYA YAZ ---
 MY_API_KEY = st.secrets["GEMINI_API_KEY"]
+try:
+    import google.generativeai as genai
+    genai.configure(api_key=MY_API_KEY)
+    st.sidebar.warning("🔍 Sistem Teşhisi Başlatıldı...")
+    modeller = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    st.sidebar.write("Senin anahtarının gördüğü modeller:")
+    for model_ismi in modeller:
+        st.sidebar.code(model_ismi)
+except Exception as e:
+    st.sidebar.error(f"Teşhis başarısız: {e}")
 
 # 2. SESSION STATE BAŞLATMA
 if 'aktif_ekran' not in st.session_state:
