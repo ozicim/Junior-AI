@@ -300,14 +300,6 @@ elif menu == "🎓 Akademi (Ders Notları)":
 
         st.markdown("---")
 
-        st.subheader("❓ Notlara Soru Sor")
-        soru = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı")
-        if st.button("Hocam Anlatır mısınız?", key = "akademi_soru_kutusu_1"):
-            if soru:
-                st.write("Hocanız notları inceliyor...")
-            else:
-                st.warning("Lütfen bir soru girin.")
-
     # ==========================================
     # 3. SEKME: SINAV MODU
     # ==========================================
