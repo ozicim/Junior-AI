@@ -196,7 +196,7 @@ if "Adliye" in ana_mod:
                 st.markdown(f'<div class="hoca-anlatim-kutusu">{analiz}</div>', unsafe_allow_html=True)
 
 # --- MOD 2: AKADEMİ ---
-    else:
+elif:
     st.markdown("### 🎓 Akademik Kütüphane")
     tab_lib, tab_hoca, tab_sinav = st.tabs(["📂 Ders Notları", "👨‍🏫 JUNIOR AI Hoca", "📝 Sınav Modu"])
 
