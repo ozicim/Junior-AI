@@ -67,6 +67,20 @@ class AkademikEngine:
             }
         }
         return veriler.get(ders_id, {}).get(konu_id, "Bu konu hakkında henüz bir not eklenmemiş.")
+        @classmethod
+    def yuklenen_notlari_getir(cls):
+    """Firestore'da kayıtlı olan tüm notların isimlerini getirir."""
+        db = firestore.client()
+        # 'ders_notlari' koleksiyonundaki tüm dökümanları çekiyoruz
+        docs = db.collection("ders_notlari").stream()
+    
+        not_listesi = []
+        for doc in docs:
+            verı = doc.to_dict()
+            if "dosya_adi" in verı:
+                not_listesi.append(verı["dosya_adi"])
+    
+        return list(set(not_listesi)) # Aynı isimli dosyalar varsa tek göster
 
     @classmethod
     def dosyadan_metin_cikar(cls, yuklenen_dosya):
