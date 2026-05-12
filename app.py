@@ -373,14 +373,65 @@ elif menu == "🎓 Akademi (Ders Notları)":
             col_baslik, col_indir = st.columns([3, 1])
             with col_baslik:
                 st.markdown("### 📖 Hoca'nın Notu")
+            from fpdf import FPDF
+            import os
+            
+           from fpdf import FPDF
+            import os
+            
             with col_indir:
-                # Tüm sayfaları birleştirip indirilebilir metin haline getiriyoruz
+                # 1. Hoca'nın tüm anlattıklarını birleştir
                 tam_metin = "\n\n".join(st.session_state.hoca_sayfalar)
+                
+                # 2. Junilex SVG Logosunu Tanımla
+                svg_logo = """<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" stroke="#C5A059" stroke-width="2" fill="none"/>
+                    <path d="M30 45C30 45 35 60 50 60C65 60 70 45 70 45" stroke="#C5A059" stroke-width="2" fill="none"/>
+                    <path d="M50 20V80" stroke="#C5A059" stroke-width="2"/>
+                    <path d="M25 35H75" stroke="#1A1A1A" stroke-width="4"/>
+                </svg>"""
+                
+                # Geçici SVG dosyası oluşturuyoruz
+                with open("temp_logo.svg", "w", encoding="utf-8") as f:
+                    f.write(svg_logo)
+                
+                # 3. PDF Motorunu Başlat
+                pdf = FPDF()
+                pdf.add_page()
+                
+                # 4. Geçici SVG'yi PDF'e Ekle (Merkeze hizalayarak)
+                pdf.image("temp_logo.svg", x=85, y=10, w=40)
+                pdf.ln(35) # Logonun altına boşluk bırak
+                
+                # Geçici dosyayı hemen siliyoruz (Sunucuda çöp kalmasın)
+                if os.path.exists("temp_logo.svg"):
+                    os.remove("temp_logo.svg")
+                
+                # 5. Antet ve Başlıkları Ekle
+                pdf.set_font("Helvetica", style="B", size=16)
+                pdf.cell(0, 10, "JUNILEX AI - MÜTALAA NOTU", ln=True, align='C')
+                
+                pdf.set_font("Helvetica", style="I", size=11)
+                pdf.cell(0, 10, f"İncelenen Evrak: {aktif_not}", ln=True, align='C')
+                pdf.cell(0, 10, "Hazırlayan: Ozan Şahin Sicim", ln=True, align='C')
+                pdf.ln(10)
+                
+                # 6. Ana Metni Ekle
+                pdf.set_font("Helvetica", size=11)
+                
+                # Türkçe karakterlerin PDF'de hata vermemesi için güvenli dönüştürme:
+                guvenli_metin = tam_metin.encode('latin-1', 'replace').decode('latin-1')
+                pdf.multi_cell(0, 7, guvenli_metin) 
+                
+                # 7. PDF'i Byte (Veri) olarak belleğe al
+                pdf_bytes = bytes(pdf.output())
+                
+                # 8. Şık PDF İndirme Butonu
                 st.download_button(
-                    label="📥 Notu İndir (.txt)",
-                    data=tam_metin,
-                    file_name=f"Junilex_Hoca_Notu_{aktif_not}.txt",
-                    mime="text/plain",
+                    label="📥 PDF Olarak İndir",
+                    data=pdf_bytes,
+                    file_name=f"Junilex_Mutaala_{aktif_not}.pdf",
+                    mime="application/pdf",
                     use_container_width=True
                 )
             
