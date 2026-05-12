@@ -10,7 +10,7 @@ class AkademikSinavEngine:
             model = genai.GenerativeModel('gemini-2.5-pro')
             
             
-            kaynak_bilgi = f"Ders Notu: {ders_notu_metni[:5000]}" if ders_notu_metni else "Genel hukuk öğretisi."
+            kaynak_bilgi = f"Ders Notu: {ders_notu_metni}" if ders_notu_metni else "Genel hukuk öğretisi."
             
             prompt = f"""
             Hukuk profesörü olarak {konu_adi} üzerine bir sınav hazırla.
