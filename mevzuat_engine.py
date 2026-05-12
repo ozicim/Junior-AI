@@ -30,7 +30,9 @@ class MevzuatBulutEngine:
     @classmethod
     def veritabanini_baslat(cls):
         if not firebase_admin._apps:
-            cred = credentials.Certificate("firebase-anahtar.json")
+            # Secrets içindeki 'firebase' başlığını bir sözlük olarak alıyoruz
+            firebase_dict = dict(st.secrets["firebase"])
+            cred = credentials.Certificate(firebase_dict)
             firebase_admin.initialize_app(cred)
         if not cls.db:
             cls.db = firestore.client()
