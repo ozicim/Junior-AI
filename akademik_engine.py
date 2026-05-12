@@ -153,7 +153,7 @@ class AkademikEngine:
             Sen profesyonel bir hukuk hocasısın. Aşağıda bir öğrencinin sana sağladığı 'Ders Notları' bulunmaktadır.
             
             ÖĞRENCİ NOTLARI:
-            {ders_notu_metni} # Bellek sınırı için ilk 10bin karakteri alıyoruz
+            {ders_notu_metni} 
             
             GÖREVİN:
             Öğrencinin sorduğu "{konu_adi}" konusunu, ÖNCELİKLE YUKARIDAKİ DERS NOTLARINA DAYANARAK anlat. 
