@@ -2,6 +2,7 @@ import streamlit as st
 from mevzuat_engine import MevzuatBulutEngine
 from akademik_engine import AkademikEngine
 from akademik_sinav_modu import AkademikSinavEngine
+from dilekce_engine import DilekceEngine
 
 # 1. SAYFA AYARLARI
 st.set_page_config(page_title="JUNIOR AI", page_icon="⚖️", layout="centered")
@@ -90,7 +91,7 @@ st.markdown("""
 # 5. KENAR ÇUBUĞU
 with st.sidebar:
     st.markdown("### 🏛️ JUNIOR AI PANEL")
-    ana_mod = st.radio("Çalışma Alanı Seçiniz:", ["⚖️ Adliye (Mevzuat)", "🎓 Akademi (Ders Notları)"])
+    ana_mod = st.radio("Çalışma Alanı Seçiniz:", ["⚖️ Adliye (Mevzuat)", "🎓 Akademi (Ders Notları)", "📝Arzuhal(Dilekçe Yazım Merkezi))"])
     st.divider()
     st.info("Ozan Şahin Sicim | JUNIOR AI v2.0")
 
@@ -308,33 +309,32 @@ else:
                 # app.py içinde sekmelerin olduğu kısma ekle
 tab_dilekce = st.tabs(["Dilekçe Yaz"]) # Mevcut sekmelerine ekle
 
-with tab_dilekce[0]: 
-    st.subheader("⚖️ Dilekçe Taslağı Oluştur")
-    st.info("AI tarafından oluşturulan taslaklar bilgilendirme amaçlıdır, avukat kontrolü şarttır.")
+# 3. BÖLÜM: DİLEKÇE (YENİ YERİ)
+elif menu == "📝 Dilekçe Yazım Merkezi":
+    st.header("📝 Dilekçe Taslağı Oluştur")
+    st.info("Lütfen olayları ve tarafları detaylıca giriniz.")
     
     col1, col2 = st.columns(2)
     with col1:
-        d_konu = st.text_input("Dilekçe Konusu", placeholder="Örn: Alacak Davası, Şikayet Dilekçesi")
-        d_taraflar = st.text_area("Taraflar", placeholder="Davacı: Ad Soyad (TC)\nDavalı: Ad Soyad/Kurum")
+        d_konu = st.text_input("Dilekçe Konusu", placeholder="Örn: Hakaret Suçu Şikayeti")
+        d_taraflar = st.text_area("Taraflar", placeholder="Davacı: ...\nDavalı: ...")
     with col2:
-        d_olay = st.text_area("Olayın Özeti", placeholder="Olayları kronolojik ve kısa özetleyin...")
-        d_talep = st.text_area("Talepleriniz", placeholder="Neyin yapılmasını istiyorsunuz?")
+        d_olay = st.text_area("Olayın Özeti", placeholder="Olayları buraya özetleyin...")
+        d_talep = st.text_area("Talepler", placeholder="Netice-i talep kısmını buraya yazın...")
 
-    if st.button("📝 Dilekçeyi Hazırla"):
+    if st.button("📝 Dilekçeyi Yaz ve Hazırla"):
         if d_konu and d_olay:
-            with st.spinner("Hukuki metin dokunuyor..."):
+            with st.spinner("Hukuki terminolojiye uygun taslak hazırlanıyor..."):
                 metin = DilekceEngine.dilekce_olustur(MY_API_KEY, d_konu, d_taraflar, d_olay, d_talep)
                 st.session_state.son_dilekce = metin
-                st.markdown("### Dilekçe Önizleme")
+                st.markdown("### 📄 Dilekçe Önizlemesi")
                 st.text_area("", value=metin, height=400)
                 
-                # Word İndirme Butonu
+                # Word İndirme
                 word_data = DilekceEngine.word_dosyasi_yap(metin)
                 st.download_button(
-                    label="📥 Word Olarak İndir",
+                    label="📥 Word Dosyası Olarak Kaydet",
                     data=word_data,
                     file_name=f"{d_konu}_taslak.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
-        else:
-            st.warning("Lütfen en azından konu ve olay özetini doldurun.")
