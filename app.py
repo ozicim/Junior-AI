@@ -6,6 +6,7 @@ from dilekce_engine import DilekceEngine
 from akademik_sinav_modu import AkademikSinavEngine
 from fpdf import FPDF
 import os
+import urllib.request
 
 try:
     AkademikEngine.veritabanini_baslat()
@@ -381,10 +382,20 @@ elif menu == "🎓 Akademi (Ders Notları)":
             with col_baslik:
                 st.markdown("### 📖 Hoca'nın Notu")
             with col_indir:
-                # 1. Hoca'nın tüm anlattıklarını birleştir
+                # 1. Metni Al (Filtre yok, orijinal Türkçe metin!)
                 tam_metin = "\n\n".join(st.session_state.hoca_sayfalar)
                 
-                # 2. Junilex SVG Logosunu Tanımla
+                # 2. Türkçe Destekli Fontları (Roboto) Otomatik İndir
+                font_reg = "Roboto-Regular.ttf"
+                font_bold = "Roboto-Bold.ttf"
+                
+                # Sunucuda (veya bilgisayarında) yoksa 1 saniyede Google'dan çeker
+                if not os.path.exists(font_reg):
+                    urllib.request.urlretrieve("https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Regular.ttf", font_reg)
+                if not os.path.exists(font_bold):
+                    urllib.request.urlretrieve("https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Bold.ttf", font_bold)
+                
+                # 3. Junilex SVG Logosunu Tanımla
                 svg_logo = """<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="50" cy="50" r="45" stroke="#C5A059" stroke-width="2" fill="none"/>
                     <path d="M30 45C30 45 35 60 50 60C65 60 70 45 70 45" stroke="#C5A059" stroke-width="2" fill="none"/>
@@ -392,42 +403,42 @@ elif menu == "🎓 Akademi (Ders Notları)":
                     <path d="M25 35H75" stroke="#1A1A1A" stroke-width="4"/>
                 </svg>"""
                 
-                # Geçici SVG dosyası oluşturuyoruz
                 with open("temp_logo.svg", "w", encoding="utf-8") as f:
                     f.write(svg_logo)
                 
-                # 3. PDF Motorunu Başlat
+                # 4. PDF Motorunu Başlat
                 pdf = FPDF()
                 pdf.add_page()
                 
-                # 4. Geçici SVG'yi PDF'e Ekle (Merkeze hizalayarak)
-                pdf.image("temp_logo.svg", x=85, y=10, w=40)
-                pdf.ln(35) # Logonun altına boşluk bırak
+                # 5. İndirdiğimiz Türkçe Fontları PDF'e Tanıt
+                pdf.add_font("Roboto", "", font_reg)
+                pdf.add_font("Roboto", "B", font_bold)
                 
-                # Geçici dosyayı hemen siliyoruz (Sunucuda çöp kalmasın)
+                # 6. Logoyu Ekle
+                pdf.image("temp_logo.svg", x=85, y=10, w=40)
+                pdf.ln(35) 
+                
                 if os.path.exists("temp_logo.svg"):
                     os.remove("temp_logo.svg")
                 
-                # 5. Antet ve Başlıkları Ekle
-                pdf.set_font("Helvetica", style="B", size=16)
+                # 7. Antet ve Başlıkları Ekle (TÜRKÇE SERBEST!)
+                pdf.set_font("Roboto", style="B", size=16)
                 pdf.cell(0, 10, "JUNILEX AI - MÜTALAA NOTU", ln=True, align='C')
                 
-                pdf.set_font("Helvetica", style="I", size=11)
-                pdf.cell(0, 10, f"İncelenen Evrak: {aktif_not}", ln=True, align='C')
-                pdf.cell(0, 10, "Hazırlayan: Ozan Şahin Sicim", ln=True, align='C')
+                # Fontu normale çevirip detayları yazıyoruz
+                pdf.set_font("Roboto", "", size=10)
+                pdf.cell(0, 6, f"İncelenen Evrak: {aktif_not}", ln=True, align='C')
+                pdf.cell(0, 6, "Hazırlayan: Ozan Şahin Sicim (Çankırı Karatekin Üniversitesi Hukuk Fakültesi)", ln=True, align='C')
                 pdf.ln(10)
                 
-                # 6. Ana Metni Ekle
-                pdf.set_font("Helvetica", size=11)
+                # 8. Ana Metni Ekle
+                pdf.set_font("Roboto", size=11)
+                pdf.multi_cell(0, 7, tam_metin) 
                 
-                # Türkçe karakterlerin PDF'de hata vermemesi için güvenli dönüştürme:
-                guvenli_metin = tam_metin.encode('latin-1', 'replace').decode('latin-1')
-                pdf.multi_cell(0, 7, guvenli_metin) 
-                
-                # 7. PDF'i Byte (Veri) olarak belleğe al
+                # 9. PDF'i Byte olarak belleğe al
                 pdf_bytes = bytes(pdf.output())
                 
-                # 8. Şık PDF İndirme Butonu
+                # 10. İndirme Butonu
                 st.download_button(
                     label="📥 PDF Olarak İndir",
                     data=pdf_bytes,
