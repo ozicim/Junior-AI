@@ -291,10 +291,26 @@ elif menu == "🎓 Akademi (Ders Notları)":
         st.markdown("---")
         
         st.subheader("❓ Notlara Soru Sor")
-        soru = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı")
+        soru = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı", key="akademi_soru_kutusu_1")
+        
         if st.button("Hocam Anlatır mısınız?"):
             if soru:
-                st.write("Hocanız notları inceliyor...")
+                # Kullanıcı beklerken dönen yükleme animasyonu
+                with st.spinner("Hocanız notları inceliyor... ⏳"):
+                    
+                    # Eğer session_state'te yüklenen PDF'in metni varsa onu alıyoruz
+                    # Yoksa Hoca'ya "genel bilgiyle cevap ver" diyoruz.
+                    not_metni = st.session_state.get('islenmis_not', "Öğrenci sisteme henüz güncel bir PDF metni okutmadı, lütfen genel hukuk bilginle detaylıca anlat.")
+                    
+                    try:
+                        # Motoru çalıştırıyoruz! (MY_API_KEY senin kodun üst kısmında tanımlı olmalı)
+                        cevap = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
+                        
+                        st.success("🎓 JUNIOR AI Hoca Yanıtladı:")
+                        st.write(cevap)
+                    except Exception as e:
+                        # Eğer 429 gibi bir hata olursa artık ekrana basacak!
+                        st.error(f"Hoca cevaplarken bir sorun oluştu: {e}")
             else:
                 st.warning("Lütfen bir soru girin.")
 
