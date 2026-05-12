@@ -307,7 +307,7 @@ else:
             else:
                 st.error("Sınav formatı bozuk. Lütfen sıfırlayıp tekrar başlatın.")
                 # app.py içinde sekmelerin olduğu kısma ekle
-tab_dilekce = st.tabs(["Dilekçe Yaz"]) # Mevcut sekmelerine ekle
+#tab_dilekce = st.tabs(["Dilekçe Yaz"]) # Mevcut sekmelerine ekle
 
 # 3. BÖLÜM: DİLEKÇE (YENİ YERİ)
 elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
