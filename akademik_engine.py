@@ -68,20 +68,27 @@ class AkademikEngine:
         }
         return veriler.get(ders_id, {}).get(konu_id, "Bu konu hakkında henüz bir not eklenmemiş.")
         @classmethod
+        @classmethod
     def yuklenen_notlari_getir(cls):
-    """Firestore'da kayıtlı olan tüm notların isimlerini getirir."""
-        db = firestore.client()
-        # 'ders_notlari' koleksiyonundaki tüm dökümanları çekiyoruz
-        docs = db.collection("ders_notlari").stream()
-    
-        not_listesi = []
-        for doc in docs:
-            verı = doc.to_dict()
-            if "dosya_adi" in verı:
-                not_listesi.append(verı["dosya_adi"])
-    
-        return list(set(not_listesi)) # Aynı isimli dosyalar varsa tek göster
-
+    """Firestore'dan tüm ders notlarının isimlerini çeker."""
+        try:
+            from firebase_admin import firestore # Importun içeride olduğundan emin olalım
+            db = firestore.client()
+        
+            # 'ders_notlari' senin koleksiyon adınla aynı olmalı
+            docs = db.collection("ders_notlari").stream()
+        
+            not_listesi = []
+            for doc in docs:
+                veri = doc.to_dict()
+                if "dosya_adi" in veri:
+                    not_listesi.append(veri["dosya_adi"])
+        
+        # Aynı isimli notları teke düşür ve listele
+            return list(set(not_listesi))
+        except Exception as e:
+            print(f"Hata: {e}")
+            return []
     @classmethod
     def dosyadan_metin_cikar(cls, yuklenen_dosya):
         """Yüklenen PDF veya TXT dosyasını metne çevirir."""
