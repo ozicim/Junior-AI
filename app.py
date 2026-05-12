@@ -90,8 +90,11 @@ st.markdown("""
 
 # 5. KENAR ÇUBUĞU
 with st.sidebar:
-    st.markdown("### 🏛️ JUNIOR AI PANEL")
-    ana_mod = st.radio("Çalışma Alanı Seçiniz:", ["⚖️ Adliye (Mevzuat)", "🎓 Akademi (Ders Notları)", "📝Arzuhal(Dilekçe Yazım Merkezi)"])
+    st.title("⚖️ Junilex AI")
+    # İşte burası 'menu' değişkeninin doğduğu yer:
+    menu = st.radio(
+        "Lütfen bir departman seçin:",
+        ["🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)"]
     st.divider()
     st.info("Ozan Şahin Sicim | JUNIOR AI v2.0")
 
