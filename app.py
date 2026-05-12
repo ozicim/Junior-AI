@@ -244,22 +244,34 @@ elif menu == "🎓 Akademi (Ders Notları)":
     # ==========================================
     with tab_notlar:
         st.header("📥 Not Yükleme Alanı")
+        
         uploaded_file = st.file_uploader("Notunu Buraya Yükle (PDF)", type="pdf", key="main_uploader")
         
         if uploaded_file is not None:
             dosya_ismi = uploaded_file.name
-            try:
-                from firebase_admin import firestore
-                db = firestore.client()
-                # Dosyayı veritabanına kaydediyoruz
-                db.collection("ders_notlari").add({
-                    "dosya_adi": dosya_ismi,
-                    "tarih": firestore.SERVER_TIMESTAMP
-                })
-                st.success(f"✅ {dosya_ismi} başarıyla arşive işlendi!")
-                st.rerun() # Anında güncellenmesi için sayfayı yeniliyoruz
-            except Exception as e:
-                st.error(f"Veritabanına işlenirken hata: {e}")
+            
+            with st.spinner("PDF okunuyor ve arşive işleniyor... (Bu biraz sürebilir)"):
+                # 1. PDF'İN İÇİNDEKİ YAZILARI ÇIKARIYORUZ
+                cikarilan_metin = AkademikEngine.dosyadan_metin_cikar(uploaded_file)
+                
+                try:
+                    from firebase_admin import firestore
+                    db = firestore.client()
+                    
+                    # 2. VERİTABANINA İSMİ VE "METNİ" BİRLİKTE KAYDEDİYORUZ
+                    db.collection("ders_notlari").add({
+                        "dosya_adi": dosya_ismi,
+                        "metin": cikarilan_metin,  # <-- Eksik olan asıl evrak buydu!
+                        "tarih": firestore.SERVER_TIMESTAMP
+                    })
+                    
+                    # 3. Yüklenen dosyayı anında "Aktif Not" yapıyoruz
+                    st.session_state.islenmis_not = cikarilan_metin
+                    st.session_state.aktif_dosya = dosya_ismi
+                    
+                    st.success(f"✅ {dosya_ismi} başarıyla okundu ve arşive eklendi!")
+                except Exception as e:
+                    st.error(f"Veritabanına işlenirken hata: {e}")
 
         st.markdown("---") 
 
@@ -267,53 +279,62 @@ elif menu == "🎓 Akademi (Ders Notları)":
         with st.expander("Daha Önce Tarattığın Notları Gör ve Yönet", expanded=True):
             mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
             
-            # İŞTE KRİTİK İF BLOĞU BURASI
             if mevcut_notlar: 
                 for not_adi in mevcut_notlar:
-                    col_isim, col_sil = st.columns([4, 1])
+                    # Sütunları 3'e böldük: İsim, Seç Butonu, Sil Butonu
+                    col_isim, col_sec, col_sil = st.columns([3, 1, 1])
                     
                     with col_isim:
                         st.markdown(f"📄 **{not_adi}**")
                         
+                    with col_sec:
+                        if st.button("✅ Seç", key=f"sec_{not_adi}"):
+                            # Arşivdeki notun metnini veritabanından çekip aktif ediyoruz!
+                            eski_metin = AkademikEngine.not_icerigi_getir(not_adi)
+                            
+                            if eski_metin:
+                                st.session_state.islenmis_not = eski_metin
+                                st.session_state.aktif_dosya = not_adi
+                                st.success(f"📌 '{not_adi}' masaya koyuldu, soruları buna soracaksın!")
+                            else:
+                                st.warning("Bu dosyanın metni yok! (Eski, hatalı yükleme olabilir. Lütfen silip tekrar yükle.)")
+                                
                     with col_sil:
                         if st.button("🗑️ Sil", key=f"sil_{not_adi}"):
                             basarili = AkademikEngine.not_sil(not_adi)
                             if basarili:
                                 st.success("Arşivden silindi!")
-                                st.rerun() # Dosya silinir silinmez listeyi yenile
+                                st.rerun()
                             else:
                                 st.error("Silinemedi.")
-            
-            # İŞTE KRİTİK ELSE BLOĞU (Yukarıdaki 'if mevcut_notlar:' ile milimetrik hizalı)
             else:
                 st.info("Henüz yüklü notun yok.")
 
         st.markdown("---")
-        
+
         st.subheader("❓ Notlara Soru Sor")
+        
+        # Kullanıcıya şu an hangi dosyanın okunduğunu gösterelim
+        aktif_not = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
+        st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not}")
+        
         soru = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı", key="akademi_soru_kutusu_1")
         
         if st.button("Hocam Anlatır mısınız?"):
             if soru:
-                # Kullanıcı beklerken dönen yükleme animasyonu
                 with st.spinner("Hocanız notları inceliyor... ⏳"):
-                    
-                   # Dosya okunmamışsa (None ise) patlamaması için garantiye alıyoruz
                     not_metni = st.session_state.get('islenmis_not')
-
-                    if not not_metni: # Eğer None ise veya içi boşsa standart metni ata
+                    
+                    if not not_metni:
                         not_metni = "Öğrenci sisteme henüz güncel bir PDF metni okutmadı, lütfen genel hukuk bilginle detaylıca anlat."
                     else:
-                        not_metni = str(not_metni) # Ne olur ne olmaz kesin String (metin) yapalım
-                    
-                    try:
-                        # Motoru çalıştırıyoruz! (MY_API_KEY senin kodun üst kısmında tanımlı olmalı)
-                        cevap = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
+                        not_metni = str(not_metni)
                         
+                    try:
+                        cevap = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
                         st.success("🎓 JUNIOR AI Hoca Yanıtladı:")
                         st.write(cevap)
                     except Exception as e:
-                        # Eğer 429 gibi bir hata olursa artık ekrana basacak!
                         st.error(f"Hoca cevaplarken bir sorun oluştu: {e}")
             else:
                 st.warning("Lütfen bir soru girin.")
