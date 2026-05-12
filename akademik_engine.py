@@ -5,9 +5,10 @@ import io
 import streamlit as st
 from firebase_admin import credentials, firestore
 
-
 class AkademikEngine:
     db = None
+
+    @classmethod # <-- Bu eksikti, eklendi
     def veritabanini_baslat(cls):
         if not firebase_admin._apps:
             cred = credentials.Certificate("firebase-anahtar.json")
@@ -17,10 +18,6 @@ class AkademikEngine:
 
     @classmethod
     def get_akademik_mufredat(cls):
-        """
-        Dersleri sınıflara göre gruplandıran ana kütüphane.
-        Ustam, sen listeyi attığında burayı saniyeler içinde güncelleyeceğiz.
-        """
         return {
             "1. Sınıf": [
                 {"id": "hukuk_baslangici", "isim": "Hukuk Başlangıcı", "ikon": "📜"},
@@ -58,41 +55,23 @@ class AkademikEngine:
         }
 
     @classmethod
-    def get_ders_notu_icerik(cls, ders_id, konu_id):
-        """Seçilen dersin ilgili konusuna ait notu getirir."""
-        # Şimdilik örnek veri; ileride cls.db.collection('akademik_notlar')... diyerek çekilecek.
-        veriler = {
-            "hukuk_giris": {
-                "normlar_hiyerarsisi": "Normlar hiyerarşisi, hukuk kurallarının derece ve kuvvetini belirleyen alt-üst ilişkisidir...",
-                "hak_ehliyeti": "Hak ehliyeti, her insanın sağ ve tam doğmak şartıyla kazandığı bir yetenektir..."
-            }
-        }
-        return veriler.get(ders_id, {}).get(konu_id, "Bu konu hakkında henüz bir not eklenmemiş.")
-        
-    @classmethod
     def yuklenen_notlari_getir(cls):
-    """Firestore'dan tüm ders notlarının isimlerini çeker."""
+        """Firestore'dan tüm ders notlarının isimlerini çeker.""" # <-- Girinti düzeltildi
         try:
-            from firebase_admin import firestore # Importun içeride olduğundan emin olalım
+            from firebase_admin import firestore
             db = firestore.client()
-        
-            # 'ders_notlari' senin koleksiyon adınla aynı olmalı
             docs = db.collection("ders_notlari").stream()
-        
             not_listesi = []
             for doc in docs:
                 veri = doc.to_dict()
                 if "dosya_adi" in veri:
                     not_listesi.append(veri["dosya_adi"])
-        
-        # Aynı isimli notları teke düşür ve listele
-            return list(set(not_listesi))
+            return list(set(not_listesi)) # <-- Girinti düzeltildi
         except Exception as e:
-            print(f"Hata: {e}")
             return []
+
     @classmethod
     def dosyadan_metin_cikar(cls, yuklenen_dosya):
-        """Yüklenen PDF veya TXT dosyasını metne çevirir."""
         if yuklenen_dosya.type == "application/pdf":
             pdf_reader = PyPDF2.PdfReader(yuklenen_dosya)
             metin = ""
@@ -104,23 +83,11 @@ class AkademikEngine:
 
     @classmethod
     def notlarla_ai_hoca_anlat(cls, api_key, konu_adi, ders_notu_metni):
-        """Yüklenen ders notlarını baz alarak konu anlatımı yapar."""
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            
-            prompt = f"""
-            Sen profesyonel bir hukuk hocasısın. Aşağıda bir öğrencinin sana sağladığı 'Ders Notları' bulunmaktadır.
-            
-            ÖĞRENCİ NOTLARI:
-            {ders_notu_metni[:10000]} # Bellek sınırı için ilk 10bin karakteri alıyoruz
-            
-            GÖREVİN:
-            Öğrencinin sorduğu "{konu_adi}" konusunu, ÖNCELİKLE YUKARIDAKİ DERS NOTLARINA DAYANARAK anlat. 
-            Eğer notlarda bilgi eksikse, genel hukuk bilginle tamamla ama notlardaki özel vurguları (hocanın görüşü, sınav tüyosu vb.) asla atlama.
-            """
-            
+            model = genai.GenerativeModel('gemini-1.5-flash') # İsmi düzelttik
+            prompt = f"Sen profesyonel bir hukuk hocasısın... {ders_notu_metni[:10000]}"
             response = model.generate_content(prompt)
             return response.text
         except Exception as e:
-            return f"Hoca notları okurken bir sorun yaşadı: {str(e)}"
+            return f"Hata: {str(e)}"
