@@ -44,7 +44,7 @@ st.markdown("""
 
         /* Başlık ve Logo Alanı */
         .header-container { text-align: center; padding: 20px 0; }
-        .header-logo-svg { width: 65px; height: auto; margin: 0 auto 10px auto; display: block; }
+        .header-logo-svg { width: 80px; height: auto; margin: 0 auto 10px auto; display: block; }
         .main-title { font-size: 52px; font-weight: 800; color: #1A1A1A; letter-spacing: 6px; margin: 0; text-transform: uppercase; }
         .sub-title { color: #C5A059; font-weight: 600; letter-spacing: 4px; font-size: 14px; text-align: center; margin-bottom: 20px; }
 
@@ -96,7 +96,7 @@ with st.sidebar:
         "Lütfen bir departman seçin:",
         ["🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)"])
     st.divider()
-    st.info("Ozan Şahin Sicim | JUNIOR AI v2.0")
+    st.info("Ozan Şahin Sicim | JUNILEX AI v2.0")
 
 # 6. LOGO VE ÜST BAŞLIK
 st.markdown("""
@@ -107,7 +107,7 @@ st.markdown("""
             <path d="M50 20V80" stroke="#C5A059" stroke-width="2"/>
             <path d="M25 35H75" stroke="#1A1A1A" stroke-width="4"/>
         </svg>
-        <h1 class="main-title">JUNIOR AI</h1>
+        <h1 class="main-title">JUNILEX AI</h1>
         <p class="sub-title">LEGAL INTELLIGENCE & ACADEMY</p>
     </div>
 """, unsafe_allow_html=True)
