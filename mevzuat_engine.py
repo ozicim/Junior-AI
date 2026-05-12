@@ -69,8 +69,8 @@ class MevzuatBulutEngine:
     @classmethod
     def madde_analiz_et(cls, api_key, madde_metni, kanun_adi, madde_no):
         try:
-            genai.configure(api_key=MY_API_KEY)
-            model = genai.GenerativeModel('gemini-3-flash')
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
             
             
             prompt = f"""
