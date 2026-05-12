@@ -298,9 +298,13 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 # Kullanıcı beklerken dönen yükleme animasyonu
                 with st.spinner("Hocanız notları inceliyor... ⏳"):
                     
-                    # Eğer session_state'te yüklenen PDF'in metni varsa onu alıyoruz
-                    # Yoksa Hoca'ya "genel bilgiyle cevap ver" diyoruz.
-                    not_metni = st.session_state.get('islenmis_not', "Öğrenci sisteme henüz güncel bir PDF metni okutmadı, lütfen genel hukuk bilginle detaylıca anlat.")
+                   # Dosya okunmamışsa (None ise) patlamaması için garantiye alıyoruz
+                    not_metni = st.session_state.get('islenmis_not')
+
+                    if not not_metni: # Eğer None ise veya içi boşsa standart metni ata
+                        not_metni = "Öğrenci sisteme henüz güncel bir PDF metni okutmadı, lütfen genel hukuk bilginle detaylıca anlat."
+                    else:
+                        not_metni = str(not_metni) # Ne olur ne olmaz kesin String (metin) yapalım
                     
                     try:
                         # Motoru çalıştırıyoruz! (MY_API_KEY senin kodun üst kısmında tanımlı olmalı)
