@@ -203,7 +203,7 @@ if "Adliye" in menu:
 # --- MOD 2: AKADEMİ ---
 elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce şartı koy!
     st.header("🎓 Akademik Asistan")
-    tab_lib, tab_hoca, tab_sinav = st.tabs(["📂 Ders Notları", "👨‍🏫 JUNIOR AI Hoca", "📝 Sınav Modu"])
+    tab_notlar, tab_sinav = st.tabs(["Ders Notları", "Sınav Modu"])
     
 
     with tab_lib:
@@ -272,13 +272,7 @@ elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce
             st.write("Hocanız notları inceliyor...")
         else:
             st.warning("Lütfen bir soru girin.")
-
-    with tab_hoca:
-        st.markdown("#### 👨‍🏫 Ders Notuna Göre Anlatım")
-        st.write("Kendi PDF notlarını yükle, JUNIOR AI o notlara göre ders anlatsın.")
-    
-    
-    
+   
         
     with tab_sinav:
         st.markdown("#### 📝 Pratik Çalışma")
