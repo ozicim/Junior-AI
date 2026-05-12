@@ -200,7 +200,7 @@ if "Adliye" in menu:
 
 # --- MOD 2: AKADEMİ ---
 elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce şartı koy!
-    st.header("Akademi Bölümü")
+    st.header("🎓 Akademik Asistan")
     tab_lib, tab_hoca, tab_sinav = st.tabs(["📂 Ders Notları", "👨‍🏫 JUNIOR AI Hoca", "📝 Sınav Modu"])
     
 
@@ -237,59 +237,46 @@ elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce
                 if st.button("Hocadan Dinle (AI)", key=f"ai_{konu}_{secili['id']}"):
                     # AI Hoca sekmesine yönlendir veya burada anlat
                     st.info(f"AI Hoca '{konu}' konusunu hazırlıyor...")
+                    st.header("🎓 Akademik Asistan")
+    
+    # --- 1. KISIM: NOT YÜKLEME ---
+    uploaded_file = st.file_uploader("Notunu Buraya Yükle (PDF)", type="pdf", key="main_uploader")
+    
+    if uploaded_file is not None:
+        # Burada senin mevcut PDF okuma ve Firebase'e kaydetme kodların olmalı
+        st.success("Not başarıyla sisteme tanımlandı.")
+        # ... (Dosya işleme kodların) ...
+
+    st.markdown("---") # Araya görsel bir çizgi
+
+    # --- 2. KISIM: DİJİTAL KÜTÜPHANEM (Yeni Eklediğimiz) ---
+    st.subheader("📚 Arşivim")
+    with st.expander("Daha Önce Tarattığın Notları Gör", expanded=False):
+        mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
+        if mevcut_notlar:
+            for not_adi in mevcut_notlar:
+                st.write(f"📄 {not_adi}")
+        else:
+            st.info("Henüz yüklü notun yok.")
+
+    st.markdown("---")
+
+    # --- 3. KISIM: SORU SORMA ALANI ---
+    st.subheader("❓ Notlara Soru Sor")
+    soru = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı")
+    if st.button("Hocam Anlatır mısınız?"):
+        if soru:
+            # AI'ya soru sorma kodun buraya gelecek
+            st.write("Hocanız notları inceliyor...")
+        else:
+            st.warning("Lütfen bir soru girin."
 
     with tab_hoca:
         st.markdown("#### 👨‍🏫 Ders Notuna Göre Anlatım")
         st.write("Kendi PDF notlarını yükle, JUNIOR AI o notlara göre ders anlatsın.")
     
-    # Dosya Yükleyici
-    yuklenen_not = st.file_uploader("Ders Notunu Yükle (PDF veya TXT)", type=["pdf", "txt"])
     
-    if yuklenen_not:
-        st.success("Not başarıyla sisteme tanımlandı.")
-        # Notu metne çevirip session_state'e alalım
-        if 'islenmis_not' not in st.session_state:
-            st.session_state.islenmis_not = AkademikEngine.dosyadan_metin_cikar(yuklenen_not)
     
-    konu_sorgu = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı")
-    
-    if st.button("Hocam Notlara Bakıp Anlatır mısınız?", use_container_width=True):
-        if konu_sorgu and yuklenen_not:
-            with st.spinner("Hoca notlarını inceliyor..."):
-                cevap = AkademikEngine.notlarla_ai_hoca_anlat(
-                    MY_API_KEY, 
-                    konu_sorgu, 
-                    st.session_state.islenmis_not
-                )
-                st.markdown(f'<div class="hoca-anlatim-kutusu">{cevap}</div>', unsafe_allow_html=True)
-        elif not yuklenen_not:
-            st.warning("Lütfen önce bir ders notu yükleyin.")
-    else:
-        st.warning("Lütfen bir soru girin.")
-        st.header("🎓 Akademik Asistan")
-              # --- YENİ DOSYA YÜKLEME ALANI ---
-        uploaded_file = st.file_uploader("Yeni Not Yükle (PDF)", type="pdf")
-     # ... mevcut yükleme kodların ...
-
-        st.markdown("---") # Araya bir çizgi çekelim
-
-    # --- KÜTÜPHANEM / ARŞİV BÖLÜMÜ ---
-        st.subheader("📚 Dijital Kütüphanem")
-        if uploaded_file is not None:
-    
-            with st.expander("Daha Önce Tarattığın Notları Gör", expanded=False):
-                mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
-        
-            if mevcut_notlar:
-                st.write(f"Toplam {len(mevcut_notlar)} adet notun kayıtlı:")
-                for not_adi in mevcut_notlar:
-                    col_n, col_b = st.columns([4, 1])
-                    col_n.markdown(f"📄 **{not_adi}**")
-                    if col_b.button("Seç", key=not_adi):
-                        st.session_state.secili_not = not_adi
-                        st.success(f"{not_adi} seçildi, şimdi soru sorabilirsin!")
-        else:
-            st.info("Henüz yüklü notun yok ustam. İlk notunu yukarıdan yükleyebilirsin.")
         
     with tab_sinav:
         st.markdown("#### 📝 Pratik Çalışma")
