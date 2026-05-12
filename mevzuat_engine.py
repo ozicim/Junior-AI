@@ -70,7 +70,7 @@ class MevzuatBulutEngine:
     def madde_analiz_et(cls, api_key, madde_metni, kanun_adi, madde_no):
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-3-flash')
             
             prompt = f"""
             Sen profesyonel bir hukuk asistanısın. Aşağıda metni verilen kanun maddesini bir hukukçu titizliğiyle analiz et.
