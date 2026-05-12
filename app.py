@@ -113,7 +113,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- MOD 1: ADLİYE (MEVZUAT) ---
-if "Adliye" in ana_mod:
+if "Adliye" in menu:
     if st.session_state.aktif_ekran == 'liste':
         st.markdown("### ⚖️ Mevzuat Kütüphanesi")
         kategori_ikonlari = {"Ceza Hukuku": "⚖️", "Özel Hukuk": "🏛️", "Ticaret Hukuku": "💼", "İş Hukuku": "🤝"}
