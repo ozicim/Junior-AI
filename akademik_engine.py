@@ -146,7 +146,7 @@ class AkademikEngine:
         """Yüklenen ders notlarını baz alarak konu anlatımı yapar."""
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-3-flash')
+            model = genai.GenerativeModel('gemini-1.5-flash')
             
             prompt = f"""
             Sen profesyonel bir hukuk hocasısın. Aşağıda bir öğrencinin sana sağladığı 'Ders Notları' bulunmaktadır.
