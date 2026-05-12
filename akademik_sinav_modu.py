@@ -7,7 +7,7 @@ class AkademikSinavEngine:
     def pratik_calisma_uret(cls, api_key, konu_adi, ders_notu_metni=None):
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-3-flash')
+            model = genai.GenerativeModel('gemini-2.5-pro')
             
             
             kaynak_bilgi = f"Ders Notu: {ders_notu_metni[:5000]}" if ders_notu_metni else "Genel hukuk öğretisi."
