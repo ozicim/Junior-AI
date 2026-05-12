@@ -6,7 +6,7 @@ class AkademikSinavEngine:
     @classmethod
     def pratik_calisma_uret(cls, api_key, konu_adi, ders_notu_metni=None):
         try:
-            genai.configure(api_key=api_key)
+            genai.configure(api_key=MY_API_KEY)
             model = genai.GenerativeModel('gemini-3-flash')
             
             
