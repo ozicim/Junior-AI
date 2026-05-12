@@ -67,7 +67,7 @@ class AkademikEngine:
             }
         }
         return veriler.get(ders_id, {}).get(konu_id, "Bu konu hakkında henüz bir not eklenmemiş.")
-        @classmethod
+        
         @classmethod
     def yuklenen_notlari_getir(cls):
     """Firestore'dan tüm ders notlarının isimlerini çeker."""
