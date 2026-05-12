@@ -310,7 +310,7 @@ else:
 tab_dilekce = st.tabs(["Dilekçe Yaz"]) # Mevcut sekmelerine ekle
 
 # 3. BÖLÜM: DİLEKÇE (YENİ YERİ)
-elif menu == "📝 Dilekçe Yazım Merkezi":
+elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
     st.header("📝 Dilekçe Taslağı Oluştur")
     st.info("Lütfen olayları ve tarafları detaylıca giriniz.")
     
