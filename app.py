@@ -1,8 +1,12 @@
 import streamlit as st
-from mevzuat_engine import MevzuatBulutEngine
+import firebase_admin
 from akademik_engine import AkademikEngine
-from akademik_sinav_modu import AkademikSinavEngine
+from mevzuat_engine import MevzuatBulutEngine
 from dilekce_engine import DilekceEngine
+
+
+from akademik_sinav_modu import AkademikSinavEngine
+
 
 # 1. SAYFA AYARLARI
 st.set_page_config(page_title="JUNIOR AI", page_icon="⚖️", layout="centered")
