@@ -269,7 +269,7 @@ elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce
             # AI'ya soru sorma kodun buraya gelecek
             st.write("Hocanız notları inceliyor...")
         else:
-            st.warning("Lütfen bir soru girin."
+            st.warning("Lütfen bir soru girin.")
 
     with tab_hoca:
         st.markdown("#### 👨‍🏫 Ders Notuna Göre Anlatım")
