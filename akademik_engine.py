@@ -5,6 +5,7 @@ import io
 import streamlit as st
 from firebase_admin import credentials, firestore
 
+
 class AkademikEngine:
     db = None
     def veritabanini_baslat(cls):
