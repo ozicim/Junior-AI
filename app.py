@@ -375,7 +375,6 @@ elif menu == "🎓 Akademi (Ders Notları)":
             col_baslik, col_indir = st.columns([3, 1])
             with col_baslik:
                 st.markdown("### 📖 Hoca'nın Notu")
-            
             with col_indir:
                 # 1. Hoca'nın tüm anlattıklarını birleştir
                 tam_metin = "\n\n".join(st.session_state.hoca_sayfalar)
