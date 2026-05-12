@@ -6,7 +6,7 @@ class DilekceEngine:
     @classmethod
     def dilekce_olustur(cls, api_key, konu, taraflar, olay_ozeti, talepler):
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         prompt = f"""
         Sen profesyonel bir avukatsın. Aşağıdaki bilgilere dayanarak resmi, ağırbaşlı ve 
