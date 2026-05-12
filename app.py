@@ -4,6 +4,8 @@ from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine
 from dilekce_engine import DilekceEngine
 from akademik_sinav_modu import AkademikSinavEngine
+from fpdf import FPDF
+import os
 
 
 # 1. SAYFA AYARLARI
@@ -373,11 +375,6 @@ elif menu == "🎓 Akademi (Ders Notları)":
             col_baslik, col_indir = st.columns([3, 1])
             with col_baslik:
                 st.markdown("### 📖 Hoca'nın Notu")
-            from fpdf import FPDF
-            import os
-            
-           from fpdf import FPDF
-            import os
             
             with col_indir:
                 # 1. Hoca'nın tüm anlattıklarını birleştir
