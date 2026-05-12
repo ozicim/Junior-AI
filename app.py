@@ -247,8 +247,23 @@ elif menu == "🎓 Akademi (Ders Notları)":
         uploaded_file = st.file_uploader("Notunu Buraya Yükle (PDF)", type="pdf", key="main_uploader")
         
         if uploaded_file is not None:
-            # Senin kendi PDF okuma/işleme kodların buraya gelecek
-            st.success("Not başarıyla sisteme tanımlandı.")
+            dosya_ismi = uploaded_file.name
+        
+        # Veritabanı bağlantısını kontrol et ve yaz
+            try:
+                from firebase_admin import firestore
+                db = firestore.client()
+            
+                # Bu isimde bir kayıt var mı diye bakmadan ekleyebiliriz (ya da set kullanabilirsin)
+                db.collection("ders_notlari").add({
+                    "dosya_adi": dosya_ismi,
+                    "tarih": firestore.SERVER_TIMESTAMP
+                })
+            
+                st.success(f"✅ {dosya_ismi} başarıyla arşive işlendi!")
+                st.rerun() # Arşivi anında güncellemek için sayfayı yeniliyoruz
+            except Exception as e:
+                st.error(f"Veritabanına işlenirken hata oluştu: {e}")
 
         st.markdown("---") 
 
