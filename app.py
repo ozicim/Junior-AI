@@ -44,7 +44,7 @@ st.markdown("""
 
         /* Başlık ve Logo Alanı */
         .header-container { text-align: center; padding: 20px 0; }
-        .header-logo-svg { width: 80px; height: auto; margin: 0 auto 10px auto; display: block; }
+        .header-logo-svg { width: 100px; height: auto; margin: 0 auto 10px auto; display: block; }
         .main-title { font-size: 52px; font-weight: 800; color: #1A1A1A; letter-spacing: 6px; margin: 0; text-transform: uppercase; }
         .sub-title { color: #C5A059; font-weight: 600; letter-spacing: 4px; font-size: 14px; text-align: center; margin-bottom: 20px; }
 
