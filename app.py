@@ -277,8 +277,8 @@ elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce
         st.subheader("📚 Dijital Kütüphanem")
         if uploaded_file is not None:
     
-        with st.expander("Daha Önce Tarattığın Notları Gör", expanded=False):
-            mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
+            with st.expander("Daha Önce Tarattığın Notları Gör", expanded=False):
+                mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
         
             if mevcut_notlar:
                 st.write(f"Toplam {len(mevcut_notlar)} adet notun kayıtlı:")
