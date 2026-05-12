@@ -2,3 +2,5 @@ streamlit
 google-generativeai
 firebase-admin
 PyPDF2
+beautifulsoup4
+requests
