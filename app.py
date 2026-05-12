@@ -286,8 +286,8 @@ elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce
                         if col_b.button("Seç", key=not_adi):
                             st.session_state.secili_not = not_adi
                             st.success(f"{not_adi} seçildi, şimdi soru sorabilirsin!")
-            else:
-                st.info("Henüz yüklü notun yok ustam. İlk notunu yukarıdan yükleyebilirsin."
+        else:
+            st.info("Henüz yüklü notun yok ustam. İlk notunu yukarıdan yükleyebilirsin."
     with tab_sinav:
         st.markdown("#### 📝 Pratik Çalışma")
         sinav_konusu = st.text_input("Sınav Konusu", placeholder="Örn: Ceza Hukuku Genel Hükümler")
