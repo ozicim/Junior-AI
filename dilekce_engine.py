@@ -5,8 +5,8 @@ import io
 class DilekceEngine:
     @classmethod
     def dilekce_olustur(cls, api_key, konu, taraflar, olay_ozeti, talepler):
-        genai.configure(api_key)
-        model = genai.GenerativeModel('gemini-3-flash')
+        genai.configure(api_key=api_key)
+        
         
         prompt = f"""
         Sen profesyonel bir avukatsın. Aşağıdaki bilgilere dayanarak resmi, ağırbaşlı ve 
