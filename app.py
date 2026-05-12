@@ -201,79 +201,79 @@ if "Adliye" in menu:
                 st.markdown(f'<div class="hoca-anlatim-kutusu">{analiz}</div>', unsafe_allow_html=True)
 
 # --- MOD 2: AKADEMİ ---
-elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce şartı koy!
+elif menu == "🎓 Akademi (Ders Notları)":
     st.header("🎓 Akademik Asistan")
-    tab_notlar, tab_sinav = st.tabs(["Ders Notları", "Sınav Modu"])
     
-
-    with tab_lib:
-        
+    # Sekmeleri net bir şekilde tanımlıyoruz
+    tab_mufredat, tab_notlar, tab_sinav = st.tabs(["📚 Müfredat", "📄 Notlarım", "📝 Sınav Modu"])
+    
+    # ==========================================
+    # 1. SEKME: MÜFREDAT (Ders Listesi)
+    # ==========================================
+    with tab_mufredat:
         mufredat = AkademikEngine.get_akademik_mufredat()
-    
-    # 1. 2. 3. 4. Sınıf Grupları
-    for sinif, dersler in mufredat.items():
-        with st.expander(f"📍 {sinif}", expanded=False):
-            for ders in dersler:
-                col_d, col_b = st.columns([4, 1])
-                with col_d:
-                    st.markdown(f"{ders['ikon']} **{ders['isim']}**")
-                with col_b:
-                    # Derse özel 'Notları Aç' butonu
-                    if st.button("Ders Notları", key=f"notes_{ders['id']}"):
-                        st.session_state.secili_ders = ders
-                        st.session_state.akademi_ekran = 'konular'
-                        st.rerun()
-
-    # Eğer bir ders seçildiyse alt konuları gösterelim
-    if 'akademi_ekran' in st.session_state and st.session_state.akademi_ekran == 'konular':
-        st.divider()
-        secili = st.session_state.secili_ders
-        st.markdown(f"### 📑 {secili['isim']} Konu Başlıkları")
         
-        # Örnek Konu Başlıkları (Burayı her ders için özelleştirebiliriz)
-        konular = ["Genel Kavramlar", "Temel İlkeler", "Uygulama Örnekleri"]
+        for sinif, dersler in mufredat.items():
+            with st.expander(f"📍 {sinif}", expanded=False):
+                for ders in dersler:
+                    col_d, col_b = st.columns([4, 1])
+                    with col_d:
+                        st.markdown(f"{ders['ikon']} **{ders['isim']}**")
+                    with col_b:
+                        if st.button("Notları Aç", key=f"notes_{ders['id']}"):
+                            st.session_state.secili_ders = ders
+                            st.session_state.akademi_ekran = 'konular'
+                            st.rerun()
+
+        # Eğer bir ders seçildiyse alt konuları gösterelim
+        if st.session_state.get('akademi_ekran') == 'konular':
+            st.divider()
+            secili = st.session_state.get('secili_ders', {})
+            if secili:
+                st.markdown(f"### 📑 {secili.get('isim', '')} Konu Başlıkları")
+                konular = ["Genel Kavramlar", "Temel İlkeler", "Uygulama Örnekleri"]
+                
+                for konu in konular:
+                    with st.expander(f"📙 {konu}"):
+                        st.write("Bu konuya dair özet notlar burada yer alacak.")
+                        if st.button("Hocadan Dinle (AI)", key=f"ai_{konu}_{secili['id']}"):
+                            st.info(f"AI Hoca '{konu}' konusunu hazırlıyor...")
+
+    # ==========================================
+    # 2. SEKME: NOTLARIM (Yükleme ve Arşiv)
+    # ==========================================
+    with tab_notlar:
+        st.header("📥 Not Yükleme Alanı")
+        uploaded_file = st.file_uploader("Notunu Buraya Yükle (PDF)", type="pdf", key="main_uploader")
         
-        for konu in konular:
-            with st.expander(f"📙 {konu}"):
-                st.write("Bu konuya dair özet notlar burada yer alacak.")
-                if st.button("Hocadan Dinle (AI)", key=f"ai_{konu}_{secili['id']}"):
-                    # AI Hoca sekmesine yönlendir veya burada anlat
-                    st.info(f"AI Hoca '{konu}' konusunu hazırlıyor...")
-                    st.header("🎓 Akademik Asistan")
-    
-    # --- 1. KISIM: NOT YÜKLEME ---
-    uploaded_file = st.file_uploader("Notunu Buraya Yükle (PDF)", type="pdf", key="main_uploader")
-    
-    if uploaded_file is not None:
-        # Burada senin mevcut PDF okuma ve Firebase'e kaydetme kodların olmalı
-        st.success("Not başarıyla sisteme tanımlandı.")
-        # ... (Dosya işleme kodların) ...
+        if uploaded_file is not None:
+            # Senin kendi PDF okuma/işleme kodların buraya gelecek
+            st.success("Not başarıyla sisteme tanımlandı.")
 
-    st.markdown("---") # Araya görsel bir çizgi
+        st.markdown("---") 
 
-    # --- 2. KISIM: DİJİTAL KÜTÜPHANEM (Yeni Eklediğimiz) ---
-    st.subheader("📚 Arşivim")
-    with st.expander("Daha Önce Tarattığın Notları Gör", expanded=False):
-        mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
-        if mevcut_notlar:
-            for not_adi in mevcut_notlar:
-                st.write(f"📄 {not_adi}")
-        else:
-            st.info("Henüz yüklü notun yok.")
+        st.subheader("📚 Dijital Arşivim")
+        with st.expander("Daha Önce Tarattığın Notları Gör", expanded=False):
+            mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
+            if mevcut_notlar:
+                for not_adi in mevcut_notlar:
+                    st.write(f"📄 {not_adi}")
+            else:
+                st.info("Henüz yüklü notun yok.")
 
-    st.markdown("---")
+        st.markdown("---")
 
-    # --- 3. KISIM: SORU SORMA ALANI ---
-    st.subheader("❓ Notlara Soru Sor")
-    soru = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı")
-    if st.button("Hocam Anlatır mısınız?"):
-        if soru:
-            # AI'ya soru sorma kodun buraya gelecek
-            st.write("Hocanız notları inceliyor...")
-        else:
-            st.warning("Lütfen bir soru girin.")
-   
-        
+        st.subheader("❓ Notlara Soru Sor")
+        soru = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı")
+        if st.button("Hocam Anlatır mısınız?"):
+            if soru:
+                st.write("Hocanız notları inceliyor...")
+            else:
+                st.warning("Lütfen bir soru girin.")
+
+    # ==========================================
+    # 3. SEKME: SINAV MODU
+    # ==========================================
     with tab_sinav:
         st.markdown("#### 📝 Pratik Çalışma")
         sinav_konusu = st.text_input("Sınav Konusu", placeholder="Örn: Ceza Hukuku Genel Hükümler")
@@ -281,7 +281,10 @@ elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce
         if st.button("🔥 Sınavı Başlat"):
             if sinav_konusu:
                 with st.spinner("Sınav hazırlanıyor..."):
-                    sonuc = AkademikSinavEngine.pratik_calisma_uret(MY_API_KEY, sinav_konusu, st.session_state.islenmis_not)
+                    # Not yoksa hata vermemesi için '.get()' kullanıyoruz
+                    islenmis = st.session_state.get('islenmis_not', "")
+                    sonuc = AkademikSinavEngine.pratik_calisma_uret(MY_API_KEY, sinav_konusu, islenmis)
+                    
                     if "hata" in sonuc:
                         st.error(f"Sınav üretilemedi: {sonuc['hata']}")
                     else:
@@ -289,33 +292,29 @@ elif menu == "🎓 Akademi (Ders Notları)": # <-- Buraya ':' işaretinden önce
             else:
                 st.warning("Lütfen bir konu girin.")
 
-        # Hata kontrolü yaparak ekrana basma
-        if st.session_state.su_anki_sinav:
+        # Sınav Ekrana Basma
+        if st.session_state.get('su_anki_sinav'):
             sinav = st.session_state.su_anki_sinav
             
             if "olay_kurgusu" in sinav:
                 st.info(f"📖 OLAY: {sinav['olay_kurgusu']}")
                 
-                # Soruları tek tek dönüyoruz
-                for i, soru in enumerate(sinav.get('sorular', [])):
-                    st.markdown(f"---")
-                    st.markdown(f"**Soru {i+1}:** {soru['soru']}")
+                for i, soru_data in enumerate(sinav.get('sorular', [])):
+                    st.markdown("---")
+                    st.markdown(f"**Soru {i+1}:** {soru_data['soru']}")
                     
-                    # BURASI KRİTİK: 'secim' burada tanımlanıyor
                     secim = st.radio(
                         f"Seçenekler ({i+1})", 
-                        soru['secenekler'], 
+                        soru_data['secenekler'], 
                         key=f"q_{i}"
                     )
                     
-                    # Kontrol butonu
                     if st.button(f"Kontrol Et ({i+1})", key=f"b_{i}"):
-                        # Artık 'secim' yukarıda tanımlandığı için hata vermez
-                        if secim.strip().lower() == soru['cevap'].strip().lower():
-                            st.success(f"✅ DOĞRU! \n\n **Analiz:** {soru['analiz']}")
+                        if secim.strip().lower() == soru_data['cevap'].strip().lower():
+                            st.success(f"✅ DOĞRU! \n\n **Analiz:** {soru_data['analiz']}")
                         else:
-                            st.error(f"❌ YANLIŞ! \n\n **Doğru Cevap:** {soru['cevap']}")
-                            st.warning(f"**Gerekçe:** {soru['analiz']}")
+                            st.error(f"❌ YANLIŞ! \n\n **Doğru Cevap:** {soru_data['cevap']}")
+                            st.warning(f"**Gerekçe:** {soru_data['analiz']}")
             else:
                 st.error("Sınav formatı bozuk. Lütfen sıfırlayıp tekrar başlatın.")
                 # app.py içinde sekmelerin olduğu kısma ekle
