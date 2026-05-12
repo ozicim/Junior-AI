@@ -145,8 +145,8 @@ class AkademikEngine:
     def notlarla_ai_hoca_anlat(cls, api_key, konu_adi, ders_notu_metni):
         """Yüklenen ders notlarını baz alarak konu anlatımı yapar."""
         try:
-            genai.configure(api_key=MY_API_KEY)
-            model = genai.GenerativeModel('gemini-3-flash')
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
             
             
             prompt = f"""
