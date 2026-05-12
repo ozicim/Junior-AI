@@ -239,8 +239,8 @@ elif menu == "🎓 Akademi (Ders Notları)":
                         if st.button("Hocadan Dinle (AI)", key=f"ai_{konu}_{secili['id']}"):
                             st.info(f"AI Hoca '{konu}' konusunu hazırlıyor...")
 
-    # ==========================================
-    # 2. SEKME: NOTLARIM (Yükleme ve Arşiv)
+# ==========================================
+    # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
     # ==========================================
     with tab_notlar:
         st.header("📥 Not Yükleme Alanı")
@@ -248,42 +248,55 @@ elif menu == "🎓 Akademi (Ders Notları)":
         
         if uploaded_file is not None:
             dosya_ismi = uploaded_file.name
-        
-        # Veritabanı bağlantısını kontrol et ve yaz
             try:
                 from firebase_admin import firestore
                 db = firestore.client()
-            
-                # Bu isimde bir kayıt var mı diye bakmadan ekleyebiliriz (ya da set kullanabilirsin)
+                # Dosyayı veritabanına kaydediyoruz
                 db.collection("ders_notlari").add({
                     "dosya_adi": dosya_ismi,
                     "tarih": firestore.SERVER_TIMESTAMP
                 })
-            
                 st.success(f"✅ {dosya_ismi} başarıyla arşive işlendi!")
-                st.rerun() # Arşivi anında güncellemek için sayfayı yeniliyoruz
+                st.rerun() # Anında güncellenmesi için sayfayı yeniliyoruz
             except Exception as e:
-                st.error(f"Veritabanına işlenirken hata oluştu: {e}")
+                st.error(f"Veritabanına işlenirken hata: {e}")
 
         st.markdown("---") 
 
         st.subheader("📚 Dijital Arşivim")
-        with st.expander("Daha Önce Tarattığın Notları Gör", expanded=False):
+        with st.expander("Daha Önce Tarattığın Notları Gör ve Yönet", expanded=True):
             mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
-            if mevcut_notlar:
+            
+            # İŞTE KRİTİK İF BLOĞU BURASI
+            if mevcut_notlar: 
                 for not_adi in mevcut_notlar:
-                    st.write(f"📄 {not_adi}")
-        with col_sil:
-            # Her dosya için benzersiz bir silme butonu
-             if st.button("🗑️ Sil", key=f"sil_{not_adi}"):
-                    basarili = AkademikEngine.not_sil(not_adi)
-                    if basarili:
-                        st.success(f"'{not_adi}' arşivden silindi!")
-                        st.rerun() # Sayfayı ANINDA yenile ki dosya listeden kaybolsun
-            else:
-                st.error("Silinirken bir hata oluştu.")
+                    col_isim, col_sil = st.columns([4, 1])
+                    
+                    with col_isim:
+                        st.markdown(f"📄 **{not_adi}**")
+                        
+                    with col_sil:
+                        if st.button("🗑️ Sil", key=f"sil_{not_adi}"):
+                            basarili = AkademikEngine.not_sil(not_adi)
+                            if basarili:
+                                st.success("Arşivden silindi!")
+                                st.rerun() # Dosya silinir silinmez listeyi yenile
+                            else:
+                                st.error("Silinemedi.")
+            
+            # İŞTE KRİTİK ELSE BLOĞU (Yukarıdaki 'if mevcut_notlar:' ile milimetrik hizalı)
             else:
                 st.info("Henüz yüklü notun yok.")
+
+        st.markdown("---")
+
+        st.subheader("❓ Notlara Soru Sor")
+        soru = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı")
+        if st.button("Hocam Anlatır mısınız?"):
+            if soru:
+                st.write("Hocanız notları inceliyor...")
+            else:
+                st.warning("Lütfen bir soru girin.")
 
         st.markdown("---")
 
