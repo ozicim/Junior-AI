@@ -273,6 +273,15 @@ elif menu == "🎓 Akademi (Ders Notları)":
             if mevcut_notlar:
                 for not_adi in mevcut_notlar:
                     st.write(f"📄 {not_adi}")
+        with col_sil:
+            # Her dosya için benzersiz bir silme butonu
+             if st.button("🗑️ Sil", key=f"sil_{not_adi}"):
+                    basarili = AkademikEngine.not_sil(not_adi)
+                    if basarili:
+                        st.success(f"'{not_adi}' arşivden silindi!")
+                        st.rerun() # Sayfayı ANINDA yenile ki dosya listeden kaybolsun
+            else:
+                st.error("Silinirken bir hata oluştu.")
             else:
                 st.info("Henüz yüklü notun yok.")
 
