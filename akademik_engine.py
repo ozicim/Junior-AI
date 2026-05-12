@@ -1,0 +1,103 @@
+import google.generativeai as genai
+import firebase_admin
+import PyPDF2
+import io
+from firebase_admin import credentials, firestore
+
+class AkademikEngine:
+    db = None
+    def veritabanini_baslat(cls):
+        if not firebase_admin._apps:
+            cred = credentials.Certificate("firebase-anahtar.json")
+            firebase_admin.initialize_app(cred)
+        if not cls.db:
+            cls.db = firestore.client()
+
+    @classmethod
+    def get_akademik_mufredat(cls):
+        """
+        Dersleri sınıflara göre gruplandıran ana kütüphane.
+        Ustam, sen listeyi attığında burayı saniyeler içinde güncelleyeceğiz.
+        """
+        return {
+            "1. Sınıf": [
+                {"id": "hukuk_baslangici", "isim": "Hukuk Başlangıcı", "ikon": "📜"},
+                {"id": "anayasa_genel", "isim": "Anayasa Hukuku (Genel)", "ikon": "⚖️"},
+                {"id": "roma_hukuku", "isim": "Roma Hukuku", "ikon": "🏛️"},
+                {"id" : "iktisat", "isim": "İktisat", "ikon": "📈"},
+                {"id" : "medeni", "isim": "Medeni Hukuk (Genel)", "ikon": "🏠"},
+            ],
+            "2. Sınıf": [
+                {"id": "ceza_genel", "isim": "Ceza Hukuku (Genel)", "ikon": "⛓️"},
+                {"id": "idare_hukuku", "isim": "İdare Hukuku", "ikon": "🏢"},
+                {"id": "borclar_genel", "isim": "Borçlar Hukuku (Genel)", "ikon": "🤝"},
+                {"id" : "hukuk_felsefesi", "isim": "Hukuk Felsefesi ve Sosyolojisi", "ikon": "🧠"},
+                {"id" : "milletlerarasi_hukuk", "isim": "Milletlerarası Hukuk", "ikon": "🌍"},
+                {"id" : "hukuk_tarihi", "isim": "Türk Hukuk Tarihi", "ikon": "📚"},
+            ],
+            "3. Sınıf": [
+                {"id": "ceza_ozel", "isim": "Ceza Hukuku (Özel)", "ikon": "🔍"},
+                {"id": "medeni_usul", "isim": "Medeni Usul Hukuku", "ikon": "👨‍⚖️"},
+                {"id": "ticaret_hukuku", "isim": "Ticaret Hukuku", "ikon": "💼"},
+                {"id" : "borclar_ozel", "isim": "Borçlar Hukuku (Özel)", "ikon": "📑"},
+                {"id" : "idari_yargi", "isim": "İdari Yargı Hukuku", "ikon": "⚔️"},
+                {"id" : "esya", "isim": "Eşya Hukuku", "ikon": "🏡"},
+            ],
+            "4. Sınıf": [
+                {"id": "icra_iflas", "isim": "İcra İflas Hukuku", "ikon": "🔨"},
+                {"id": "ozel_milletlerarasi", "isim": "Milletlerarası Özel Hukuk", "ikon": "🌐"},
+                {"id": "is_hukuku", "isim": "İş Hukuku", "ikon": "👷"},
+                {"id" : "kiymetli_evrak", "isim": "Kıymetli Evrak Hukuku", "ikon": "💳"},
+                {"id" : "ceza_muhakemesi", "isim": "Ceza Muhakemesi Hukuku", "ikon": "⚖️"},
+                {"id" : "miras", "isim": "Miras Hukuku", "ikon": "👪"},
+                {"id": "genel_kamu_hukuku", "isim": "Genel Kamu Hukuku", "ikon": "🏛️"},
+                {"id" : "sosyal_guvenlik", "isim": "Sosyal Güvenlik Hukuku", "ikon": "🛡️"},
+            ]
+        }
+
+    @classmethod
+    def get_ders_notu_icerik(cls, ders_id, konu_id):
+        """Seçilen dersin ilgili konusuna ait notu getirir."""
+        # Şimdilik örnek veri; ileride cls.db.collection('akademik_notlar')... diyerek çekilecek.
+        veriler = {
+            "hukuk_giris": {
+                "normlar_hiyerarsisi": "Normlar hiyerarşisi, hukuk kurallarının derece ve kuvvetini belirleyen alt-üst ilişkisidir...",
+                "hak_ehliyeti": "Hak ehliyeti, her insanın sağ ve tam doğmak şartıyla kazandığı bir yetenektir..."
+            }
+        }
+        return veriler.get(ders_id, {}).get(konu_id, "Bu konu hakkında henüz bir not eklenmemiş.")
+
+    @classmethod
+    def dosyadan_metin_cikar(cls, yuklenen_dosya):
+        """Yüklenen PDF veya TXT dosyasını metne çevirir."""
+        if yuklenen_dosya.type == "application/pdf":
+            pdf_reader = PyPDF2.PdfReader(yuklenen_dosya)
+            metin = ""
+            for sayfa in pdf_reader.pages:
+                metin += sayfa.extract_text()
+            return metin
+        else:
+            return str(yuklenen_dosya.read(), "utf-8")
+
+    @classmethod
+    def notlarla_ai_hoca_anlat(cls, api_key, konu_adi, ders_notu_metni):
+        """Yüklenen ders notlarını baz alarak konu anlatımı yapar."""
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            
+            prompt = f"""
+            Sen profesyonel bir hukuk hocasısın. Aşağıda bir öğrencinin sana sağladığı 'Ders Notları' bulunmaktadır.
+            
+            ÖĞRENCİ NOTLARI:
+            {ders_notu_metni[:10000]} # Bellek sınırı için ilk 10bin karakteri alıyoruz
+            
+            GÖREVİN:
+            Öğrencinin sorduğu "{konu_adi}" konusunu, ÖNCELİKLE YUKARIDAKİ DERS NOTLARINA DAYANARAK anlat. 
+            Eğer notlarda bilgi eksikse, genel hukuk bilginle tamamla ama notlardaki özel vurguları (hocanın görüşü, sınav tüyosu vb.) asla atlama.
+            """
+            
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            return f"Hoca notları okurken bir sorun yaşadı: {str(e)}"
