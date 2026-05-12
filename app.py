@@ -7,6 +7,11 @@ from akademik_sinav_modu import AkademikSinavEngine
 from fpdf import FPDF
 import os
 
+try:
+    AkademikEngine.veritabanini_baslat()
+except Exception as e:
+    st.error(f"Veritabanı başlatılamadı: {e}")
+
 
 # 1. SAYFA AYARLARI
 st.set_page_config(page_title="JUNIOR AI", page_icon="⚖️", layout="centered")
