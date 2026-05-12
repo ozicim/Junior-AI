@@ -308,7 +308,7 @@ else:
                 # app.py içinde sekmelerin olduğu kısma ekle
 tab_dilekce = st.tabs(["Dilekçe Yaz"]) # Mevcut sekmelerine ekle
 
-with tab_dilekce:
+with tab_dilekce[0]: 
     st.subheader("⚖️ Dilekçe Taslağı Oluştur")
     st.info("AI tarafından oluşturulan taslaklar bilgilendirme amaçlıdır, avukat kontrolü şarttır.")
     
