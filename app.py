@@ -276,7 +276,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 st.info(f"📊 AI Hoca {secilen_ders} - {secilen_konu} konusunu hazırlıyor...")
                 try:
                     from ictihat_engine import IctihatEngine
-                    akademi_prompt = f"{secilen_ders} dersinin {secilen_konu} konusunu bir hukuk profesörü edasıyla, önemli kavramlar ve güncel içtihatlar eşliğinde kapsamlı şekilde anlat."
+                    akademi_prompt = f"{secilen_ders} dersinin {secilen_konu} konusunu bir hukuk öğretim üyesi tarzıyla, örnekler vererek ve güncel içtihatlara değinerek anlaşılır şekilde anlat."
                     
                     # 1. AKIŞI BAŞLATIYORUZ (Streaming)
                     stream = IctihatEngine.emsal_ara(MY_API_KEY, akademi_prompt)
