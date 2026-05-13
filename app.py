@@ -608,3 +608,42 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
                 file_name=f"{d_konu}_taslak.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
+    elif menu == "⚖️ İçtihat Sorgulama":
+        st.header("⚖️ Yüksek Yargı Karar Analizi")
+        st.warning("🛡️ **Güvenlik Modu Aktif:** Junilex şu an sadece yapıştırdığınız metne sadık kalarak analiz yapmaktadır.")
+    
+        karar_input = st.text_area(
+            "Karar Metnini Buraya Yapıştırın", 
+            height=400, 
+            placeholder="Yargıtay, Danıştay veya AYM karar metnini buraya ekleyin..."
+        )
+    
+        soru_input = st.text_input(
+            "Bu kararda özellikle neyi merak ediyorsunuz?", 
+            placeholder="Örn: Davalının kusur durumu nasıl değerlendirilmiş?"
+        )
+
+        if st.button("⚖️ Kararı Şerh Düş"):
+            if karar_input and soru_input:
+                st.info("📊 Karar dosyası inceleniyor, mütalaa hazırlanıyor...")
+            
+                try:
+                    # Engine Çağrısı
+                    stream = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_input, soru_input)
+                
+                    # Streaming Süzgeci (Generator)
+                    def ictihat_suzucu():
+                        for parca in stream:
+                            if hasattr(parca, 'text') and parca.text:
+                                yield parca.text
+                
+                    # Ekrana Daktilo Hızıyla Yazdırma
+                    st.write_stream(ictihat_suzucu)
+                
+                    st.divider()
+                    st.caption("⚠️ Not: Bu analiz yapay zeka tarafından sağlanan bir özet olup, resmi evrak yerine geçmez.")
+                
+                except Exception as e:
+                    st.error(f"Analiz başlatılamadı: {e}")
+            else:
+                st.warning("Ustam, analiz için hem karar metnini hem de sorunu girmelisin.")
