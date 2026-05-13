@@ -375,11 +375,10 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 def hoca_suzucu():
                     for parca in stream:
                         if parca.text:
-                            yield parca.text
+                            yield parca.text:
         
                 # 3. Akışı ekrana basıyoruz
                 st.write_stream(hoca_suzucu)
-                        
                     try:
                         # 1. AI'dan Tam Cevabı Al
                         cevap = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
