@@ -6,12 +6,11 @@ class IctihatEngine:
     @classmethod
     def karar_analiz_et(cls, api_key, karar_metni, soru):
         """
-        Yüksek yargı kararlarını sıfır halüsinasyon politikasıyla analiz eder.
+        Yüksek yargı kararlarını analiz eder.
         """
         try:
             genai.configure(api_key=api_key)
             
-            # GÜVENLİK ÖNLEMİ: Sadece gerçeklere sadık kalması için temperature 0
             generation_config = {
                 "temperature": 0,
                 "top_p": 0.1,
@@ -19,11 +18,10 @@ class IctihatEngine:
             }
             
             model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash', # Stabil versiyon
+                model_name='gemini-3-flash',
                 generation_config=generation_config
             )
 
-            # PROMPT DÜZELTİLDİ: Tüm metin tek bir f-string içine alındı
             prompt = f"""
             Sen kıdemli bir Yargıtay Tetkik Hakimisin. Aşağıdaki hukuk metnini analiz et.
             
@@ -41,22 +39,19 @@ class IctihatEngine:
             - **📢 Soruya Yanıt:** Kullanıcının sorusuna metne dayalı net cevap.
             """
 
-            # Akış (Streaming) başlatılıyor
             response = model.generate_content(prompt, stream=True)
             return response
 
         except Exception as e:
             return f"İçtihat analizi sırasında bir usul hatası oluştu: {str(e)}"
 
-   
-
- 
     @classmethod
     def serper_search(cls, query, api_key):
         """Serper.dev üzerinden Google araması yapar."""
         url = "https://google.serper.dev/search"
+        # Sorguyu hukuk odaklı ve numara bulmaya zorlayacak şekilde genişlettik
         payload = json.dumps({
-            "q": f"site:kararara.com OR site:kazanci.com.tr OR site:leperas.com.tr {query}",
+            "q": f"site:kararara.com OR site:kazanci.com.tr OR site:leperas.com.tr {query} emsal karar esas karar no",
             "gl": "tr",
             "hl": "tr"
         })
@@ -80,8 +75,9 @@ class IctihatEngine:
 
             # 3. Gemini'a veriyi "kanıt" olarak sun
             genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            model = genai.GenerativeModel('gemini-3-flash')
             
+            # PROMPT DÜZELTİLDİ: Tırnaklar ve format birleştirildi
             prompt = f"""
             SEN BİR YARGITAY ANALİSTİSİN. 
             Arama sonuçlarında numara bulamasan bile ASLA 'boş bırakılmıştır' deme. 
@@ -89,17 +85,15 @@ class IctihatEngine:
             GÖREVİN:
             1. Eğer sonuçlarda numara VARSA, doğrudan onu yaz.
             2. Eğer numara YOKSA, internetten öğrendiğin bilgilerle 'Yargıtay 3. Hukuk Dairesi'nin yerleşik görüşü şudur...' diyerek doktrini açıkla.
-            3. İspat yükünün kimde olduğunu kesin bir dille belirt (TBK 112 ve 382 vurgusuyla).
-            4. Kullanıcıya bu kararı hangi anahtar kelimelerle (Örn: 'Ariyet hasarlı iade') araması gerektiğini söyle.
+            3. İlgili kanun maddelerini (TKHK m. 11, TBK m. 227 vb.) mutlaka belirt.
             
             OLAY: {olay_ozeti}
             ARAMA VERİLERİ: {context}
-            """
 
             FORMAT:
-            - **⚖️ Hukuki Dayanak:** (İlgili Kanun Maddesi)
-            - **🔍 Gerçek Emsal:** (Arama sonuçlarındaki gerçek Daire ve Esas/Karar No)
-            - **📢 Sonuç:** (Yargıtay'ın bu konudaki net tavrı)
+            - **⚖️ Hukuki Dayanak:** (İlgili Kanun Maddesi ve İçeriği)
+            - **🔍 Gerçek Emsal:** (Arama sonuçlarındaki Daire ve Esas/Karar No)
+            - **📢 Sonuç ve Tavsiye:** (Yargıtay'ın bu konudaki net tavrı ve izlenmesi gereken yol)
             """
             
             response = model.generate_content(prompt)
