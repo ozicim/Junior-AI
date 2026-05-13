@@ -45,6 +45,13 @@ def kanun_sec(kanun):
     st.session_state.bulunan_madde = None
     st.session_state.arama_sonuclari = []
     ekran_degistir('maddeSecim')
+    
+def metni_sayfalara_bol(metin, kelime_siniri=2000):
+    kelimeler = metin.split()
+    sayfalar = []
+    for i in range(0, len(kelimeler), kelime_siniri):
+        sayfalar.append(" ".join(kelimeler[i:i + kelime_siniri]))
+    return sayfalar
 
 # 4. CSS BLOĞU (TAŞMAYI ÖNLEYEN KESİN ÇÖZÜM)
 st.markdown("""
@@ -608,7 +615,8 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
                 file_name=f"{d_konu}_taslak.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-    # --- MOD 4: İÇTİHAT SORGULAMA (Eksik Olan Kısım) ---
+
+# --- MOD 4: İÇTİHAT SORGULAMA (Eksik Olan Kısım) ---
 elif menu == "⚖️ İçtihat Sorgulama":
     st.header("⚖️ İçtihat ve Emsal Merkezi")
     
@@ -643,52 +651,74 @@ elif menu == "⚖️ İçtihat Sorgulama":
             key="o_input_kitap"
         )
         
-        if st.button("🔎 Benzer İçtihatları ve Emsalleri Getir", use_container_width=True):
-            if olay_input:
-                st.info("🔎 Kütüphane taranıyor, emsal dosyalar raflardan indiriliyor...")
-                from ictihat_engine import IctihatEngine
+        with tab2:
+            st.subheader("🔎 Olaydan Emsal Bul")
+            olay_input = st.text_area("Olayı Anlatın", height=250, key="o_input_new")
+        
+            if st.button("🔎 Benzer İçtihatları Getir", use_container_width=True):
+                if olay_input:
+                    st.info("🔎 Kütüphane taranıyor...")
+                    from ictihat_engine import IctihatEngine
                 
-                # 1. Akışı başlat
-                stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
+                    # 1. AI'dan tam yanıtı al (Akış bittikten sonra sayfalamaya geçeceğiz)
+                    stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
+                    tam_yanit = ""
+                    placeholder = st.empty()
                 
-                # 2. Akışı bir kap içinde daktilo gibi yazdırıyoruz
-                placeholder = st.empty()
-                tam_metin = ""
+                    for parca in stream:
+                        if hasattr(parca, 'text') and parca.text:
+                            tam_yanit += parca.text
+                            placeholder.markdown(tam_yanit + "▌")
                 
-                for parca in stream:
-                    if hasattr(parca, 'text') and parca.text:
-                        tam_metin += parca.text
-                        # Daktilo efekti verirken geçici olarak ham hali göster
-                        placeholder.markdown(tam_metin + "▌")
-                
-                # 3. YAZDIRMA BİTTİĞİNDE: Dijital Kitap Sayfasına Dönüştür
-                placeholder.empty() # Geçici daktilo metnini sil
-                
-                # Kitap Sayfası Tasarımı (HTML/CSS)
+                    # 2. Yanıtı sayfalara böl ve Session State'e kaydet
+                    st.session_state.kitap_sayfalari = metni_sayfalara_bol(tam_yanit, 2000)
+                    st.session_state.aktif_sayfa = 0
+                    placeholder.empty()
+
+            # 3. SAYFALAMA VE GÖRÜNÜM (Eğer hafızada sayfa varsa göster)
+            if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
+                sayfalar = st.session_state.kitap_sayfalari
+                aktif = st.session_state.aktif_sayfa
+            
+                # --- Dijital Kitap Sayfası Tasarımı ---
                 st.markdown(f"""
                 <div style="
                     background-color: #fdf6e3; 
-                    padding: 30px; 
-                    border-left: 10px solid #8e735b; 
-                    border-radius: 10px; 
-                    box-shadow: 2px 2px 15px rgba(0,0,0,0.1);
+                    padding: 40px; 
+                    border-left: 12px solid #8e735b; 
+                    border-radius: 5px; 
+                    box-shadow: 5px 5px 20px rgba(0,0,0,0.1);
                     color: #2c2c2c;
                     font-family: 'Georgia', serif;
-                    line-height: 1.6;
+                    min-height: 500px;
                 ">
-                    <h2 style="color: #8e735b; border-bottom: 2px solid #8e735b; padding-bottom: 10px;">📚 JUNILEX İÇTİHAT ŞERHİ</h2>
-                    <div style="margin-top: 20px;">
-                        {tam_metin.replace('\n', '<br>')}
+                    <div style="text-align: right; font-size: 12px; color: #8e735b; font-weight: bold;">
+                        SAYFA {aktif + 1} / {len(sayfalar)}
                     </div>
-                    <div style="margin-top: 30px; text-align: right; font-style: italic; color: #555;">
-                        — Junilex Dijital Külliyatı —
+                    <h2 style="color: #8e735b; border-bottom: 1px solid #8e735b; margin-bottom: 20px;">📜 İÇTİHAT ŞERHİ</h2>
+                    <div style="font-size: 17px; line-height: 1.8; text-align: justify;">
+                        {sayfalar[aktif].replace('\n', '<br>')}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-                
-                st.divider()
-                # Word olarak indirme butonu da ekleyebiliriz
-            else:
-                st.warning("Ustam, önce olayı anlatman lazım!")
+
+                # --- Sayfa Geçiş Butonları ---
+                st.write("") # Boşluk
+                col1, col2, col3 = st.columns([1, 2, 1])
+            
+                with col1:
+                    if aktif > 0:
+                        if st.button("⬅️ Önceki Sayfa", use_container_width=True):
+                            st.session_state.aktif_sayfa -= 1
+                            st.rerun()
+            
+                with col3:
+                    if aktif < len(sayfalar) - 1:
+                        if st.button("Sonraki Sayfa ➡️", use_container_width=True):
+                            st.session_state.aktif_sayfa += 1
+                            st.rerun()
+            
+                with col2:
+                    st.write(f"<center>Toplam {len(sayfalar)} sayfa bulundu.</center>", unsafe_allow_html=True)
         
               
