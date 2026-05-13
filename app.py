@@ -641,15 +641,6 @@ elif menu == "⚖️ İçtihat Sorgulama":
                 st.write_stream(ictihat_suzucu)
             else:
                 st.warning("Lütfen alanları doldurunuz.")
-
-    with tab2:
-        st.subheader("🔎 Olaydan Emsal Bul")
-        olay_input = st.text_area(
-            "Olayınızı Detaylıca Anlatın", 
-            height=300, 
-            placeholder="Vakayı buraya yazın...",
-            key="o_input_kitap"
-        )
         
         with tab2:
             st.subheader("🔎 Olaydan Emsal Bul")
