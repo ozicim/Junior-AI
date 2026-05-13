@@ -695,107 +695,79 @@ elif menu == "⚖️ İçtihat Sorgulama":
         
     with tab2:
         st.subheader("🔎 Olaydan Emsal Bul")
-        olay_input = st.text_area("Olayı Anlatın", height=150, key="emsal_input_final_v3")
+        olay_input = st.text_area("Olayı Anlatın", height=150, key="emsal_input_final_v5")
         
         c1, c2 = st.columns(2)
         
         with c1:
             if st.button("🔎 İçtihatları Getir", use_container_width=True):
                 if olay_input:
-                    st.info("🔎 Kütüphane taranıyor...")
-                    # Import yukarıda olduğu için direkt çağırıyoruz
-                    stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
-                    tam_metin = "".join([p.text for p in stream if hasattr(p, 'text')])
-                    
-                    st.session_state.kitap_sayfalari = metni_sayfalara_bol(tam_metin, 400)
-                    st.session_state.aktif_sayfa = 0
-                    st.rerun()
+                    try:
+                        # 1. AKIŞI BAŞLAT
+                        st.info("🔎 Kütüphane taranıyor, Junilex analiz ediyor...")
+                        from ictihat_engine import IctihatEngine
+                        
+                        # AI'dan yanıtı stream olarak alıyoruz
+                        stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
+                        
+                        tam_metin = ""
+                        p_holder = st.empty() # Akışın görüneceği alan
+                        
+                        for parca in stream:
+                            if hasattr(parca, 'text'):
+                                tam_metin += parca.text
+                                p_holder.markdown(tam_metin + "▌")
+                        
+                        # 2. VERİ GELDİ Mİ KONTROL ET
+                        if tam_metin.strip():
+                            # Sayfalara böl (metni_sayfalara_bol fonksiyonunun tanımlı olduğundan emin ol)
+                            st.session_state.kitap_sayfalari = metni_sayfalara_bol(tam_metin, 400)
+                            st.session_state.aktif_sayfa = 0
+                            p_holder.empty() # Akış alanını temizle
+                            st.rerun() # Ekranda kitap görünümünü tetikle
+                        else:
+                            st.error("⚠️ AI bir sonuç döndürmedi. Lütfen API anahtarını veya olayı kontrol edin.")
+                            
+                    except Exception as e:
+                        st.error(f"❌ Akış sırasında bir hata oluştu: {str(e)}")
+                else:
+                    st.warning("Lütfen bir olay metni girin!")
 
         with c2:
-            if st.button("🗑️ Aramayı Temizle", use_container_width=True):
+            if st.button("🗑️ Temizle", use_container_width=True):
                 if "kitap_sayfalari" in st.session_state:
                     del st.session_state.kitap_sayfalari
                 st.rerun()
 
+        # --- SONUÇLARI GÖSTERME BLOĞU (Butonun Dışında Olmalı!) ---
         if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
             sayfalar = st.session_state.kitap_sayfalari
             aktif = st.session_state.aktif_sayfa
             
-            # İçerik Düzenleme (Markdown -> HTML)
-            icerik = sayfalar[aktif]
-            # Başlıkları (###) daha profesyonel ve belirgin yapıyoruz
-            icerik = icerik.replace("### ", "<h3 style='color: #4e342e; font-size: 22px; border-bottom: 1px solid #d7ccc8; padding-bottom: 5px; margin-top: 25px; margin-bottom: 15px;'>")
-            icerik = icerik.replace("#### ", "<h4 style='color: #5d4037; font-size: 19px; margin-top: 20px; margin-bottom: 10px;'>")
-            
-            # Kalın yazıları (**) HTML <b> etiketine çeviriyoruz
+            # Tasarım: Özet Not Kartı
             import re
-            icerik = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', icerik)
-            
+            icerik = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', sayfalar[aktif])
             icerik = icerik.replace("\n", "<br>")
 
-            if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
-                sayfalar = st.session_state.kitap_sayfalari
-                aktif = st.session_state.aktif_sayfa
-    
-                # Metin Temizliği (Markdown -> HTML)
-                icerik = sayfalar[aktif]
-                import re
-                icerik = re.sub(r'\*\*(.*?)\*\*', r'<b style="color:#5d4037;">\1</b>', icerik)
-                icerik = icerik.replace("\n", "<br>")
-
-                st.markdown(f"""
-                <style>
-                    .ozet-kart {{
-                        background-color: #fdfaf1;
-                        padding: 30px;
-                        border-left: 10px solid #5d4037;
-                        border-radius: 8px;
-                        box-shadow: 5px 5px 15px rgba(0,0,0,0.08);
-                        color: #2c3e50;
-                        font-family: 'Georgia', serif;
-                        border: 1px solid #e0d9c1;
-                    }}
-                    .kart-baslik {{
-                        font-size: 14px;
-                        text-transform: uppercase;
-                        letter-spacing: 2px;
-                        color: #8d6e63;
-                        border-bottom: 1px solid #d7ccc8;
-                        margin-bottom: 15px;
-                        padding-bottom: 5px;
-                        font-weight: bold;
-                    }}
-                    .kart-metin {{
-                        font-size: 16px;
-                        line-height: 1.6;
-                    }}
-                </style>
-                
-                <div class="ozet-kart">
-                    <div class="kart-baslik">🏛️ Junilex Karar Şerhi (Özet)</div>
-                    <div class="kart-metin">
-                        {icerik}
-                    </div>
-                    <div style="text-align:right; font-size:10px; color:#aaa; margin-top:15px;">
-                        Sayfa {aktif + 1} / {len(sayfalar)}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            # NAVİGASYON BUTONLARI (Hizalama Hatası Almamak İçin Burada)
-            st.write("")
-            nav1, nav2, nav3 = st.columns([1, 2, 1])
-            with nav1:
+            st.markdown(f"""
+            <div style="background-color: #fdfaf1; padding: 30px; border-left: 12px solid #5d4037; border-radius: 8px; box-shadow: 5px 5px 15px rgba(0,0,0,0.1); color: #2c3e50; font-family: 'Georgia', serif; margin-top: 20px;">
+                <div style="font-size: 14px; text-transform: uppercase; color: #8d6e63; border-bottom: 1px solid #d7ccc8; margin-bottom: 15px; padding-bottom: 5px; font-weight: bold;">🏛️ Junilex Karar Şerhi</div>
+                <div style="font-size: 17px; line-height: 1.6; text-align: justify;">{icerik}</div>
+                <div style="text-align:right; font-size:10px; color:#aaa; margin-top:15px;">Sayfa {aktif + 1} / {len(sayfalar)}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Sayfa Navigasyonu
+            n1, n2, n3 = st.columns([1, 2, 1])
+            with n1:
                 if aktif > 0:
-                    if st.button("⬅️ Önceki Sayfa", use_container_width=True):
+                    if st.button("⬅️ Geri", key="prev_emsal"):
                         st.session_state.aktif_sayfa -= 1
                         st.rerun()
-            with nav3:
+            with n3:
                 if aktif < len(sayfalar) - 1:
-                    if st.button("Sonraki Sayfa ➡️", use_container_width=True):
+                    if st.button("İleri ➡️", key="next_emsal"):
                         st.session_state.aktif_sayfa += 1
                         st.rerun()
-            with nav2:
-                st.write(f"<center><small>Toplam {len(sayfalar)} sayfa bulundu.</small></center>", unsafe_allow_html=True)
         
               
