@@ -65,18 +65,16 @@ class IctihatEngine:
             
             # Soru sormadan direkt olay üzerinden emsal bulma talimatı
             prompt = f"""
-            Sen uzman bir Yargıtay tetkik hakimisin. Sana anlatılan hukuki olaya (vakaya) benzer, 
-            emsal teşkil edebilecek yerleşik içtihatları ve mahkeme kararlarını tespit etmelisin.
-
-            OLAY ÖZETİ:
-            {olay_ozeti}
-
-            GÖREVİN:
-            1. Bu olaydaki temel hukuki uyuşmazlığı tanımla.
-            2. Yargıtay'ın (veya Danıştay/AYM) bu konudaki GÜNCEL ve YERLEŞİK içtihadını açıkla.
-            3. Benzer vakalarda verilmiş emsal karar numaralarını (örn: 9. HD. 2021/... E.) ve tarihlerini belirt.
-            4. Kararda öne çıkan 'Hukuki Gerekçeleri' madde madde listele.
-            5. Bu olayın davanın seyrini nasıl etkileyeceğine dair kısa bir hukuki mütalaa ekle.
+            Sen kıdemli bir Yargıtay tetkik hakimisin. Sana anlatılan olaya benzer yerleşik içtihatları bul.
+            
+            OLAY: {olay_ozeti}
+            
+            GÖREVİN (Kitap formatında hazırla):
+            1. **⚖️ HUKUKİ NİTELEME**: Olayın hukuki tanımını yap.
+            2. **📌 YERLEŞİK İÇTİHAT**: Yargıtay'ın bu konudaki genel duruşu.
+            3. **🔍 EMSAL KARARLAR**: Bilinen dosya numaraları ve daireler.
+            4. **📝 MAHKEME GEREKÇESİ**: Kararlarda geçen temel hukuki mantık.
+            5. **⚖️ NETİCE-İ TALEP**: Bu olayda izlenmesi gereken hukuki yol.
             """
             
             response = model.generate_content(prompt, stream=True)
