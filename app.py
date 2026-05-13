@@ -636,30 +636,59 @@ elif menu == "⚖️ İçtihat Sorgulama":
 
     with tab2:
         st.subheader("🔎 Olaydan Emsal Bul")
-        # Soru kutusunu kaldırdık, sadece olay metni kaldı
         olay_input = st.text_area(
             "Olayınızı Detaylıca Anlatın", 
-            height=400, 
-            placeholder="Örn: İşçinin mesai saatleri dışında sosyal medya paylaşımı nedeniyle işten çıkarılması...",
-            key="olay_emsal_area"
+            height=300, 
+            placeholder="Vakayı buraya yazın...",
+            key="o_input_kitap"
         )
         
         if st.button("🔎 Benzer İçtihatları ve Emsalleri Getir", use_container_width=True):
             if olay_input:
-                st.info("🔎 Verilen olay için emsal içtihatlar taranıyor...")
+                st.info("🔎 Kütüphane taranıyor, emsal dosyalar raflardan indiriliyor...")
                 from ictihat_engine import IctihatEngine
                 
-                # Emsal arama motorunu çalıştır
+                # 1. Akışı başlat
                 stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
                 
-                # Akış (Streaming) işlemi
-                def emsal_suzucu():
-                    for parca in stream:
-                        if hasattr(parca, 'text') and parca.text:
-                            yield parca.text
+                # 2. Akışı bir kap içinde daktilo gibi yazdırıyoruz
+                placeholder = st.empty()
+                tam_metin = ""
                 
-                st.write_stream(emsal_suzucu)
+                for parca in stream:
+                    if hasattr(parca, 'text') and parca.text:
+                        tam_metin += parca.text
+                        # Daktilo efekti verirken geçici olarak ham hali göster
+                        placeholder.markdown(tam_metin + "▌")
+                
+                # 3. YAZDIRMA BİTTİĞİNDE: Dijital Kitap Sayfasına Dönüştür
+                placeholder.empty() # Geçici daktilo metnini sil
+                
+                # Kitap Sayfası Tasarımı (HTML/CSS)
+                st.markdown(f"""
+                <div style="
+                    background-color: #fdf6e3; 
+                    padding: 30px; 
+                    border-left: 10px solid #8e735b; 
+                    border-radius: 10px; 
+                    box-shadow: 2px 2px 15px rgba(0,0,0,0.1);
+                    color: #2c2c2c;
+                    font-family: 'Georgia', serif;
+                    line-height: 1.6;
+                ">
+                    <h2 style="color: #8e735b; border-bottom: 2px solid #8e735b; padding-bottom: 10px;">📚 JUNILEX İÇTİHAT ŞERHİ</h2>
+                    <div style="margin-top: 20px;">
+                        {tam_metin.replace('\n', '<br>')}
+                    </div>
+                    <div style="margin-top: 30px; text-align: right; font-style: italic; color: #555;">
+                        — Junilex Dijital Külliyatı —
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
                 st.divider()
-                st.caption("🛡️ Junilex: Bilgiler genel hukuk öğretisi ve yüksek yargı içtihatlarına dayanmaktadır.")
+                # Word olarak indirme butonu da ekleyebiliriz
             else:
-                st.warning("Ustam, önce olayı anlatman lazım ki benzerini bulalım!")      
+                st.warning("Ustam, önce olayı anlatman lazım!")
+        
+              
