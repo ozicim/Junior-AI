@@ -46,29 +46,65 @@ class IctihatEngine:
         except Exception as e:
             return f"İçtihat analizi sırasında bir usul hatası oluştu: {str(e)}"
 
+   
     @classmethod
     def emsal_ara(cls, api_key, olay_ozeti):
+        """
+        Google Search Tool kullanarak gerçek içtihat ve kanun maddesi bulur.
+        """
         try:
+            if not api_key:
+                return "HATA: API Anahtarı eksik!"
+
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            
-            # PROMPT: Artik spesifik karar numaralari istiyoruz
+
+            # --- DİKKAT: Google Search Tool'u tanımlıyoruz ---
+            # Bu araç Gemini'ın internete çıkıp gerçek verileri taramasını sağlar.
+            tools = [
+                {
+                    "google_search_retrieval": {
+                        "dynamic_retrieval_config": {
+                            "mode": "unspecified",
+                            "dynamic_threshold": 0.06 # Düşük eşik = Daha çok arama
+                        }
+                    }
+                }
+            ]
+
+            model = genai.GenerativeModel(
+                model_name='gemini-1.5-flash',
+                tools=tools # Arama motorunu buraya bağladık!
+            )
+
+            # PROMPT: Artik spesifik ve belgeli veri istiyoruz
             prompt = f"""
-            Sen Yargıtay yayınlarını ezbere bilen kıdemli bir hukukçusun. 
-            Aşağıdaki olayı analiz et ve bu konuda verilmiş gerçek emsal kararlara atıf yap.
+            Sen profesyonel bir Yargıtay Tetkik Hakimisin. Aşağıdaki olayı gerçek dünya verileriyle analiz et.
+            
+            GÖREVİN:
+            1. İnterneti tarayarak bu olayla birebir örtüşen GERÇEK Yargıtay Esas/Karar numaralarını bul.
+            2. Olayın dayandığı temel Türk Kanun maddelerini (TBK, TMK vb.) içeriğiyle birlikte getir.
+            3. Verileri şu formatta (Kitap Şerhi gibi) sun:
+
+            ---
+            ### ⚖️ HUKUKİ TEŞHİS VE MEVZUAT
+            - **İlgili Kanun Maddesi:** (Örn: TBK m. 379 ve açıklaması)
+            - **Hukuki Niteleme:** (Olayın hukuki tanımı)
+
+            ### 🔍 GERÇEK EMSAL KARARLAR (Google Arama Destekli)
+            - **Karar 1:** (Daire Adı, Esas/Karar No, Karar Yılı)
+            - **Karar Özeti:** (Yargıtay'ın bu olaydaki kritik ispat yükü yorumu)
+            - **Kaynak:** (Bulduğun internet sitesinin adı veya linki)
+
+            ### 📌 YARGITAY'IN KIRMIZI ÇİZGİSİ
+            - Mahkemelerin bu durumda asla taviz vermediği ana ilke nedir?
+            ---
 
             OLAY: {olay_ozeti}
-
-            GÖREVİN:
-            Aşağıdaki formatta, hukuki terminolojiye uygun bir "Emsal Notu" hazırla:
-
-            1. **⚖️ Hukuki Teşhis:** Olayın kanuni niteliği (Örn: TBK m. 379 - Kullanım Ödüncü).
-            2. **🔍 Emsal Karar Atıfları:** Bu konuda karar vermiş Yargıtay Dairelerini (Örn: 3. HD, 13. HD vb.) ve varsa örnek Esas/Karar numaralarını belirt.
-            3. **📌 Karar Özeti:** Yargıtay'ın bu tip olaylarda ispat yükü ve kusur konusundaki yerleşik içtihadını açıkla.
-            4. **📢 Netice:** Müvekkilin haklılık durumunu bu içtihatlar ışığında yorumla.
             """
-            
+
+            # Akış (Streaming) başlatılıyor
             response = model.generate_content(prompt, stream=True)
             return response
+
         except Exception as e:
-            return f"HATA: {str(e)}"
+            return f"HATA: Motor internete bağlanırken bir sorun yaşadı: {str(e)}"
