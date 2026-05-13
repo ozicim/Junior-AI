@@ -47,7 +47,7 @@ def kanun_sec(kanun):
     st.session_state.arama_sonuclari = []
     ekran_degistir('maddeSecim')
     
-def metni_sayfalara_bol(metin, kelime_siniri=2000):
+def metni_sayfalara_bol(metin, kelime_siniri=300):
     kelimeler = metin.split()
     sayfalar = []
     for i in range(0, len(kelimeler), kelime_siniri):
