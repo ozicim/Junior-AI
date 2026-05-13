@@ -636,19 +636,30 @@ elif menu == "⚖️ İçtihat Sorgulama":
 
     with tab2:
         st.subheader("🔎 Olaydan Emsal Bul")
-        st.write("Olayı anlatın, Junilex benzer içtihatları ve Yargıtay görüşlerini getirsin.")
-        olay_input = st.text_area("Olay Özeti", height=300, key="olay_emsal", placeholder="Örn: Mirasçının saklı payının ihlali durumunda...")
+        # Soru kutusunu kaldırdık, sadece olay metni kaldı
+        olay_input = st.text_area(
+            "Olayınızı Detaylıca Anlatın", 
+            height=400, 
+            placeholder="Örn: İşçinin mesai saatleri dışında sosyal medya paylaşımı nedeniyle işten çıkarılması...",
+            key="olay_emsal_area"
+        )
         
-        if st.button("🔎 Benzer İçtihatları Getir"):
+        if st.button("🔎 Benzer İçtihatları ve Emsalleri Getir", use_container_width=True):
             if olay_input:
-                st.info("🔎 Emsal kararlar ve yerleşik içtihatlar taranıyor...")
+                st.info("🔎 Verilen olay için emsal içtihatlar taranıyor...")
                 from ictihat_engine import IctihatEngine
+                
+                # Emsal arama motorunu çalıştır
                 stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
                 
+                # Akış (Streaming) işlemi
                 def emsal_suzucu():
                     for parca in stream:
                         if hasattr(parca, 'text') and parca.text:
                             yield parca.text
+                
                 st.write_stream(emsal_suzucu)
+                st.divider()
+                st.caption("🛡️ Junilex: Bilgiler genel hukuk öğretisi ve yüksek yargı içtihatlarına dayanmaktadır.")
             else:
-                st.warning("Lütfen olay özetini giriniz.")      
+                st.warning("Ustam, önce olayı anlatman lazım ki benzerini bulalım!")      
