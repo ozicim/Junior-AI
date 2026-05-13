@@ -4,7 +4,6 @@ from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine
 from dilekce_engine import DilekceEngine
 from akademik_sinav_modu import AkademikSinavEngine
-from ictihat_engine import IctihatEngine
 from fpdf import FPDF
 import os
 import urllib.request
@@ -246,6 +245,11 @@ if "Adliye" in menu:
                     st.warning("Lütfen bir soru yazın ustam!")
 
 # --- MOD 2: AKADEMİ ---
+# app.py içinde İçtihat veya Akademi butonunun tam içine:
+if st.button("🔎 İçtihatları Getir"):
+    from ictihat_engine import IctihatEngine  # <--- Buraya, tam bu hizaya ekleyin
+    stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
+    # ... devamı aynı
 elif menu == "🎓 Akademi (Ders Notları)":
     st.header("🎓 Akademik Asistan")
     
