@@ -576,20 +576,29 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
                 # 1. Akışı başlatıyoruz
                 stream = DilekceEngine.dilekce_olustur(MY_API_KEY, d_konu, d_taraflar, d_olay, d_talep)
         
-                # 2. Dilekçe metnini süzerek getiren yardımcı fonksiyon
+                # 2. Süzgeç fonksiyonu
                 def dilekce_suzucu():
                     for parca in stream:
                         if parca.text:
                             yield parca.text
         
-                # 3. Ekrana daktilo gibi yazdırıyoruz ve dönen metni saklıyoruz
+                # 3. Ekrana yazdırıyoruz ve sonucu TAM_METIN içine alıyoruz
                 tam_metin = st.write_stream(dilekce_suzucu)
         
-                # İleride çıktı alabilmek için session state'e kaydedelim
+                # 4. Session State kaydı (Her iki satırı da tam_metin yapalım)
                 st.session_state.son_dilekce = tam_metin
-            
-                # Son hali session state'e kaydedelim (Word/PDF çıktısı için)
-                st.session_state.son_dilekce = tam_metin
+                
+                # 5. WORD İNDİRME (Hata buradaydı: 'metin' yerine 'tam_metin' yazdık)
+                word_data = DilekceEngine.word_dosyasi_yap(tam_metin) 
+                
+                st.download_button(
+                    label="📥 Word Dosyası Olarak Kaydet",
+                    data=word_data,
+                    file_name=f"{d_konu}_taslak.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+            else:
+                st.warning("Lütfen konu ve olay özetini doldurunuz ustam!")
                 
                 # Word İndirme
                 word_data = DilekceEngine.word_dosyasi_yap(metin)
