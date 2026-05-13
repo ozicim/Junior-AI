@@ -47,47 +47,31 @@ class IctihatEngine:
             return f"İçtihat analizi sırasında bir usul hatası oluştu: {str(e)}"
 
    
-    import google.generativeai as genai
-
 
     @classmethod
     def emsal_ara(cls, api_key, olay_ozeti):
         try:
             if not api_key:
-                return "HATA: API Anahtarı bulunamadı!"
+                return "HATA: API Anahtarı eksik!"
 
             genai.configure(api_key=api_key)
-
-            # --- Arama Aracını En Sade Haline Getirdik ---
-            # Karmaşık ayarları sildik, sadece 'google_search_retrieval' bıraktık.
-            tools = [{"google_search_retrieval": {}}]
-
-            model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash', # 'models/gemini-1.5-flash' da denenebilir
-                tools=tools
-            )
-
-            prompt = f"""
-            Sen kıdemli bir Yargıtay tetkik hakimisin. 
-            Aşağıdaki olayla ilgili internetten GERÇEK Yargıtay kararlarını ve kanun maddelerini bul.
             
-            OLAY: {olay_ozeti}
-
-            GÖREVİN:
-            1. Bu olaya uyan TBK veya ilgili kanun maddelerini yaz.
-            2. Google'da arayarak gerçek Esas ve Karar numaralı örnekler ver.
-            3. İspat yükünün kimde olduğunu Yargıtay içtihatlarına göre açıkla.
-            """
-
-            # ÖNEMLİ: Stream'i kaldırıp deniyoruz (Hata tespiti için daha iyidir)
-            response = model.generate_content(prompt)
-            
-            # Eğer yanıt boşsa (Bloklanmış olabilir)
-            if not response.text:
-                return "HATA: AI yanıt üretti ama içerik boş (Güvenlik filtresine takılmış olabilir)."
-                
-            return response.text # Stream yerine direkt metin döndürüyoruz
+            # --- HİBRİT ARAMA STRATEJİSİ ---
+            # Önce arama motorlu modeli deniyoruz
+            try:
+                model = genai.GenerativeModel(
+                    model_name='gemini-2.5-flash',
+                    tools=[{"google_search_retrieval": {}}]
+                )
+                prompt = f"Aşağıdaki hukuki olay için internetten gerçek Yargıtay kararları ve kanun maddeleri bul: {olay_ozeti}"
+                response = model.generate_content(prompt)
+                return response.text
+            except:
+                # Eğer arama aracı hata verirse (yetki yoksa), normal moda düşüyoruz
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                prompt = f"Sen bir Yargıtay hakimi gibi şu olayı analiz et. İnternete erişemiyorsan bile bildiğin gerçek kanun maddelerini (TBK, TMK vb.) ve yerleşik Yargıtay ilkelerini yaz: {olay_ozeti}"
+                response = model.generate_content(prompt)
+                return response.text
 
         except Exception as e:
-            # Buradaki hata mesajı bize "API yetkisi mi yok" yoksa "Arama mı yapılamıyor" söyleyecek
-            return f"HATA (Detaylı): {str(e)}"
+            return f"HATA (Sistem): {str(e)}"
