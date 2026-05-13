@@ -369,7 +369,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 st.markdown("### 🎓 JUNILEX Hoca Anlatıyor:")
         
                 # 1. Akışı başlatıyoruz
-                stream = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
+                stream = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru,)
         
                 # 2. Hoca anlatımını süzerek getiren yardımcı fonksiyon
                 def hoca_suzucu():
@@ -381,7 +381,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 st.write_stream(hoca_suzucu)
                 try:
                     # 1. AI'dan Tam Cevabı Al
-                    cevap = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
+                    cevap = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru,)
                         
                     # 2. Cevabı Sayfalara Böl (Fermanı Kitaba Çevirme İşlemi)
                     paragraflar = cevap.split('\n\n')
