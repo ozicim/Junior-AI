@@ -17,7 +17,7 @@ class IctihatEngine:
             }
             
             model = genai.GenerativeModel(
-                model_name='gemini-1.5-flash', # Stabil versiyon
+                model_name='gemini-2.5-flash', # Stabil versiyon
                 generation_config=generation_config
             )
 
@@ -50,7 +50,7 @@ class IctihatEngine:
     def emsal_ara(cls, api_key, olay_ozeti):
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             
             # PROMPT: Artik spesifik karar numaralari istiyoruz
             prompt = f"""
