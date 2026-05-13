@@ -230,7 +230,7 @@ if "Adliye" in menu:
                     madde_metni, 
                     kanun_adi, 
                     madde_no, 
-                    soru, # 'soru' buraya 5. parametre olarak eklenmeli
+                    mevzuat_sorusu, # 'soru' buraya 5. parametre olarak eklenmeli
                 )
             
                     st.write_stream(stream)
