@@ -645,118 +645,88 @@ elif menu == "⚖️ İçtihat Sorgulama":
         
     with tab2:
         st.subheader("🔎 Olaydan Emsal Bul")
-        olay_input = st.text_area("Olayı Anlatın", height=250, key="o_input_kesin")
+        olay_input = st.text_area("Olayı Anlatın", height=250, key="o_input_final")
         
         # ARAMA BUTONLARI
-        c_btn1, c_btn2 = st.columns([1, 1])
-        with c_btn1:
+        c1, c2 = st.columns([1, 1])
+        with c1:
             if st.button("🔎 İçtihatları Getir", use_container_width=True):
                 if olay_input:
-                    st.info("🔎 Kütüphane taranıyor...")
+                    st.info("🔎 Kütüphane taranıyor, sayfalar diziliyor...")
                     from ictihat_engine import IctihatEngine
+                    
+                    # AI'dan yanıtı alıyoruz
                     stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
                     tam_metin = "".join([p.text for p in stream if hasattr(p, 'text')])
                     
-                    # Sayfalara böl ve hafızaya al
+                    # Sayfalara bölüyoruz (Test için 400 kelime idealdir ustam)
                     st.session_state.kitap_sayfalari = metni_sayfalara_bol(tam_metin, 400)
                     st.session_state.aktif_sayfa = 0
                     st.rerun()
 
-        with c_btn2:
-            if st.button("🗑️ Temizle", use_container_width=True):
+        with c2:
+            if st.button("🗑️ Aramayı Temizle", use_container_width=True):
                 if "kitap_sayfalari" in st.session_state:
                     del st.session_state.kitap_sayfalari
                 st.rerun()
 
-       if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
+        # --- DİJİTAL KİTAP VE DİZGİ TASARIMI ---
+        if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
             sayfalar = st.session_state.kitap_sayfalari
             aktif = st.session_state.aktif_sayfa
-    
-            # --- TEMİZLİK VE DÜZENLEME ---
-            # Metindeki Markdown işaretlerini HTML'e çeviriyoruz
+            
+            # İçerikteki Markdown işaretlerini HTML'e çeviriyoruz
             icerik = sayfalar[aktif]
             icerik = icerik.replace("### ", "<h3 style='color: #5d4037; border-bottom: 1px solid #d7ccc8; padding-bottom: 5px; margin-top: 20px;'>")
             icerik = icerik.replace("#### ", "<h4 style='color: #795548; margin-top: 15px;'>")
-            icerik = icerik.replace("**", "<b>").replace("**", "</b>") # Çift yıldızları <b> yapar
+            icerik = icerik.replace("**", "<b>", 1).replace("**", "</b>", 1) # İlk çift yıldız için
+            while "**" in icerik: # Kalan tüm yıldızları temizlemek için
+                icerik = icerik.replace("**", "<b>", 1).replace("**", "</b>", 1)
             icerik = icerik.replace("\n", "<br>")
 
-            # --- YENİ NESİL KİTAP TASARIMI ---
+            # Kitap Görünümü
             st.markdown(f"""
             <style>
-                .kitap-sayfasi {{
+                .kitap-konteynir {{
                     background-color: #fdfaf1;
-                    padding: 50px;
+                    padding: 45px;
                     border-left: 15px solid #5d4037;
-                    border-right: 1px solid #e0e0e0;
                     border-radius: 4px;
-                    box-shadow: 10px 10px 30px rgba(0,0,0,0.15);
+                    box-shadow: 10px 10px 25px rgba(0,0,0,0.1);
                     color: #263238;
                     font-family: 'Times New Roman', Times, serif;
-                    min-height: 600px;
-                    position: relative;
+                    min-height: 550px;
                 }}
-                .sayfa-no {{
-                    position: absolute;
-                    top: 20px;
-                    right: 30px;
-                    font-size: 14px;
-                    color: #8d6e63;
-                    font-weight: bold;
-                    letter-spacing: 1px;
+                .ust-bilgi {{
+                    text-align: right; font-size: 13px; color: #8d6e63; font-weight: bold; margin-bottom: 10px;
                 }}
-                .kitap-baslik {{
-                    text-align: center;
-                    font-variant: small-caps;
-                    color: #5d4037;
-                    border-bottom: 2px double #8d6e63;
-                    margin-bottom: 30px;
-                    padding-bottom: 10px;
-                }}
-                .metin-alani {{
-                    font-size: 18px;
-                    line-height: 1.8;
-                    text-align: justify;
-                    text-justify: inter-word;
-                }}
-                .dipnot {{
-                    margin-top: 40px;
-                    font-size: 12px;
-                    border-top: 1px solid #d7ccc8;
-                    padding-top: 10px;
-                    color: #78909c;
-                    font-style: italic;
+                .kitap-metni {{
+                    font-size: 19px; line-height: 1.7; text-align: justify;
                 }}
             </style>
-
-            <div class="kitap-sayfasi">
-                <div class="sayfa-no">VESİKA NO: {aktif + 1} / {len(sayfalar)}</div>
-                <div class="kitap-baslik"><h1>Junilex Dijital Külliyatı</h1></div>
-                <div class="metin-alani">
-                    {icerik}
+            <div class="kitap-konteynir">
+                <div class="ust-bilgi">SAYFA: {aktif + 1} / {len(sayfalar)}</div>
+                <div style="text-align: center; border-bottom: 2px double #8d6e63; margin-bottom: 25px;">
+                    <h2 style="color: #5d4037; margin-bottom: 5px;">📜 JUNILEX İÇTİHAT ŞERHİ</h2>
                 </div>
-                <div class="dipnot">
-                    * Bu belge Junilex AI tarafından yüksek yargı içtihatları temel alınarak tanzim edilmiştir.
-                </div>
+                <div class="kitap-metni">{icerik}</div>
             </div>
             """, unsafe_allow_html=True)
 
-            # NAVİGASYON SÜTUNLARINI TAM BURADA TANIMLIYORUZ (HATA ALMAMAK İÇİN)
-            st.write("") 
-            n1, n2, n3 = st.columns([1, 2, 1]) # İşte burası!
-            
-            with n1:
+            # NAVİGASYON BUTONLARI (Hizalama Hatası Almamak İçin Burada)
+            st.write("")
+            nav1, nav2, nav3 = st.columns([1, 2, 1])
+            with nav1:
                 if aktif > 0:
-                    if st.button("⬅️ Önceki"):
+                    if st.button("⬅️ Önceki Sayfa", use_container_width=True):
                         st.session_state.aktif_sayfa -= 1
                         st.rerun()
-            
-            with n3:
+            with nav3:
                 if aktif < len(sayfalar) - 1:
-                    if st.button("Sonraki ➡️"):
+                    if st.button("Sonraki Sayfa ➡️", use_container_width=True):
                         st.session_state.aktif_sayfa += 1
                         st.rerun()
-            
-            with n2:
-                st.write(f"<center>Toplam {len(sayfalar)} sayfa.</center>", unsafe_allow_html=True)
+            with nav2:
+                st.write(f"<center><small>Toplam {len(sayfalar)} sayfa bulundu.</small></center>", unsafe_allow_html=True)
         
               
