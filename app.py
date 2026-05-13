@@ -476,7 +476,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 st.download_button(
                     label="📥 PDF Olarak İndir",
                     data=pdf_bytes,
-                    file_name=f"Junilex_Mutaala_{aktif_not}.pdf",
+                    file_name=f"Junilex_Mutaala_{aktif_not_ismi}.pdf",
                     mime="application/pdf",
                     use_container_width=True
                 )
