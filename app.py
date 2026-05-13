@@ -225,21 +225,21 @@ if "Adliye" in menu:
                     # NOT: Eğer metodun adı 'madde_analiz_et' ise onu kullan, 
                     # eğer benim önerdiğim 'mevzuat_yorumlama' ise onu yaz.
                     # app.py içinde:
-                stream = MevzuatBulutEngine.madde_analiz_et(
-                    MY_API_KEY, 
-                    st.session_state.bulunan_madde['metin'], 
-                    st.session_state.secili_kanun['isim'], 
-                    st.session_state.bulunan_madde['no'], 
-                    mevzuat_sorusu
-                )
-                def stream_izleyici(akistan_gelenler):
-                    for parca in akistan_gelenler:
-                        if parca.text:
-                            yield parca.text
+                    stream = MevzuatBulutEngine.madde_analiz_et(
+                        MY_API_KEY, 
+                        st.session_state.bulunan_madde['metin'], 
+                        st.session_state.secili_kanun['isim'], 
+                        st.session_state.bulunan_madde['no'], 
+                        mevzuat_sorusu
+                    )
+                    def stream_izleyici(akistan_gelenler):
+                        for parca in akistan_gelenler:
+                            if parca.text:
+                                yield parca.text
             
-                st.write_stream(stream)
-            else:
-                st.warning("Lütfen bir soru yazın ustam!")
+                    st.write_stream(stream)
+                else:
+                    st.warning("Lütfen bir soru yazın ustam!")
 
 # --- MOD 2: AKADEMİ ---
 elif menu == "🎓 Akademi (Ders Notları)":
