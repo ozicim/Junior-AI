@@ -232,14 +232,14 @@ if "Adliye" in menu:
                     st.session_state.bulunan_madde['no'], 
                     mevzuat_sorusu
                 )
-                    def stream_izleyici(akistan_gelenler):
-                        for parca in akistan_gelenler:
-                            if parca.text:
-                                yield parca.text
+                def stream_izleyici(akistan_gelenler):
+                    for parca in akistan_gelenler:
+                        if parca.text:
+                            yield parca.text
             
-                    st.write_stream(stream)
-                else:
-                    st.warning("Lütfen bir soru yazın ustam!")
+                st.write_stream(stream)
+            else:
+                st.warning("Lütfen bir soru yazın ustam!")
 
 # --- MOD 2: AKADEMİ ---
 elif menu == "🎓 Akademi (Ders Notları)":
