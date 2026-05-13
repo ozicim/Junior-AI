@@ -24,9 +24,13 @@ class DilekceEngine:
         3. Türk hukuk sistemine uygun terminoloji kullan (Örn: 'müvekkil', 'haksız fiil', 'mesnetsiz').
         4. Sadece dilekçe metnini döndür.
         """
+        response = model.generate_content(prompt, stream=True)
+        return response # Yanıtı bir bütün olarak değil, akış (generator) olarak döndürüyoruz
         
         response = model.generate_content(prompt)
         return response.text
+        # stream=True ekledik:
+        
 
     @classmethod
     def word_dosyasi_yap(cls, metin):
