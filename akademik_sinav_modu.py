@@ -28,22 +28,20 @@ class AkademikSinavEngine:
                     }}
                 ]
             }}
+                # 1. JSON TEMİZLEME (Hata burada olabilir, dikkatlice kontrol et!)
+                temiz_metin = re.sub(r'```json|```', '', response).strip()
+                # Gizli kontrol karakterlerini temizle:
+                temiz_metin = re.sub(r"[\x00-\x1F\x7F]", "", temiz_metin)
+            
+                # 2. JSON YÜKLEME (strict=False çok kritik)
+                sinav_verisi = json.loads(temiz_metin, strict=False)
+                return sinav_verisi
+            
+            except Exception as e:
+                return f"Hata oluştu: {str(e)}
             """
             
             response = model.generate_content(prompt)
-        def temiz_json_yukle(ham_metin):
-            try:
-            # 1. Eğer AI cevabı ```json ... ``` blokları içine aldıysa onları temizleyelim
-            temiz_metin = re.sub(r'```json|```', '', ham_metin).strip()
-        
-            # 2. JSON içindeki kontrol karakterlerini (hataya sebep olan gizli karakterleri) temizleyelim
-            # Bu satır, 0-31 arası kontrol karakterlerini temizler
-            temiz_metin = re.sub(r"[\x00-\x1F\x7F]", "", temiz_metin)
-        
-            # 3. strict=False kullanarak yükleyelim (Bu en kritik hamle!)
-            return json.loads(temiz_metin, strict=False)
-        except Exception as e:
-            print(f"JSON Ayıklama Hatası: {e}")
             return None
             if json_match:
                 veriler = json.loads(json_match.group())
