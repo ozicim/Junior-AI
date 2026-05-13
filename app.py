@@ -218,7 +218,7 @@ if "Adliye" in menu:
             
                     # NOT: Eğer metodun adı 'madde_analiz_et' ise onu kullan, 
                     # eğer benim önerdiğim 'mevzuat_yorumlama' ise onu yaz.
-                    stream = MevzuatBulutEngine.madde_analiz_et(MY_API_KEY, madde_metni, mevzuat_sorusu)
+                    stream = MevzuatBulutEngine.madde_analiz_et(cls, api_key, madde_metni, kanun_adi, madde_no)
             
                     st.write_stream(stream)
                 else:
