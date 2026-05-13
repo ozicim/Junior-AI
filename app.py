@@ -721,8 +721,8 @@ elif menu == "⚖️ İçtihat Sorgulama":
                     else:
                         st.error("⚠️ AI motoru cevap verdi ama içerik tamamen boş. API Kotasını kontrol edin.")
                             
-                    except Exception as e:
-                        st.error(f"❌ Akış sırasında bir hata oluştu: {str(e)}")
+                except Exception as e:
+                    st.error(f"❌ Akış sırasında bir hata oluştu: {str(e)}")
                 else:
                     st.warning("Lütfen bir olay metni girin!")
 
