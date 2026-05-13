@@ -213,6 +213,12 @@ if "Adliye" in menu:
             mevzuat_sorusu = st.text_input("Bu madde hakkında neyi merak ediyorsun?", key="mevzuat_input")
 
             if st.button("⚖️ Maddeyi Analiz Et"):
+                if st.session_state.bulunan_madde and st.session_state.secili_kanun:
+        
+                    # --- DEĞİŞKENLERİ TANIMLIYORUZ (NAMEERROR'I BİTİREN KISIM) ---
+                    madde_metni = st.session_state.bulunan_madde['metin']
+                    madde_no = st.session_state.bulunan_madde['no']
+                    kanun_adi = st.session_state.secili_kanun['isim'] # Seçili kanunun tam adı
                 if mevzuat_sorusu:
                     st.info("📊 Mevzuat uzmanı analiz ediyor...")
             
