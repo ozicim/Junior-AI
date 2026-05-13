@@ -362,7 +362,9 @@ elif menu == "🎓 Akademi (Ders Notları)":
             st.session_state.hoca_sayfalar = []
         if "hoca_aktif_sayfa" not in st.session_state:
             st.session_state.hoca_aktif_sayfa = 0
-
+            
+        not_metni = st.text_area("Ders Notlarını Buraya Yapıştır veya Dosyadan Oku", height=250)
+        soru = st.text_input("Hocaya sormak istediğin soru nedir?")
         if st.button("👨‍🏫 Hocaya Sor"):
             if soru and not_metni:
                 st.markdown("### 🎓 JUNILEX Hoca Anlatıyor:")
