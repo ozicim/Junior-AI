@@ -19,7 +19,7 @@ class IctihatEngine:
             }
             
             model = genai.GenerativeModel(
-                model_name='gemini-1.5-pro', # Uzun metinlerde Pro modeli daha tutarlıdır
+                model_name='gemini-2.5-flash', # Uzun metinlerde Pro modeli daha tutarlıdır
                 generation_config=generation_config
             )
 
