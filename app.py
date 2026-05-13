@@ -731,50 +731,54 @@ elif menu == "⚖️ İçtihat Sorgulama":
             
             icerik = icerik.replace("\n", "<br>")
 
-            # Kitap Görünümü CSS ve HTML
-            st.markdown(f"""
-            <style>
-                @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville&display=swap');
+            if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
+                sayfalar = st.session_state.kitap_sayfalari
+                aktif = st.session_state.aktif_sayfa
+    
+                # Metin Temizliği (Markdown -> HTML)
+                icerik = sayfalar[aktif]
+                import re
+                icerik = re.sub(r'\*\*(.*?)\*\*', r'<b style="color:#5d4037;">\1</b>', icerik)
+                icerik = icerik.replace("\n", "<br>")
 
-                .kitap-konteynir {{
-                    background-color: #fdfaf1;
-                    padding: 45px 55px;
-                    border-left: 18px solid #5d4037;
-                    border-radius: 4px;
-                    box-shadow: 12px 12px 35px rgba(0,0,0,0.15);
-                    color: #2c3e50;
-                    font-family: 'Libre Baskerville', 'Georgia', serif;
-                    min-height: 600px;
-                }}
-                .ust-bilgi {{
-                    text-align: right; 
-                    font-size: 12px; 
-                    color: #a1887f; 
-                    font-weight: bold; 
-                    text-transform: uppercase;
-                    letter-spacing: 2px;
-                    margin-bottom: 20px;
-                }}
-                .kitap-metni {{
-                    font-size: 17px; /* İşte burayı ideal boyuta çektik ustam */
-                    line-height: 1.8; 
-                    text-align: justify;
-                    color: #34495e;
-                }}
-                .kitap-metni b {{
-                    color: #1a252f;
-                    font-weight: 700;
-                }}
-            </style>
-            
-            <div class="kitap-konteynir">
-                <div class="ust-bilgi">CİLT: JUNILEX-2026 / SAYFA: {aktif + 1}</div>
-                <div style="text-align: center; border-bottom: 3px double #d7ccc8; margin-bottom: 30px; padding-bottom: 15px;">
-                    <h2 style="color: #5d4037; font-size: 26px; margin: 0; letter-spacing: 1px;">📜 İÇTİHAT ŞERHİ</h2>
+                st.markdown(f"""
+                <style>
+                    .ozet-kart {{
+                        background-color: #fdfaf1;
+                        padding: 30px;
+                        border-left: 10px solid #5d4037;
+                        border-radius: 8px;
+                        box-shadow: 5px 5px 15px rgba(0,0,0,0.08);
+                        color: #2c3e50;
+                        font-family: 'Georgia', serif;
+                        border: 1px solid #e0d9c1;
+                    }}
+                    .kart-baslik {{
+                        font-size: 14px;
+                        text-transform: uppercase;
+                        letter-spacing: 2px;
+                        color: #8d6e63;
+                        border-bottom: 1px solid #d7ccc8;
+                        margin-bottom: 15px;
+                        padding-bottom: 5px;
+                        font-weight: bold;
+                    }}
+                    .kart-metin {{
+                        font-size: 16px;
+                        line-height: 1.6;
+                    }}
+                </style>
+                
+                <div class="ozet-kart">
+                    <div class="kart-baslik">🏛️ Junilex Karar Şerhi (Özet)</div>
+                    <div class="kart-metin">
+                        {icerik}
+                    </div>
+                    <div style="text-align:right; font-size:10px; color:#aaa; margin-top:15px;">
+                        Sayfa {aktif + 1} / {len(sayfalar)}
+                    </div>
                 </div>
-                <div class="kitap-metni">{icerik}</div>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
             # NAVİGASYON BUTONLARI (Hizalama Hatası Almamak İçin Burada)
             st.write("")
