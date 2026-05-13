@@ -702,7 +702,7 @@ elif menu == "⚖️ İçtihat Sorgulama":
             if st.button("🔎 İçtihatları Getir", use_container_width=True):
                 if olay_input:
                     st.info("🔎 Kütüphane taranıyor, sayfalar diziliyor...")
-                    from ictihat_engine import IctihatEngine
+                    
                     
                     # AI'dan yanıtı alıyoruz
                     stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
