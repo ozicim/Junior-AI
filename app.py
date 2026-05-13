@@ -682,54 +682,55 @@ elif menu == "⚖️ İçtihat Sorgulama":
     tab1, tab2 = st.tabs(["🔍 Karar Analizi (Şerh)", "🔎 Emsal Karar Bulucu"])
     
     with tab1:
-        st.subheader("📄 Mevcut Kararı İncele")
-        karar_input = st.text_area("Karar Metni", height=300, key="karar_serh", placeholder="İncelemek istediğiniz kararı yapıştırın...")
-        soru_input = st.text_input("Bu kararda neyi arıyoruz?", key="karar_soru")
-        
-        if st.button("⚖️ Kararı Şerh Düş"):
-            if karar_input and soru_input:
-                st.info("📊 Karar tetkik ediliyor...")
-                    from ictihat_engine import IctihatEngine
-                    stream = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_input, soru_input)
-                    st.session_state.analiz_sayfalari = metni_sayfalara_bol(tam_metn, 300)
-                    st.session_state.analiz_aktif_sayfa = 0
-                    st.rerun()
+    st.subheader("⚖️ Karar Analiz Modülü")
+    karar_metni = st.text_area("Yargıtay Karar Metnini Buraya Yapıştırın", height=250)
+    soru_input = st.text_input("Bu kararla ilgili neyi merak ediyorsunuz?", placeholder="Örn: İspat yükü kime verilmiş?")
     
-        # --- GÖRÜNTÜLEME VE BUTONLAR ---
-        if "analiz_sayfalari" in st.session_state and st.session_state.analiz_sayfalari:
-            sayfalar = st.session_state.analiz_sayfalari
-            aktif = st.session_state.analiz_aktif_sayfa
-            
-            # Junilex Şerh Kartı
-            st.markdown(f"""
-            <div style="background-color: #fdfaf1; padding: 25px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50;">
-                <div style="font-size: 12px; color: #8d6e63; font-weight: bold;">🏛️ ANALİZ ŞERHİ - Sayfa {aktif + 1}</div>
-                <div style="font-size: 16px; line-height: 1.6; margin-top: 15px;">
-                    {sayfalar[aktif].replace("\n", "<br>")}
-                </div>
+    if st.button("⚖️ Analiz Et", use_container_width=True):
+        if karar_metni and soru_input:
+            with st.spinner("Hakim Junilex dosyayı inceliyor..."):
+                from ictihat_engine import IctihatEngine
+                
+                # Kararı analiz et (Stream=True ise listeye çevirip birleştiriyoruz)
+                response = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_metni, soru_input)
+                
+                # Stream yanıtını tam metne dönüştür
+                tam_metn = ""
+                for chunk in response:
+                    tam_metn += chunk.text
+                
+                # İŞTE BURASI: Analiz sonucunu da sayfalara bölüyoruz
+                st.session_state.analiz_sayfalari = metni_sayfalara_bol(tam_metn, 400)
+                st.session_state.analiz_aktif_sayfa = 0
+                st.rerun()
+
+    # --- GÖRÜNTÜLEME VE BUTONLAR ---
+    if "analiz_sayfalari" in st.session_state and st.session_state.analiz_sayfalari:
+        sayfalar = st.session_state.analiz_sayfalari
+        aktif = st.session_state.analiz_aktif_sayfa
+        
+        # Junilex Şerh Kartı
+        st.markdown(f"""
+        <div style="background-color: #fdfaf1; padding: 25px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50;">
+            <div style="font-size: 12px; color: #8d6e63; font-weight: bold;">🏛️ ANALİZ ŞERHİ - Sayfa {aktif + 1}</div>
+            <div style="font-size: 16px; line-height: 1.6; margin-top: 15px;">
+                {sayfalar[aktif].replace("\n", "<br>")}
             </div>
-            """, unsafe_allow_html=True)
-            
-            # Sayfa Navigasyonu
-            c1, c2, c3 = st.columns([1, 2, 1])
-            with c1:
-                if aktif > 0:
-                    if st.button("⬅️ Geri", key="analiz_geri"):
-                        st.session_state.analiz_aktif_sayfa -= 1
-                        st.rerun()
-            with c3:
-                if aktif < len(sayfalar) - 1:
-                    if st.button("İleri ➡️", key="analiz_ileri"):
-                        st.session_state.analiz_aktif_sayfa += 1
-                        st.rerun()
-                    
-                    def ictihat_suzucu():
-                        for parca in stream:
-                            if hasattr(parca, 'text') and parca.text:
-                                yield parca.text
-                    st.write_stream(ictihat_suzucu)
-                else:
-                    st.warning("Lütfen alanları doldurunuz.")
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Sayfa Navigasyonu
+        c1, c2, c3 = st.columns([1, 2, 1])
+        with c1:
+            if aktif > 0:
+                if st.button("⬅️ Geri", key="analiz_geri"):
+                    st.session_state.analiz_aktif_sayfa -= 1
+                    st.rerun()
+        with c3:
+            if aktif < len(sayfalar) - 1:
+                if st.button("İleri ➡️", key="analiz_ileri"):
+                    st.session_state.analiz_aktif_sayfa += 1
+                    st.rerun()
         
     with tab2:
         st.subheader("🔎 Emsal Karar ve Mevzuat Bulucu")
