@@ -67,7 +67,7 @@ class MevzuatBulutEngine:
 
     # --- AI ANALİZ FONKSİYONU (YENİ SİLAHIMIZ) ---
     @classmethod
-    def madde_analiz_et(cls, api_key, madde_metni, kanun_adi, madde_no):
+    def madde_analiz_et(cls, api_key, madde_metni, kanun_adi, madde_no, soru): # 'soru' burada olmalı
         try:
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-2.5-flash')
