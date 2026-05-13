@@ -670,44 +670,62 @@ elif menu == "⚖️ İçtihat Sorgulama":
                     del st.session_state.kitap_sayfalari
                 st.rerun()
 
-        # --- DİJİTAL KİTAP VE DİZGİ TASARIMI ---
         if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
             sayfalar = st.session_state.kitap_sayfalari
             aktif = st.session_state.aktif_sayfa
             
-            # İçerikteki Markdown işaretlerini HTML'e çeviriyoruz
+            # İçerik Düzenleme (Markdown -> HTML)
             icerik = sayfalar[aktif]
-            icerik = icerik.replace("### ", "<h3 style='color: #5d4037; border-bottom: 1px solid #d7ccc8; padding-bottom: 5px; margin-top: 20px;'>")
-            icerik = icerik.replace("#### ", "<h4 style='color: #795548; margin-top: 15px;'>")
-            icerik = icerik.replace("**", "<b>", 1).replace("**", "</b>", 1) # İlk çift yıldız için
-            while "**" in icerik: # Kalan tüm yıldızları temizlemek için
-                icerik = icerik.replace("**", "<b>", 1).replace("**", "</b>", 1)
+            # Başlıkları (###) daha profesyonel ve belirgin yapıyoruz
+            icerik = icerik.replace("### ", "<h3 style='color: #4e342e; font-size: 22px; border-bottom: 1px solid #d7ccc8; padding-bottom: 5px; margin-top: 25px; margin-bottom: 15px;'>")
+            icerik = icerik.replace("#### ", "<h4 style='color: #5d4037; font-size: 19px; margin-top: 20px; margin-bottom: 10px;'>")
+            
+            # Kalın yazıları (**) HTML <b> etiketine çeviriyoruz
+            import re
+            icerik = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', icerik)
+            
             icerik = icerik.replace("\n", "<br>")
 
-            # Kitap Görünümü
+            # Kitap Görünümü CSS ve HTML
             st.markdown(f"""
             <style>
+                @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville&display=swap');
+
                 .kitap-konteynir {{
                     background-color: #fdfaf1;
-                    padding: 45px;
-                    border-left: 15px solid #5d4037;
+                    padding: 45px 55px;
+                    border-left: 18px solid #5d4037;
                     border-radius: 4px;
-                    box-shadow: 10px 10px 25px rgba(0,0,0,0.1);
-                    color: #263238;
-                    font-family: 'Times New Roman', Times, serif;
-                    min-height: 550px;
+                    box-shadow: 12px 12px 35px rgba(0,0,0,0.15);
+                    color: #2c3e50;
+                    font-family: 'Libre Baskerville', 'Georgia', serif;
+                    min-height: 600px;
                 }}
                 .ust-bilgi {{
-                    text-align: right; font-size: 13px; color: #8d6e63; font-weight: bold; margin-bottom: 10px;
+                    text-align: right; 
+                    font-size: 12px; 
+                    color: #a1887f; 
+                    font-weight: bold; 
+                    text-transform: uppercase;
+                    letter-spacing: 2px;
+                    margin-bottom: 20px;
                 }}
                 .kitap-metni {{
-                    font-size: 19px; line-height: 1.7; text-align: justify;
+                    font-size: 17px; /* İşte burayı ideal boyuta çektik ustam */
+                    line-height: 1.8; 
+                    text-align: justify;
+                    color: #34495e;
+                }}
+                .kitap-metni b {{
+                    color: #1a252f;
+                    font-weight: 700;
                 }}
             </style>
+            
             <div class="kitap-konteynir">
-                <div class="ust-bilgi">SAYFA: {aktif + 1} / {len(sayfalar)}</div>
-                <div style="text-align: center; border-bottom: 2px double #8d6e63; margin-bottom: 25px;">
-                    <h2 style="color: #5d4037; margin-bottom: 5px;">📜 JUNILEX İÇTİHAT ŞERHİ</h2>
+                <div class="ust-bilgi">CİLT: JUNILEX-2026 / SAYFA: {aktif + 1}</div>
+                <div style="text-align: center; border-bottom: 3px double #d7ccc8; margin-bottom: 30px; padding-bottom: 15px;">
+                    <h2 style="color: #5d4037; font-size: 26px; margin: 0; letter-spacing: 1px;">📜 İÇTİHAT ŞERHİ</h2>
                 </div>
                 <div class="kitap-metni">{icerik}</div>
             </div>
