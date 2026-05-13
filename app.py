@@ -608,12 +608,13 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
                 file_name=f"{d_konu}_taslak.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-    elif menu == "⚖️ İçtihat Sorgulama":
+    elif "İçtihat" in menu:
         st.header("⚖️ Yüksek Yargı Karar Analizi")
-        st.info("Elinizdeki mahkeme kararını buraya yapıştırın, Junilex sizin için şerh düşsün.")
+        st.info("Yargıtay, Danıştay veya AYM kararlarını buraya yapıştırarak Junilex'in profesyonel şerhini alabilirsiniz.")
+        st.warning("🛡️ **Güvenlik Modu:** Analizler sadece yapıştırdığınız metinle sınırlı tutulur (Sıfır Halüsinasyon).")
     
-        karar_input = st.text_area("Karar Metni", height=400, placeholder="Yargıtay/Danıştay metnini buraya girin...")
-        soru_input = st.text_input("Bu kararda neyi arıyorsunuz?", placeholder="Örn: Kusur dağılımı nasıl yapılmış?")
+        karar_input = st.text_area("Karar Metni", height=350, placeholder="Karar metnini buraya yapıştırın...")
+        soru_input = st.text_input("Bu kararda neyi analiz etmemi istersiniz?", placeholder="Örn: Yerleşik içtihatlara uygun mu?")
 
         if st.button("⚖️ Kararı Şerh Düş"):
             if karar_input and soru_input:
