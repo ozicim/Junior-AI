@@ -326,7 +326,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
             with n3:
                 if aktif < len(sayfalar) - 1:
                     if st.button("İleri ➡️", key="ak_next"):
-                        st.session_state.aktif_sayfa += 1
+                        st.session_state.akademi_aktif_sayfa += 1
                         st.rerun()
 
 # ==========================================
