@@ -63,7 +63,27 @@ class IctihatEngine:
                     model_name='gemini-2.5-flash',
                     tools=[{"google_search_retrieval": {}}]
                 )
-                prompt = f"Aşağıdaki hukuki olay için internetten gerçek Yargıtay kararları ve kanun maddeleri bul: {olay_ozeti}"
+                # ictihat_engine.py içindeki prompt kısmını şu şekilde güncelle:
+
+                 # ictihat_engine.py içindeki prompt kısmını şu şekilde güncelle:
+
+                prompt = f"""
+                SEN BİR YARGITAY KÜTÜPHANECİSİSİN. Sadece hukuki yorum yapma, GERÇEK DOSYA NUMARALARI BUL.
+                    
+                OLAY: {olay_ozeti}
+                    
+                GÖREVİN:
+                1. Google'da 'Yargıtay 3. Hukuk Dairesi ariyet sözleşmesi hasarlı iade ispat yükü' diye arama yap.
+                2. SADECE gerçek olduğunu teyit ettiğin Esas ve Karar numaralarını (Örn: E. 2016/123, K. 2017/456) yaz.
+                3. Bulduğun kararın hangi web sitesinde (Kararara, Lexpera, Barolar Birliği vb.) geçtiğini belirt.
+                4. Eğer numara bulamazsan, 'Şu dairenin şu tarihli genel ilkesine bakılmalı' diyerek en yakın veriyi getir.
+                    
+                FORMAT:
+                - **📍 Gerçek Emsal:** [Daire No] - [Esas/Karar No]
+                - **📝 Kararın Özü:** (Kısa özet)
+                - **🔗 Kaynak/Link:** (Bulunan site)
+                """   
+
                 response = model.generate_content(prompt)
                 return response.text
             except:
