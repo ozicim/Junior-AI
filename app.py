@@ -538,11 +538,17 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
 
     if st.button("📝 Dilekçeyi Yaz ve Hazırla"):
         if d_konu and d_olay:
-            with st.spinner("Hukuki terminolojiye uygun taslak hazırlanıyor..."):
-                metin = DilekceEngine.dilekce_olustur(MY_API_KEY, d_konu, d_taraflar, d_olay, d_talep)
-                st.session_state.son_dilekce = metin
-                st.markdown("### 📄 Dilekçe Önizlemesi")
-                st.text_area("", value=metin, height=400)
+            # Spinner yerine artık akışı göreceğiz
+            st.markdown("### 📄 Dilekçe Taslağı Hazırlanıyor...")
+            
+            # Akışı başlatıyoruz
+            stream = DilekceEngine.dilekce_olustur(MY_API_KEY, d_konu, d_taraflar, d_olay, d_talep)
+            
+            # st.write_stream akışı ekrana daktilo gibi yazar ve tamamlanan metni döndürür
+            tam_metin = st.write_stream(stream)
+            
+            # Son hali session state'e kaydedelim (Word/PDF çıktısı için)
+            st.session_state.son_dilekce = tam_metin
                 
                 # Word İndirme
                 word_data = DilekceEngine.word_dosyasi_yap(metin)
