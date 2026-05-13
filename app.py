@@ -457,7 +457,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 
                 # 7. Antet ve Başlıkları Ekle (TÜRKÇE SERBEST!)
                 pdf.set_font("Roboto", style="B", size=16)
-                pdf.cell(0, 10, "JUNILEX AI - MÜTALAA NOTU", ln=True, align='C')
+                pdf.cell(0, 6, f"İncelenen Evrak: {aktif_not_ismi}", ln=True, align='C')
                 
                 # Fontu normale çevirip detayları yazıyoruz
                 pdf.set_font("Roboto", "", size=10)
