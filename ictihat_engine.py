@@ -1,4 +1,6 @@
 import google.generativeai as genai
+import requests
+import json
 
 class IctihatEngine:
     @classmethod
@@ -48,50 +50,56 @@ class IctihatEngine:
 
    
 
+ 
     @classmethod
-    def emsal_ara(cls, api_key, olay_ozeti):
+    def serper_search(cls, query, api_key):
+        """Serper.dev üzerinden Google araması yapar."""
+        url = "https://google.serper.dev/search"
+        payload = json.dumps({
+            "q": f"site:kararara.com OR site:kazanci.com.tr OR site:leperas.com.tr {query}",
+            "gl": "tr",
+            "hl": "tr"
+        })
+        headers = {
+            'X-API-KEY': api_key,
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("POST", url, headers=headers, data=payload)
+        return response.json()
+
+    @classmethod
+    def emsal_ara(cls, gemini_key, serper_key, olay_ozeti):
         try:
-            if not api_key:
-                return "HATA: API Anahtarı eksik!"
-
-            genai.configure(api_key=api_key)
+            # 1. Arama Yap (Hukuk odaklı sitelerde)
+            search_results = cls.serper_search(olay_ozeti, serper_key)
             
-            # --- HİBRİT ARAMA STRATEJİSİ ---
-            # Önce arama motorlu modeli deniyoruz
-            try:
-                model = genai.GenerativeModel(
-                    model_name='gemini-2.5-flash',
-                    tools=[{"google_search_retrieval": {}}]
-                )
-                # ictihat_engine.py içindeki prompt kısmını şu şekilde güncelle:
+            # 2. Arama sonuçlarından metinleri ayıkla
+            context = ""
+            for result in search_results.get('organic', []):
+                context += f"\nBaşlık: {result.get('title')}\nÖzet: {result.get('snippet')}\nLink: {result.get('link')}\n"
 
-                 # ictihat_engine.py içindeki prompt kısmını şu şekilde güncelle:
+            # 3. Gemini'a veriyi "kanıt" olarak sun
+            genai.configure(api_key=gemini_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            prompt = f"""
+            Aşağıdaki arama sonuçlarını kullanarak bir Yargıtay analizi yap. 
+            SADECE sağlanan bilgilerdeki gerçek Esas/Karar numaralarını kullan. 
+            Uydurma veri üretme!
 
-                prompt = f"""
-                SEN BİR YARGITAY KÜTÜPHANECİSİSİN. Sadece hukuki yorum yapma, GERÇEK DOSYA NUMARALARI BUL.
-                    
-                OLAY: {olay_ozeti}
-                    
-                GÖREVİN:
-                1. Google'da 'Yargıtay 3. Hukuk Dairesi ariyet sözleşmesi hasarlı iade ispat yükü' diye arama yap.
-                2. SADECE gerçek olduğunu teyit ettiğin Esas ve Karar numaralarını (Örn: E. 2016/123, K. 2017/456) yaz.
-                3. Bulduğun kararın hangi web sitesinde (Kararara, Lexpera, Barolar Birliği vb.) geçtiğini belirt.
-                4. Eğer numara bulamazsan, 'Şu dairenin şu tarihli genel ilkesine bakılmalı' diyerek en yakın veriyi getir.
-                    
-                FORMAT:
-                - **📍 Gerçek Emsal:** [Daire No] - [Esas/Karar No]
-                - **📝 Kararın Özü:** (Kısa özet)
-                - **🔗 Kaynak/Link:** (Bulunan site)
-                """   
+            ARAMA SONUÇLARI:
+            {context}
 
-                response = model.generate_content(prompt)
-                return response.text
-            except:
-                # Eğer arama aracı hata verirse (yetki yoksa), normal moda düşüyoruz
-                model = genai.GenerativeModel('gemini-2.5-flash')
-                prompt = f"Sen bir Yargıtay hakimi gibi şu olayı analiz et. İnternete erişemiyorsan bile bildiğin gerçek kanun maddelerini (TBK, TMK vb.) ve yerleşik Yargıtay ilkelerini yaz: {olay_ozeti}"
-                response = model.generate_content(prompt)
-                return response.text
+            OLAY: {olay_ozeti}
+
+            FORMAT:
+            - **⚖️ Hukuki Dayanak:** (İlgili Kanun Maddesi)
+            - **🔍 Gerçek Emsal:** (Arama sonuçlarındaki gerçek Daire ve Esas/Karar No)
+            - **📢 Sonuç:** (Yargıtay'ın bu konudaki net tavrı)
+            """
+            
+            response = model.generate_content(prompt)
+            return response.text
 
         except Exception as e:
-            return f"HATA (Sistem): {str(e)}"
+            return f"Operasyon Hatası: {str(e)}"
