@@ -702,31 +702,24 @@ elif menu == "⚖️ İçtihat Sorgulama":
         with c1:
             if st.button("🔎 İçtihatları Getir", use_container_width=True):
                 if olay_input:
-                    try:
-                        # 1. AKIŞI BAŞLAT
-                        st.info("🔎 Kütüphane taranıyor, Junilex analiz ediyor...")
-                        from ictihat_engine import IctihatEngine
-                        
-                        # AI'dan yanıtı stream olarak alıyoruz
-                        stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
-                        
-                        tam_metin = ""
-                        p_holder = st.empty() # Akışın görüneceği alan
-                        
-                        for parca in stream:
-                            if hasattr(parca, 'text'):
-                                tam_metin += parca.text
-                                p_holder.markdown(tam_metin + "▌")
-                        
-                        # 2. VERİ GELDİ Mİ KONTROL ET
-                        if tam_metin.strip():
-                            # Sayfalara böl (metni_sayfalara_bol fonksiyonunun tanımlı olduğundan emin ol)
-                            st.session_state.kitap_sayfalari = metni_sayfalara_bol(tam_metin, 400)
-                            st.session_state.aktif_sayfa = 0
-                            p_holder.empty() # Akış alanını temizle
-                            st.rerun() # Ekranda kitap görünümünü tetikle
+                    st.info("🔎 Junilex verileri topluyor...")
+                    from ictihat_engine import IctihatEngine
+                    
+                    # Motoru çağır
+                    sonuc = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
+                    
+                    # GELEN VERİYİ KONTROL ET VE BAS
+                    if sonuc:
+                        if "HATA" in sonuc:
+                            st.error(sonuc)
                         else:
-                            st.error("⚠️ AI bir sonuç döndürmedi. Lütfen API anahtarını veya olayı kontrol edin.")
+                            # Sonucu doğrudan sayfaya ve state'e kaydet
+                            st.session_state.kitap_sayfalari = [sonuc]
+                            st.session_state.aktif_sayfa = 0
+                            st.success("✅ Veriler getirildi!")
+                            st.rerun()
+                    else:
+                        st.error("⚠️ AI motoru cevap verdi ama içerik tamamen boş. API Kotasını kontrol edin.")
                             
                     except Exception as e:
                         st.error(f"❌ Akış sırasında bir hata oluştu: {str(e)}")
