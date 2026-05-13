@@ -8,7 +8,7 @@ class AkademikSinavEngine:
         try:
             genai.configure(api_key=api_key)
             # Model ismini güncel ve stabil olanla sabitledim
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             
             kaynak_bilgi = f"Ders Notu: {ders_notu_metni}" if ders_notu_metni else "Genel hukuk öğretisi."
             
