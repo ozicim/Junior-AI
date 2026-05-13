@@ -47,64 +47,47 @@ class IctihatEngine:
             return f"İçtihat analizi sırasında bir usul hatası oluştu: {str(e)}"
 
    
+    import google.generativeai as genai
+
+
     @classmethod
     def emsal_ara(cls, api_key, olay_ozeti):
-        """
-        Google Search Tool kullanarak gerçek içtihat ve kanun maddesi bulur.
-        """
         try:
             if not api_key:
-                return "HATA: API Anahtarı eksik!"
+                return "HATA: API Anahtarı bulunamadı!"
 
             genai.configure(api_key=api_key)
 
-            # --- DİKKAT: Google Search Tool'u tanımlıyoruz ---
-            # Bu araç Gemini'ın internete çıkıp gerçek verileri taramasını sağlar.
-            tools = [
-                {
-                    "google_search_retrieval": {
-                        "dynamic_retrieval_config": {
-                            "mode": "unspecified",
-                            "dynamic_threshold": 0.06 # Düşük eşik = Daha çok arama
-                        }
-                    }
-                }
-            ]
+            # --- Arama Aracını En Sade Haline Getirdik ---
+            # Karmaşık ayarları sildik, sadece 'google_search_retrieval' bıraktık.
+            tools = [{"google_search_retrieval": {}}]
 
             model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash',
-                tools=tools # Arama motorunu buraya bağladık!
+                model_name='gemini-2.5-flash', # 'models/gemini-1.5-flash' da denenebilir
+                tools=tools
             )
 
-            # PROMPT: Artik spesifik ve belgeli veri istiyoruz
             prompt = f"""
-            Sen profesyonel bir Yargıtay Tetkik Hakimisin. Aşağıdaki olayı gerçek dünya verileriyle analiz et.
+            Sen kıdemli bir Yargıtay tetkik hakimisin. 
+            Aşağıdaki olayla ilgili internetten GERÇEK Yargıtay kararlarını ve kanun maddelerini bul.
             
-            GÖREVİN:
-            1. İnterneti tarayarak bu olayla birebir örtüşen GERÇEK Yargıtay Esas/Karar numaralarını bul.
-            2. Olayın dayandığı temel Türk Kanun maddelerini (TBK, TMK vb.) içeriğiyle birlikte getir.
-            3. Verileri şu formatta (Kitap Şerhi gibi) sun:
-
-            ---
-            ### ⚖️ HUKUKİ TEŞHİS VE MEVZUAT
-            - **İlgili Kanun Maddesi:** (Örn: TBK m. 379 ve açıklaması)
-            - **Hukuki Niteleme:** (Olayın hukuki tanımı)
-
-            ### 🔍 GERÇEK EMSAL KARARLAR (Google Arama Destekli)
-            - **Karar 1:** (Daire Adı, Esas/Karar No, Karar Yılı)
-            - **Karar Özeti:** (Yargıtay'ın bu olaydaki kritik ispat yükü yorumu)
-            - **Kaynak:** (Bulduğun internet sitesinin adı veya linki)
-
-            ### 📌 YARGITAY'IN KIRMIZI ÇİZGİSİ
-            - Mahkemelerin bu durumda asla taviz vermediği ana ilke nedir?
-            ---
-
             OLAY: {olay_ozeti}
+
+            GÖREVİN:
+            1. Bu olaya uyan TBK veya ilgili kanun maddelerini yaz.
+            2. Google'da arayarak gerçek Esas ve Karar numaralı örnekler ver.
+            3. İspat yükünün kimde olduğunu Yargıtay içtihatlarına göre açıkla.
             """
 
-            # Akış (Streaming) başlatılıyor
-            response = model.generate_content(prompt, stream=True)
-            return response
+            # ÖNEMLİ: Stream'i kaldırıp deniyoruz (Hata tespiti için daha iyidir)
+            response = model.generate_content(prompt)
+            
+            # Eğer yanıt boşsa (Bloklanmış olabilir)
+            if not response.text:
+                return "HATA: AI yanıt üretti ama içerik boş (Güvenlik filtresine takılmış olabilir)."
+                
+            return response.text # Stream yerine direkt metin döndürüyoruz
 
         except Exception as e:
-            return f"HATA: Motor internete bağlanırken bir sorun yaşadı: {str(e)}"
+            # Buradaki hata mesajı bize "API yetkisi mi yok" yoksa "Arama mı yapılamıyor" söyleyecek
+            return f"HATA (Detaylı): {str(e)}"
