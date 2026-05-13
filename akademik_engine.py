@@ -159,6 +159,11 @@ class AkademikEngine:
             Öğrencinin sorduğu "{konu_adi}" konusunu, ÖNCELİKLE YUKARIDAKİ DERS NOTLARINA DAYANARAK anlat. 
             Eğer notlarda bilgi eksikse, genel hukuk bilginle tamamla ama notlardaki özel vurguları (hocanın görüşü, sınav tüyosu vb.) asla atlama.
             """
+            # stream=True ekledik:
+            response = model.generate_content(prompt, stream=True)
+            return response
+        except Exception as e:
+            return f"Hata: {str(e)}"
             
             response = model.generate_content(prompt)
             return response.text
