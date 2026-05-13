@@ -68,7 +68,7 @@ class IctihatEngine:
                 return response.text
             except:
                 # Eğer arama aracı hata verirse (yetki yoksa), normal moda düşüyoruz
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 prompt = f"Sen bir Yargıtay hakimi gibi şu olayı analiz et. İnternete erişemiyorsan bile bildiğin gerçek kanun maddelerini (TBK, TMK vb.) ve yerleşik Yargıtay ilkelerini yaz: {olay_ozeti}"
                 response = model.generate_content(prompt)
                 return response.text
