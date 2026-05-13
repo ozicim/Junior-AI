@@ -252,81 +252,67 @@ elif menu == "🎓 Akademi (Ders Notları)":
     # Sekmeleri net bir şekilde tanımlıyoruz
     tab_mufredat, tab_notlar, tab_sinav = st.tabs(["📚 Müfredat", "📄 Notlarım", "📝 Sınav Modu"])
     mufredat_sozlugu = AkademikEngine.get_akademik_mufredat()
-    
+    ders_listesi = []
+    for sinif_adi, dersler in mufredat_sozlugu.items():
+        for ders in dersler:
+        # İkon ve isim birleştirerek listeye ekle (Örn: "📜 Hukuk Başlangıcı")
+            ders_listesi.append(f"{ders['ikon']} {ders['isim']}")
+            
+    konu_listesi = ["Genel Tanımlar", "Sınav Soruları", "Hoca Notları", "Özet Analiz"]
     # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
+    tab_mufredat, tab_soru = st.tabs(["📚 Müfredat Analizi", "❓ Hocaya Soru Sor"])
     with tab_mufredat:
         st.subheader("📚 Ders ve Konu Seçimi")
-        # Burada ders_listesi ve konu_listesi olduğunu varsayıyoruz (CSV'den gelen)
         col1, col2 = st.columns(2)
         with col1:
-            secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi) # Liste senin kodunda tanımlı olmalı
+            secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi, key="akademi_ders_v3")
         with col2:
-            secilen_konu = st.selectbox("Konu Seçiniz", options=konu_listesi)
+            secilen_konu = st.selectbox("Konu Seçiniz", options=konu_listesi, key="akademi_konu_v3")
 
         if st.button("👨‍🏫 AI Hoca Analiz Et", use_container_width=True):
             if secilen_ders and secilen_konu:
                 st.info(f"📊 AI Hoca {secilen_ders} - {secilen_konu} konusunu hazırlıyor...")
-                ders_listesi = []
-                    for sinif_adi, dersler in mufredat_sozlugu.items():
-                        for ders in dersler:
-                        # İkon ve isim birleştirerek listeye ekle (Örn: "📜 Hukuk Başlangıcı")
-                        ders_listesi.append(f"{ders['ikon']} {ders['isim']}")
-                        konu_listesi = ["Genel Tanımlar", "Sınav Soruları", "Hoca Notları", "Özet Analiz"]
-                
-                   elif menu == "🎓 Akademi (Ders Notları)":
-                        st.header("🎓 Junilex Akademi")
-                        tab_mufredat, tab_soru = st.tabs(["📚 Müfredat Analizi", "❓ Hocaya Soru Sor"])
-
-                        with tab_mufredat:
-                            st.subheader("📚 Ders ve Konu Seçimi")
-        
-                            col1, col2 = st.columns(2)
-                        with col1:
-                            # Artık ders_listesi AkademikEngine'den geliyor!
-                            secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi, key="ders_sec")
-                        with col2:
-                            secilen_konu = st.selectbox("Konu Seçiniz", options=konu_listesi, key="konu_sec") 
-                    
-                    # AI'ya ders anlatma talimatı veriyoruz
+                try:
+                    from ictihat_engine import IctihatEngine
                     akademi_prompt = f"{secilen_ders} dersinin {secilen_konu} konusunu bir hukuk profesörü edasıyla, önemli kavramlar ve güncel içtihatlar eşliğinde kapsamlı şekilde anlat."
                     
-                    # Not: emsal_ara fonksiyonunu genel bir "analiz" motoru gibi kullanıyoruz
+                    # 1. AKIŞI BAŞLATIYORUZ (Streaming)
                     stream = IctihatEngine.emsal_ara(MY_API_KEY, akademi_prompt)
                     
-                    tam_ders_notu = ""
-                    placeholder = st.empty()
+                    tam_not = ""
+                    placeholder = st.empty() # Yazının akacağı geçici alan
                     
                     for parca in stream:
                         if hasattr(parca, 'text') and parca.text:
-                            tam_ders_notu += parca.text
-                            placeholder.markdown(tam_ders_notu + "▌")
+                            tam_not += parca.text
+                            # Daktilo efektiyle ekrana basıyoruz
+                            placeholder.markdown(tam_not + "▌")
                     
-                    # 2. Analiz bittiğinde Dijital Kitap formatına çevir
-                    st.session_state.akademi_notlari = metni_sayfalara_bol(tam_ders_notu, 400)
+                    # 2. AKIŞ BİTTİĞİNDE: Sayfalara böl ve kalıcı hafızaya al
+                    st.session_state.akademi_notlari = metni_sayfalara_bol(tam_not, 400)
                     st.session_state.akademi_aktif_sayfa = 0
-                    placeholder.empty()
-                    st.rerun()
+                    
+                    placeholder.empty() # Akış bitti, geçici alanı temizle
+                    st.rerun() # Sayfayı yenile ki aşağıdaki kitap görünümü tetiklensin
 
                 except Exception as e:
                     st.error(f"Hoca derse giremedi ustam: {e}")
             else:
                 st.warning("Lütfen ders ve konu seçin!")
 
-        # --- DİJİTAL KİTAP GÖRÜNÜMÜ (Müfredat İçin) ---
+        # --- DİJİTAL KİTAP GÖRÜNÜMÜ ---
         if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
             sayfalar = st.session_state.akademi_notlari
             aktif = st.session_state.akademi_aktif_sayfa
             
-            # İçerik Düzenleme (Görseli güzelleştiriyoruz)
-            icerik = sayfalar[aktif].replace("### ", "<h3>").replace("#### ", "<h4>").replace("**", "<b>").replace("\n", "<br>")
-            
+            # Kitap Tasarımı
             st.markdown(f"""
-            <div style="background-color: #fdfaf1; padding: 40px; border-left: 15px solid #2e7d32; border-radius: 5px; box-shadow: 5px 5px 20px rgba(0,0,0,0.1); color: #263238; font-family: 'Times New Roman', serif;">
-                <div style="text-align: right; font-size: 12px; color: #2e7d32; font-weight: bold;">DERS NOTU: SAYFA {aktif + 1} / {len(sayfalar)}</div>
-                <h2 style="color: #1b5e20; border-bottom: 1px solid #c8e6c9; margin-bottom: 20px;">🎓 AKADEMİK ŞERH</h2>
-                <div style="font-size: 18px; line-height: 1.7; text-align: justify;">{icerik}</div>
+            <div style="background-color: #fdfaf1; padding: 40px; border-left: 15px solid #2e7d32; border-radius: 5px; box-shadow: 10px 10px 25px rgba(0,0,0,0.1); color: #263238; font-family: 'Times New Roman', serif;">
+                <div style="text-align: right; font-size: 12px; color: #2e7d32; font-weight: bold;">SAYFA {aktif + 1} / {len(sayfalar)}</div>
+                <h2 style="color: #1b5e20; border-bottom: 2px solid #c8e6c9; margin-bottom: 20px;">🎓 AKADEMİK ŞERH</h2>
+                <div style="font-size: 18px; line-height: 1.7; text-align: justify;">{sayfalar[aktif].replace('\\n', '<br>')}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -334,13 +320,13 @@ elif menu == "🎓 Akademi (Ders Notları)":
             n1, n2, n3 = st.columns([1, 2, 1])
             with n1:
                 if aktif > 0:
-                    if st.button("⬅️ Önceki Sayfa", key="akademi_prev"):
+                    if st.button("⬅️ Geri", key="ak_prev"):
                         st.session_state.akademi_aktif_sayfa -= 1
                         st.rerun()
             with n3:
                 if aktif < len(sayfalar) - 1:
-                    if st.button("Sonraki Sayfa ➡️", key="akademi_next"):
-                        st.session_state.akademi_aktif_sayfa += 1
+                    if st.button("İleri ➡️", key="ak_next"):
+                        st.session_state.aktif_sayfa += 1
                         st.rerun()
 
 # ==========================================
