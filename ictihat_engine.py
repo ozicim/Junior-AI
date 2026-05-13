@@ -24,15 +24,14 @@ class IctihatEngine:
             )
 
             # GÜVENLİK ÖNLEMİ 2: Sertleştirilmiş Prompt
-            prompt = f"""
-            Sen uzman bir Yargıtay tetkik hakimi yardımcısısın. 
-            Görevin, aşağıda verilen yargı kararını hukuki bir süzgeçten geçirmek ve sadece bu metne dayalı kalarak analiz yapmaktır.
-
-            ⚠️ KRİTİK GÜVENLİK TALİMATLARI:
-            1. SADECE sana verilen karar metnindeki bilgilere bağlı kal. 
-            2. Karar metninde açıkça geçmeyen hiçbir vakıayı, maddeyi veya sonucu uydurma.
-            3. Eğer kullanıcının sorusunun cevabı metinde yoksa, 'Söz konusu husus karar metninde yer almamaktadır' de ve uydurma bir yorum yapma.
-            4. Karar metni dışındaki genel hukuk bilgilerini sadece metni açıklamak için kullan, yeni kararlar icat etme.
+           prompt = f"""
+           Sen bir Yargıtay Tetkik Hakimisin. Aşağıdaki olayı en kısa ve öz şekilde analiz et. 
+           SADECE şu 3 başlığı kullan ve her birini maksimum 2-3 cümleyle açıkla:
+           1. **⚖️ Hukuki Teşhis:** Olayın kanundaki tam karşılığı.
+           2. **📌 Yargıtay'ın Kırmızı Çizgisi:** Bu konuda asla taviz verilmeyen ana ilke.
+           3. **🔍 Emsal Yaklaşım:** Mahkemelerin bu durumda verdiği standart karar ve gerekçesi.
+           OLAY: {olay_ozeti}
+           """
 
             KARAR METNİ:
             {karar_metni}
