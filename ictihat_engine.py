@@ -83,14 +83,18 @@ class IctihatEngine:
             model = genai.GenerativeModel('gemini-2.5-flash')
             
             prompt = f"""
-            Aşağıdaki arama sonuçlarını kullanarak bir Yargıtay analizi yap. 
-            SADECE sağlanan bilgilerdeki gerçek Esas/Karar numaralarını kullan. 
-            Uydurma veri üretme!
-
-            ARAMA SONUÇLARI:
-            {context}
-
+            SEN BİR YARGITAY ANALİSTİSİN. 
+            Arama sonuçlarında numara bulamasan bile ASLA 'boş bırakılmıştır' deme. 
+            
+            GÖREVİN:
+            1. Eğer sonuçlarda numara VARSA, doğrudan onu yaz.
+            2. Eğer numara YOKSA, internetten öğrendiğin bilgilerle 'Yargıtay 3. Hukuk Dairesi'nin yerleşik görüşü şudur...' diyerek doktrini açıkla.
+            3. İspat yükünün kimde olduğunu kesin bir dille belirt (TBK 112 ve 382 vurgusuyla).
+            4. Kullanıcıya bu kararı hangi anahtar kelimelerle (Örn: 'Ariyet hasarlı iade') araması gerektiğini söyle.
+            
             OLAY: {olay_ozeti}
+            ARAMA VERİLERİ: {context}
+            """
 
             FORMAT:
             - **⚖️ Hukuki Dayanak:** (İlgili Kanun Maddesi)
