@@ -52,24 +52,24 @@ class IctihatEngine:
 
  
     @classmethod
-def serper_search(cls, query, api_key):
-    """3 farklı koldan arama yaparak emsal yakalama şansını artırır."""
-    url = "https://google.serper.dev/search"
-    # Sadece olayı değil, 'Esas Karar No' gibi teknik kelimeleri de zorluyoruz.
-    queries = [
-        f"Yargıtay emsal karar Esas Karar No {query}",
-        f"site:kararara.com {query} ispat yükü",
-        f"site:barobirlik.org.tr {query} yargıtay kararı"
-    ]
-    
-    combined_results = []
-    for q in queries:
-        payload = json.dumps({"q": q, "gl": "tr", "hl": "tr", "num": 5}) # Her sorgudan 5 sonuç
-        headers = {'X-API-KEY': api_key, 'Content-Type': 'application/json'}
-        response = requests.request("POST", url, headers=headers, data=payload)
-        combined_results.extend(response.json().get('organic', []))
-    
-    return combined_results
+    def serper_search(cls, query, api_key):
+        """3 farklı koldan arama yaparak emsal yakalama şansını artırır."""
+        url = "https://google.serper.dev/search"
+        # Sadece olayı değil, 'Esas Karar No' gibi teknik kelimeleri de zorluyoruz.
+        queries = [
+            f"Yargıtay emsal karar Esas Karar No {query}",
+            f"site:kararara.com {query} ispat yükü",
+            f"site:barobirlik.org.tr {query} yargıtay kararı"
+        ]
+        
+        combined_results = []
+        for q in queries:
+            payload = json.dumps({"q": q, "gl": "tr", "hl": "tr", "num": 5}) # Her sorgudan 5 sonuç
+            headers = {'X-API-KEY': api_key, 'Content-Type': 'application/json'}
+            response = requests.request("POST", url, headers=headers, data=payload)
+            combined_results.extend(response.json().get('organic', []))
+        
+        return combined_results
     
     @classmethod
     def emsal_ara(cls, gemini_key, serper_key, olay_ozeti):
