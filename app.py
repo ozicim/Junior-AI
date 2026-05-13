@@ -698,10 +698,11 @@ elif menu == "⚖️ İçtihat Sorgulama":
         
         # ARAMA BUTONLARI
         c1, c2 = st.columns([1, 1])
-        with c1:
+       with c1:
             if st.button("🔎 İçtihatları Getir", use_container_width=True):
                 if olay_input:
-                    st.info("🔎 Kütüphane taranıyor, sayfalar diziliyor...")
+                    # DİKKAT: Import satırı tam olarak bu hizada olmalı (Sıfır hata için)
+                    from ictihat_engine import IctihatEngine
                     
                     
                     # AI'dan yanıtı alıyoruz
