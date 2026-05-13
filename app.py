@@ -375,7 +375,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 def hoca_suzucu():
                     for parca in stream:
                         if parca.text:
-                            yield parca.text:
+                            yield parca.text
         
                 # 3. Akışı ekrana basıyoruz
                 st.write_stream(hoca_suzucu)
