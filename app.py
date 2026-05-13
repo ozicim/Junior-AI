@@ -608,39 +608,40 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
                 file_name=f"{d_konu}_taslak.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-    elif "İçtihat" in menu:
-        st.header("⚖️ Yüksek Yargı Karar Analizi")
-        st.info("Yargıtay, Danıştay veya AYM kararlarını buraya yapıştırarak Junilex'in profesyonel şerhini alabilirsiniz.")
-        st.warning("🛡️ **Güvenlik Modu:** Analizler sadece yapıştırdığınız metinle sınırlı tutulur (Sıfır Halüsinasyon).")
+    # --- MOD 4: İÇTİHAT SORGULAMA (Eksik Olan Kısım) ---
+elif "İçtihat" in menu:
+    st.header("⚖️ Yüksek Yargı Karar Analizi")
+    st.info("Yargıtay, Danıştay veya AYM kararlarını buraya yapıştırarak Junilex'in profesyonel şerhini alabilirsiniz.")
+    st.warning("🛡️ **Güvenlik Modu:** Analizler sadece yapıştırdığınız metinle sınırlı tutulur (Sıfır Halüsinasyon).")
     
-        karar_input = st.text_area("Karar Metni", height=350, placeholder="Karar metnini buraya yapıştırın...")
-        soru_input = st.text_input("Bu kararda neyi analiz etmemi istersiniz?", placeholder="Örn: Yerleşik içtihatlara uygun mu?")
+    karar_input = st.text_area("Karar Metni", height=350, placeholder="Karar metnini buraya yapıştırın...")
+    soru_input = st.text_input("Bu kararda neyi analiz etmemi istersiniz?", placeholder="Örn: Yerleşik içtihatlara uygun mu?")
 
-        if st.button("⚖️ Kararı Şerh Düş"):
-            if karar_input and soru_input:
-                st.info("📊 Karar dosyası tetkik ediliyor...")
+    if st.button("⚖️ Kararı Şerh Düş"):
+        if karar_input and soru_input:
+            st.info("📊 Karar dosyası tetkik ediliyor...")
             
-                # Dinamik import (Hata almamak için içeride yapıyoruz)
+            try:
+                # ictihat_engine.py dosyasındaki sınıfı çağırıyoruz
                 from ictihat_engine import IctihatEngine
-            
-                try:
-                    # 1. Akışı (Stream) başlatıyoruz
-                    stream = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_input, soru_input)
                 
-                    # 2. Metin Süzücü (Generator)
-                    def ictihat_suzucu():
-                        for parca in stream:
-                            if hasattr(parca, 'text') and parca.text:
-                                yield parca.text
+                # 1. Akışı başlatıyoruz
+                stream = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_input, soru_input)
                 
-                    # 3. Yazdırma
-                    st.write_stream(ictihat_suzucu)
+                # 2. Süzgeç fonksiyonu (Generator)
+                def ictihat_suzucu():
+                    for parca in stream:
+                        if hasattr(parca, 'text') and parca.text:
+                            yield parca.text
                 
-                    st.divider()
-                    st.caption("⚠️ Junilex Analiz Notu: Bu bir yapay zeka özetidir, hukuki tavsiye değildir.")
+                # 3. Ekrana daktilo hızıyla yazdırıyoruz
+                st.write_stream(ictihat_suzucu)
                 
-                except Exception as e:
-                    st.error(f"Hizmet sırasında hata oluştu: {e}")
-            else:
-                st.warning("Ustam, hem kararı hem de soruyu girmen şart!")
+                st.divider()
+                st.caption("⚠️ Not: Bu analiz yapay zeka tarafından sağlanan bir özet olup, resmi evrak yerine geçmez.")
+                
+            except Exception as e:
+                st.error(f"Analiz motoru başlatılamadı: {e}")
+        else:
+            st.warning("Ustam, analiz için hem karar metnini hem de sorunu girmelisin!")
                 
