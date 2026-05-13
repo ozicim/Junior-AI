@@ -56,25 +56,30 @@ class IctihatEngine:
             return f"İçtihat analizi sırasında bir usul hatası oluştu: {str(e)}"
     @classmethod
     def emsal_ara(cls, api_key, olay_ozeti):
+        """
+        Kullanıcının anlattığı olaya benzer emsal kararları bulur.
+        """
         try:
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-1.5-pro')
             
+            # Soru sormadan direkt olay üzerinden emsal bulma talimatı
             prompt = f"""
-            Sen uzman bir hukuk tetkik hakimisin. Aşağıdaki olaya benzer yerleşik Yargıtay içtihatlarını bul ve analiz et.
-            
-            OLAY: {olay_ozeti}
-            
-            ANALİZ PLANI:
-            1. Olaydaki hukuki uyuşmazlığın tespiti.
-            2. Yargıtay'ın bu konudaki genel ve yerleşik görüşü.
-            3. Varsa bilinen emsal karar numaraları ve daire bilgileri.
-            4. İlgili kanun maddeleri ve ispat kuralları.
+            Sen uzman bir Yargıtay tetkik hakimisin. Sana anlatılan hukuki olaya (vakaya) benzer, 
+            emsal teşkil edebilecek yerleşik içtihatları ve mahkeme kararlarını tespit etmelisin.
+
+            OLAY ÖZETİ:
+            {olay_ozeti}
+
+            GÖREVİN:
+            1. Bu olaydaki temel hukuki uyuşmazlığı tanımla.
+            2. Yargıtay'ın (veya Danıştay/AYM) bu konudaki GÜNCEL ve YERLEŞİK içtihadını açıkla.
+            3. Benzer vakalarda verilmiş emsal karar numaralarını (örn: 9. HD. 2021/... E.) ve tarihlerini belirt.
+            4. Kararda öne çıkan 'Hukuki Gerekçeleri' madde madde listele.
+            5. Bu olayın davanın seyrini nasıl etkileyeceğine dair kısa bir hukuki mütalaa ekle.
             """
             
-            # Akışı (Streaming) başlatıyoruz
             response = model.generate_content(prompt, stream=True)
             return response
         except Exception as e:
-            # Hata durumunda bunu bir liste/akış gibi döndürmeliyiz ki write_stream patlamasın
             return [f"Emsal arama hatası: {str(e)}"]
