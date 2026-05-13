@@ -668,18 +668,74 @@ elif menu == "⚖️ İçtihat Sorgulama":
                     del st.session_state.kitap_sayfalari
                 st.rerun()
 
-        # --- DİKKAT: NameError'u Bitiren Kısım ---
-        if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
+       if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
             sayfalar = st.session_state.kitap_sayfalari
             aktif = st.session_state.aktif_sayfa
-            
-            # Kitap Tasarımı (HTML)
+    
+            # --- TEMİZLİK VE DÜZENLEME ---
+            # Metindeki Markdown işaretlerini HTML'e çeviriyoruz
+            icerik = sayfalar[aktif]
+            icerik = icerik.replace("### ", "<h3 style='color: #5d4037; border-bottom: 1px solid #d7ccc8; padding-bottom: 5px; margin-top: 20px;'>")
+            icerik = icerik.replace("#### ", "<h4 style='color: #795548; margin-top: 15px;'>")
+            icerik = icerik.replace("**", "<b>").replace("**", "</b>") # Çift yıldızları <b> yapar
+            icerik = icerik.replace("\n", "<br>")
+
+            # --- YENİ NESİL KİTAP TASARIMI ---
             st.markdown(f"""
-            <div style="background-color: #fdf6e3; padding: 40px; border-left: 12px solid #8e735b; border-radius: 5px; box-shadow: 5px 5px 20px rgba(0,0,0,0.1); color: #2c2c2c; font-family: 'Georgia', serif;">
-                <div style="text-align: right; font-size: 12px; color: #8e735b; font-weight: bold;">SAYFA {aktif + 1} / {len(sayfalar)}</div>
-                <h2 style="color: #8e735b; border-bottom: 1px solid #8e735b; margin-bottom: 20px;">📜 JUNILEX İÇTİHAT ŞERHİ</h2>
-                <div style="font-size: 17px; line-height: 1.8; text-align: justify;">
-                    {sayfalar[aktif].replace('\\n', '<br>')}
+            <style>
+                .kitap-sayfasi {{
+                    background-color: #fdfaf1;
+                    padding: 50px;
+                    border-left: 15px solid #5d4037;
+                    border-right: 1px solid #e0e0e0;
+                    border-radius: 4px;
+                    box-shadow: 10px 10px 30px rgba(0,0,0,0.15);
+                    color: #263238;
+                    font-family: 'Times New Roman', Times, serif;
+                    min-height: 600px;
+                    position: relative;
+                }}
+                .sayfa-no {{
+                    position: absolute;
+                    top: 20px;
+                    right: 30px;
+                    font-size: 14px;
+                    color: #8d6e63;
+                    font-weight: bold;
+                    letter-spacing: 1px;
+                }}
+                .kitap-baslik {{
+                    text-align: center;
+                    font-variant: small-caps;
+                    color: #5d4037;
+                    border-bottom: 2px double #8d6e63;
+                    margin-bottom: 30px;
+                    padding-bottom: 10px;
+                }}
+                .metin-alani {{
+                    font-size: 18px;
+                    line-height: 1.8;
+                    text-align: justify;
+                    text-justify: inter-word;
+                }}
+                .dipnot {{
+                    margin-top: 40px;
+                    font-size: 12px;
+                    border-top: 1px solid #d7ccc8;
+                    padding-top: 10px;
+                    color: #78909c;
+                    font-style: italic;
+                }}
+            </style>
+
+            <div class="kitap-sayfasi">
+                <div class="sayfa-no">VESİKA NO: {aktif + 1} / {len(sayfalar)}</div>
+                <div class="kitap-baslik"><h1>Junilex Dijital Külliyatı</h1></div>
+                <div class="metin-alani">
+                    {icerik}
+                </div>
+                <div class="dipnot">
+                    * Bu belge Junilex AI tarafından yüksek yargı içtihatları temel alınarak tanzim edilmiştir.
                 </div>
             </div>
             """, unsafe_allow_html=True)
