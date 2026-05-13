@@ -258,7 +258,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
         # İkon ve isim birleştirerek listeye ekle (Örn: "📜 Hukuk Başlangıcı")
             ders_listesi.append(f"{ders['ikon']} {ders['isim']}")
             
-    konu_listesi = ["Genel Tanımlar", "Sınav Soruları", "Hoca Notları", "Özet Analiz"]
+    konu_listesi = ["Genel Tanımlar", "Hoca Notları", "Özet Analiz"]
     # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
