@@ -706,7 +706,7 @@ elif menu == "⚖️ İçtihat Sorgulama":
                     from ictihat_engine import IctihatEngine
                     
                     # Motoru çağır
-                    sonuc = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
+                    sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
                     
                     # GELEN VERİYİ KONTROL ET VE BAS
                     if sonuc:
