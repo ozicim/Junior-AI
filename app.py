@@ -636,8 +636,8 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
             else:
                 st.warning("Ustam, hem kararı hem de soruyu girmen lazım!")
                 
-                    st.divider()
-                    st.caption("⚠️ Not: Bu analiz yapay zeka tarafından sağlanan bir özet olup, resmi evrak yerine geçmez.")
+                st.divider()
+                st.caption("⚠️ Not: Bu analiz yapay zeka tarafından sağlanan bir özet olup, resmi evrak yerine geçmez.")
                 
                 except Exception as e:
                     st.error(f"Analiz başlatılamadı: {e}")
