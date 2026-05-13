@@ -365,7 +365,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
             
         soru = st.text_input("Hocaya sormak istediğin soru nedir?")
         if st.button("👨‍🏫 Hocaya Sor"):
-            if soru and not_metni:
+            if soru:
                 st.markdown("### 🎓 JUNILEX Hoca Anlatıyor:")
         
                 # 1. Akışı başlatıyoruz
