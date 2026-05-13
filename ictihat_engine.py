@@ -61,7 +61,7 @@ class IctihatEngine:
         """
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-pro')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             
             # Soru sormadan direkt olay üzerinden emsal bulma talimatı
             prompt = f"""
