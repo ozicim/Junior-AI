@@ -251,6 +251,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
     
     # Sekmeleri net bir şekilde tanımlıyoruz
     tab_mufredat, tab_notlar, tab_sinav = st.tabs(["📚 Müfredat", "📄 Notlarım", "📝 Sınav Modu"])
+    mufredat_sozlugu = AkademikEngine.get_akademik_mufredat()
     
     # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
@@ -267,11 +268,26 @@ elif menu == "🎓 Akademi (Ders Notları)":
         if st.button("👨‍🏫 AI Hoca Analiz Et", use_container_width=True):
             if secilen_ders and secilen_konu:
                 st.info(f"📊 AI Hoca {secilen_ders} - {secilen_konu} konusunu hazırlıyor...")
+                ders_listesi = []
+                    for sinif_adi, dersler in mufredat_sozlugu.items():
+                        for ders in dersler:
+                        # İkon ve isim birleştirerek listeye ekle (Örn: "📜 Hukuk Başlangıcı")
+                        ders_listesi.append(f"{ders['ikon']} {ders['isim']}")
+                        konu_listesi = ["Genel Tanımlar", "Sınav Soruları", "Hoca Notları", "Özet Analiz"]
                 
-                # --- İŞTE EKSİK OLAN KISIM BURASI ---
-                try:
-                    # IctihatEngine'i akademi için de kullanabiliriz veya özel bir AkademiEngine yazabilirsin
-                    from ictihat_engine import IctihatEngine 
+                   elif menu == "🎓 Akademi (Ders Notları)":
+                        st.header("🎓 Junilex Akademi")
+                        tab_mufredat, tab_soru = st.tabs(["📚 Müfredat Analizi", "❓ Hocaya Soru Sor"])
+
+                        with tab_mufredat:
+                            st.subheader("📚 Ders ve Konu Seçimi")
+        
+                            col1, col2 = st.columns(2)
+                        with col1:
+                            # Artık ders_listesi AkademikEngine'den geliyor!
+                            secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi, key="ders_sec")
+                        with col2:
+                            secilen_konu = st.selectbox("Konu Seçiniz", options=konu_listesi, key="konu_sec") 
                     
                     # AI'ya ders anlatma talimatı veriyoruz
                     akademi_prompt = f"{secilen_ders} dersinin {secilen_konu} konusunu bir hukuk profesörü edasıyla, önemli kavramlar ve güncel içtihatlar eşliğinde kapsamlı şekilde anlat."
