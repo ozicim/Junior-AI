@@ -31,10 +31,20 @@ class AkademikSinavEngine:
             """
             
             response = model.generate_content(prompt)
-            # Markdown temizliği (```json ... ``` bloklarını kaldırır)
-            temiz_metin = response.text.replace("```json", "").replace("```", "").strip()
-            
-            json_match = re.search(r'\{.*\}', temiz_metin, re.DOTALL)
+        def temiz_json_yukle(ham_metin):
+            try:
+            # 1. Eğer AI cevabı ```json ... ``` blokları içine aldıysa onları temizleyelim
+            temiz_metin = re.sub(r'```json|```', '', ham_metin).strip()
+        
+            # 2. JSON içindeki kontrol karakterlerini (hataya sebep olan gizli karakterleri) temizleyelim
+            # Bu satır, 0-31 arası kontrol karakterlerini temizler
+            temiz_metin = re.sub(r"[\x00-\x1F\x7F]", "", temiz_metin)
+        
+            # 3. strict=False kullanarak yükleyelim (Bu en kritik hamle!)
+            return json.loads(temiz_metin, strict=False)
+        except Exception as e:
+            print(f"JSON Ayıklama Hatası: {e}")
+            return None
             if json_match:
                 veriler = json.loads(json_match.group())
                 # Anahtar kontrolü: Eğer AI anahtarı yanlış yazdıysa düzeltme veya hata fırlatma
