@@ -365,12 +365,19 @@ elif menu == "🎓 Akademi (Ders Notları)":
 
         if st.button("👨‍🏫 Hocaya Sor"):
             if soru and not_metni:
-                st.markdown("### 🎓 Hoca Anlatıyor...")
-            
+                st.markdown("### 🎓 JUNILEX Hoca Anlatıyor:")
+        
+                # 1. Akışı başlatıyoruz
                 stream = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
-            
-                # Akışı ekrana basıyoruz
-                st.write_stream(stream)
+        
+                # 2. Hoca anlatımını süzerek getiren yardımcı fonksiyon
+                def hoca_suzucu():
+                    for parca in stream:
+                        if parca.text:
+                            yield parca.text
+        
+                # 3. Akışı ekrana basıyoruz
+                st.write_stream(hoca_suzucu)
                     
                 if not not_metni:
                     not_metni = "Öğrenci sisteme henüz güncel bir PDF metni okutmadı, lütfen genel hukuk bilginle detaylıca anlat."
