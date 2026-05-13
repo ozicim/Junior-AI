@@ -569,42 +569,42 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
         d_olay = st.text_area("Olayın Özeti", placeholder="Olayları buraya özetleyin...")
         d_talep = st.text_area("Talepler", placeholder="Netice-i talep kısmını buraya yazın...")
 
-        if st.button("📝 Dilekçeyi Yaz ve Hazırla"):
-            if d_konu and d_olay:
-                st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
+    if st.button("📝 Dilekçeyi Yaz ve Hazırla"):
+        if d_konu and d_olay:
+            st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
         
-                # 1. Akışı başlatıyoruz
-                stream = DilekceEngine.dilekce_olustur(MY_API_KEY, d_konu, d_taraflar, d_olay, d_talep)
+            # 1. Akışı başlatıyoruz
+            stream = DilekceEngine.dilekce_olustur(MY_API_KEY, d_konu, d_taraflar, d_olay, d_talep)
         
-                # 2. Süzgeç fonksiyonu
-                def dilekce_suzucu():
-                    for parca in stream:
-                        if parca.text:
-                            yield parca.text
+            # 2. Süzgeç fonksiyonu
+            def dilekce_suzucu():
+                for parca in stream:
+                    if parca.text:
+                        yield parca.text
         
-                # 3. Ekrana yazdırıyoruz ve sonucu TAM_METIN içine alıyoruz
-                tam_metin = st.write_stream(dilekce_suzucu)
+            # 3. Ekrana yazdırıyoruz ve sonucu TAM_METIN içine alıyoruz
+            tam_metin = st.write_stream(dilekce_suzucu)
         
-                # 4. Session State kaydı (Her iki satırı da tam_metin yapalım)
-                st.session_state.son_dilekce = tam_metin
+            # 4. Session State kaydı (Her iki satırı da tam_metin yapalım)
+            st.session_state.son_dilekce = tam_metin
                 
-                # 5. WORD İNDİRME (Hata buradaydı: 'metin' yerine 'tam_metin' yazdık)
-                word_data = DilekceEngine.word_dosyasi_yap(tam_metin) 
+            # 5. WORD İNDİRME (Hata buradaydı: 'metin' yerine 'tam_metin' yazdık)
+            word_data = DilekceEngine.word_dosyasi_yap(tam_metin) 
                 
-                st.download_button(
-                    label="📥 Word Dosyası Olarak Kaydet",
-                    data=word_data,
-                    file_name=f"{d_konu}_taslak.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-            else:
-                st.warning("Lütfen konu ve olay özetini doldurunuz ustam!")
+            st.download_button(
+                label="📥 Word Dosyası Olarak Kaydet",
+                data=word_data,
+                file_name=f"{d_konu}_taslak.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+        else:
+            st.warning("Lütfen konu ve olay özetini doldurunuz ustam!")
                 
-                # Word İndirme
-                word_data = DilekceEngine.word_dosyasi_yap(metin)
-                st.download_button(
-                    label="📥 Word Dosyası Olarak Kaydet",
-                    data=word_data,
-                    file_name=f"{d_konu}_taslak.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
+            # Word İndirme
+            word_data = DilekceEngine.word_dosyasi_yap(metin)
+            st.download_button(
+                label="📥 Word Dosyası Olarak Kaydet",
+                data=word_data,
+                file_name=f"{d_konu}_taslak.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
