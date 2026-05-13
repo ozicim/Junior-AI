@@ -1,4 +1,4 @@
-"import streamlit as st
+import streamlit as st
 import firebase_admin
 from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine
