@@ -80,7 +80,7 @@ class IctihatEngine:
 
             # 3. Gemini'a veriyi "kanıt" olarak sun
             genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             
             prompt = f"""
             Aşağıdaki arama sonuçlarını kullanarak bir Yargıtay analizi yap. 
