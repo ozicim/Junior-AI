@@ -213,18 +213,10 @@ if "Adliye" in menu:
             mevzuat_sorusu = st.text_input("Bu madde hakkında neyi merak ediyorsun?", key="mevzuat_input")
 
             if st.button("⚖️ Maddeyi Analiz Et"):
-                if st.session_state.bulunan_madde and st.session_state.secili_kanun:
+                if mevzuat_sorusu and st.session_state.bulunan_madde:
+                    st.info("📊 JUNILEX Analiz Ediyor...")
         
-                    # --- DEĞİŞKENLERİ TANIMLIYORUZ (NAMEERROR'I BİTİREN KISIM) ---
-                    madde_metni = st.session_state.bulunan_madde['metin']
-                    madde_no = st.session_state.bulunan_madde['no']
-                    kanun_adi = st.session_state.secili_kanun['isim'] # Seçili kanunun tam adı
-                if mevzuat_sorusu:
-                    st.info("📊 Mevzuat uzmanı analiz ediyor...")
-            
-                    # NOT: Eğer metodun adı 'madde_analiz_et' ise onu kullan, 
-                    # eğer benim önerdiğim 'mevzuat_yorumlama' ise onu yaz.
-                    # app.py içinde:
+                    # 1. Akışı (Stream) başlatıyoruz
                     stream = MevzuatBulutEngine.madde_analiz_et(
                         MY_API_KEY, 
                         st.session_state.bulunan_madde['metin'], 
@@ -232,12 +224,16 @@ if "Adliye" in menu:
                         st.session_state.bulunan_madde['no'], 
                         mevzuat_sorusu
                     )
-                    def stream_izleyici(akistan_gelenler):
-                        for parca in akistan_gelenler:
+        
+                    # 2. İŞTE BURASI KRİTİK: Gelen paketlerden sadece metni süzen fonksiyon
+                    def metin_suzucu():
+                        for parca in stream:
+                            # Paket boş değilse ve içinde metin varsa gönder
                             if parca.text:
                                 yield parca.text
-            
-                    st.write_stream(stream)
+
+                    # 3. Filtrelenmiş metni daktilo gibi yazdırıyoruz
+                    st.write_stream(metin_suzucu)
                 else:
                     st.warning("Lütfen bir soru yazın ustam!")
 
