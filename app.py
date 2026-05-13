@@ -643,79 +643,72 @@ elif menu == "⚖️ İçtihat Sorgulama":
             else:
                 st.warning("Lütfen alanları doldurunuz.")
         
-        with tab2:
-            st.subheader("🔎 Olaydan Emsal Bul")
-            olay_input = st.text_area("Olayı Anlatın", height=250, key="o_input_new")
+    with tab2:
+        st.subheader("🔎 Olaydan Emsal Bul")
+        olay_input = st.text_area("Olayı Anlatın", height=250, key="o_input_emsal")
         
-            if st.button("🔎 Benzer İçtihatları Getir", use_container_width=True):
-                if olay_input:
-                    st.info("🔎 Kütüphane taranıyor...")
-                    # 1. AI'dan tam yanıtı alıyoruz
-                    stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
-                    tam_yanit = "".join([p.text for p in stream if hasattr(p, 'text')])
-        
-        #
-                    st.session_state.kitap_sayfalari = metni_sayfalara_bol(tam_yanit, 2000)
-                    st.session_state.aktif_sayfa = 0 # İlk sayfadan başla
-                    from ictihat_engine import IctihatEngine
+        # 1. ARAMA BUTONU
+        if st.button("🔎 İçtihatları ve Emsalleri Getir", use_container_width=True):
+            if olay_input:
+                st.info("🔎 Kütüphane taranıyor, sayfalar hazırlanıyor...")
+                from ictihat_engine import IctihatEngine
                 
-                    # 1. AI'dan tam yanıtı al (Akış bittikten sonra sayfalamaya geçeceğiz)
-                    stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
-                    tam_yanit = ""
-                    placeholder = st.empty()
+                # AI'dan tam yanıtı al
+                stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
+                tam_metin = "".join([p.text for p in stream if hasattr(p, 'text')])
                 
-                    for parca in stream:
-                        if hasattr(parca, 'text') and parca.text:
-                            tam_yanit += parca.text
-                            placeholder.markdown(tam_yanit + "▌")
-                
-                    # 2. Yanıtı sayfalara böl ve Session State'e kaydet
-                    st.session_state.kitap_sayfalari = metni_sayfalara_bol(tam_yanit, 2000)
-                    st.session_state.aktif_sayfa = 0
-                    placeholder.empty()
+                # TEST İÇİN: Kelime sınırını 300 yapalım ki bu rapor 3 sayfa bölünsün
+                st.session_state.kitap_sayfalari = metni_sayfalara_bol(tam_metin, kelime_siniri=300)
+                st.session_state.aktif_sayfa = 0
+                st.rerun() # Hafızaya aldık, sayfayı yenileyip kitabı göster!
 
-            # 3. SAYFALAMA VE GÖRÜNÜM (Eğer hafızada sayfa varsa göster)
-            if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
-                sayfalar = st.session_state.kitap_sayfalari
-                aktif = st.session_state.aktif_sayfa
+        # 2. KİTAP GÖRÜNÜMÜ (Arama Butonunun Tamamen Dışında!)
+        if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
+            sayfalar = st.session_state.kitap_sayfalari
+            aktif = st.session_state.aktif_sayfa
             
-                # --- Dijital Kitap Sayfası Tasarımı ---
-                st.markdown(f"""
-                <div style="
-                    background-color: #fdf6e3; 
-                    padding: 40px; 
-                    border-left: 12px solid #8e735b; 
-                    border-radius: 5px; 
-                    box-shadow: 5px 5px 20px rgba(0,0,0,0.1);
-                    color: #2c2c2c;
-                    font-family: 'Georgia', serif;
-                    min-height: 500px;
-                ">
-                    <div style="text-align: right; font-size: 12px; color: #8e735b; font-weight: bold;">
-                        SAYFA {aktif + 1} / {len(sayfalar)}
-                    </div>
-                    <h2 style="color: #8e735b; border-bottom: 1px solid #8e735b; margin-bottom: 20px;">📜 İÇTİHAT ŞERHİ</h2>
-                    <div style="font-size: 17px; line-height: 1.8; text-align: justify;">
-                        {sayfalar[aktif].replace('\n', '<br>')}
-                    </div>
+            # --- Dijital Kitap Sayfası Tasarımı ---
+            st.markdown(f"""
+            <div style="
+                background-color: #fdf6e3; 
+                padding: 40px; 
+                border-left: 12px solid #8e735b; 
+                border-radius: 5px; 
+                box-shadow: 5px 5px 20px rgba(0,0,0,0.1);
+                color: #2c2c2c;
+                font-family: 'Georgia', serif;
+                min-height: 450px;
+            ">
+                <div style="text-align: right; font-size: 12px; color: #8e735b; font-weight: bold;">
+                    SAYFA {aktif + 1} / {len(sayfalar)}
                 </div>
-                """, unsafe_allow_html=True)
+                <h2 style="color: #8e735b; border-bottom: 1px solid #8e735b; margin-bottom: 20px;">📜 JUNILEX İÇTİHAT ŞERHİ</h2>
+                <div style="font-size: 17px; line-height: 1.8; text-align: justify;">
+                    {sayfalar[aktif].replace('\\n', '<br>')}
+                </div>
+                <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #aaa;">
+                    Evrak Güvenliği: Junilex Dijital Arşiv Sistemi
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-                # --- Sayfa Geçiş Butonları ---
-                st.write("") # Boşluk
-                col1, col2, col3 = st.columns([1, 2, 1])
-            
-                with col1:
-                    if aktif > 0:
-                        if st.button("⬅️ Önceki Sayfa", use_container_width=True):
-                            st.session_state.aktif_sayfa -= 1
-                            st.rerun()
-            
-                with col3:
-                    if aktif < len(sayfalar) - 1:
-                        if st.button("Sonraki Sayfa ➡️", use_container_width=True):
-                            st.session_state.aktif_sayfa += 1
-                            st.rerun()
+            # --- Navigasyon Butonları ---
+            st.write("") 
+            n1, n2, n3 = st.columns([1, 2, 1])
+            with n1:
+                if aktif > 0:
+                    if st.button("⬅️ Önceki"):
+                        st.session_state.aktif_sayfa -= 1
+                        st.rerun()
+            with n3:
+                if aktif < len(sayfalar) - 1:
+                    if st.button("Sonraki ➡️"):
+                        st.session_state.aktif_sayfa += 1
+                        st.rerun()
+            with n2:
+                if st.button("🗑️ Aramayı Kapat", use_container_width=True):
+                    del st.session_state.kitap_sayfalari
+                    st.rerun())
             
                 with col2:
                     st.write(f"<center>Toplam {len(sayfalar)} sayfa bulundu.</center>", unsafe_allow_html=True)
