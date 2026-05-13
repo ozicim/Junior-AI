@@ -61,18 +61,20 @@ class IctihatEngine:
             model = genai.GenerativeModel('gemini-1.5-pro')
             
             prompt = f"""
-            Sen kıdemli bir Yargıtay tetkik hakimisin. Sana anlatılan olayla ilgili emsal teşkil edebilecek yerleşik içtihatları ve varsa ilgili Yargıtay Dairesi kararlarını bulup analiz etmelisin.
+            Sen uzman bir hukuk tetkik hakimisin. Aşağıdaki olaya benzer yerleşik Yargıtay içtihatlarını bul ve analiz et.
             
             OLAY: {olay_ozeti}
             
-            GÖREVİN:
-            1. Bu olayla ilgili Yargıtay'ın genel görüşünü (yerleşik içtihat) açıkla.
-            2. Varsa benzer dosyalarda verilen emsal karar numaralarını veya tarihlerini belirt.
-            3. Olaydaki hukuki anahtar kelimeleri ve ilgili kanun maddelerini listele.
-            4. Karşı oy veya istisnai durumlar varsa belirt.
+            ANALİZ PLANI:
+            1. Olaydaki hukuki uyuşmazlığın tespiti.
+            2. Yargıtay'ın bu konudaki genel ve yerleşik görüşü.
+            3. Varsa bilinen emsal karar numaraları ve daire bilgileri.
+            4. İlgili kanun maddeleri ve ispat kuralları.
             """
             
+            # Akışı (Streaming) başlatıyoruz
             response = model.generate_content(prompt, stream=True)
             return response
         except Exception as e:
-            return f"Emsal arama hatası: {str(e)}"
+            # Hata durumunda bunu bir liste/akış gibi döndürmeliyiz ki write_stream patlamasın
+            return [f"Emsal arama hatası: {str(e)}"]
