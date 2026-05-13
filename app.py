@@ -708,7 +708,7 @@ elif menu == "⚖️ İçtihat Sorgulama":
             with n2:
                 if st.button("🗑️ Aramayı Kapat", use_container_width=True):
                     del st.session_state.kitap_sayfalari
-                    st.rerun())
+                    st.rerun()
             
                 with col2:
                     st.write(f"<center>Toplam {len(sayfalar)} sayfa bulundu.</center>", unsafe_allow_html=True)
