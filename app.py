@@ -204,10 +204,15 @@ if "Adliye" in menu:
         
         st.divider()
         st.subheader("🤖 JUNIOR AI Analizi")
-        if st.button("🚀 Maddeyi Yapay Zeka ile Yorumla"):
-            with st.spinner("AI analiz yapıyor..."):
-                analiz = MevzuatBulutEngine.madde_analiz_et(MY_API_KEY, madde['metin'], kanun['isim'], madde['no'])
-                st.markdown(f'<div class="hoca-anlatim-kutusu">{analiz}</div>', unsafe_allow_html=True)
+        if st.button("⚖️ Maddeyi Analiz Et"):
+    if mevzuat_sorusu:
+        st.markdown("### 🤖 JUNILEX Analizi:")
+        
+        # Fonksiyonu çağırıyoruz
+        stream = MevzuatBulutEngine.mevzuat_yorumlama(MY_API_KEY, madde_metni, mevzuat_sorusu)
+        
+        # PSIKOLOJİK HIZ: Kullanıcı metni anında görmeye başlar
+        tam_metin = st.write_stream(stream)
 
 # --- MOD 2: AKADEMİ ---
 elif menu == "🎓 Akademi (Ders Notları)":
