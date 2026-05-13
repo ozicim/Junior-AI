@@ -202,18 +202,27 @@ if "Adliye" in menu:
             </div>
         """, unsafe_allow_html=True)
         
-        st.divider()
-        st.subheader("🤖 JUNIOR AI Analizi")
-        mevzuat_sorusu = st.text_input("Bu madde hakkında neyi merak ediyorsun?", placeholder="Örn: Bu madde neyi amaçlıyor?")
-        if st.button("⚖️ Maddeyi Analiz Et"):
-            if mevzuat_sorusu:
-                st.markdown("### 🤖 JUNILEX Analizi:")
-        
-                # Fonksiyonu çağırıyoruz
-                stream = MevzuatBulutEngine.madde_analiz_et(MY_API_KEY, madde_metni, mevzuat_sorusu)
-        
-                # PSIKOLOJİK HIZ: Kullanıcı metni anında görmeye başlar
-                tam_metin = st.write_stream(stream)
+        if st.session_state.bulunan_madde: # Eğer bir madde bulunduysa
+            # 1. Önce maddenin metnini bir değişkene hapsedelim
+            mevcut_madde = st.session_state.bulunan_madde
+            madde_metni = mevcut_madde['metin'] # İşte NameError'ı bitiren satır!
+    
+            st.divider()
+            st.markdown("### 🤖 JUNILEX AI - Madde Yorumlama")
+    
+            mevzuat_sorusu = st.text_input("Bu madde hakkında neyi merak ediyorsun?", key="mevzuat_input")
+
+            if st.button("⚖️ Maddeyi Analiz Et"):
+                if mevzuat_sorusu:
+                    st.info("📊 Mevzuat uzmanı analiz ediyor...")
+            
+                    # NOT: Eğer metodun adı 'madde_analiz_et' ise onu kullan, 
+                    # eğer benim önerdiğim 'mevzuat_yorumlama' ise onu yaz.
+                    stream = MevzuatBulutEngine.mevzuat_yorumlama(MY_API_KEY, madde_metni, mevzuat_sorusu)
+            
+                    st.write_stream(stream)
+                else:
+                    st.warning("Lütfen bir soru yazın ustam!")
 
 # --- MOD 2: AKADEMİ ---
 elif menu == "🎓 Akademi (Ders Notları)":
