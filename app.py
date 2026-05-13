@@ -690,7 +690,7 @@ elif menu == "⚖️ İçtihat Sorgulama":
             if karar_input and soru_input:
                 st.info("📊 Karar tetkik ediliyor...")
                 from ictihat_engine import IctihatEngine
-                stream = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_input, soru_input)
+                    stream = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_input, soru_input)
                     st.session_state.analiz_sayfalari = metni_sayfalara_bol(tam_metn, 300)
                     st.session_state.analiz_aktif_sayfa = 0
                     st.rerun()
