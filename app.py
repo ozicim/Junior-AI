@@ -658,6 +658,13 @@ elif menu == "⚖️ İçtihat Sorgulama":
             if st.button("🔎 Benzer İçtihatları Getir", use_container_width=True):
                 if olay_input:
                     st.info("🔎 Kütüphane taranıyor...")
+                    # 1. AI'dan tam yanıtı alıyoruz
+                    stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
+                    tam_yanit = "".join([p.text for p in stream if hasattr(p, 'text')])
+        
+        #
+                    st.session_state.kitap_sayfalari = metni_sayfalara_bol(tam_yanit, 2000)
+                    st.session_state.aktif_sayfa = 0 # İlk sayfadan başla
                     from ictihat_engine import IctihatEngine
                 
                     # 1. AI'dan tam yanıtı al (Akış bittikten sonra sayfalamaya geçeceğiz)
