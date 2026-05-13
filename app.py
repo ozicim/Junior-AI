@@ -718,13 +718,8 @@ elif menu == "⚖️ İçtihat Sorgulama":
                             st.session_state.aktif_sayfa = 0
                             st.success("✅ Veriler getirildi!")
                             st.rerun()
-                        else:
-                            st.error("⚠️ AI motoru cevap verdi ama içerik tamamen boş. API Kotasını kontrol edin.")
-                            
-                    except Exception as e:
-                        st.error(f"❌ Akış sırasında bir hata oluştu: {str(e)}")
-                else:
-                    st.warning("Lütfen bir olay metni girin!")
+                    else:
+                        st.error("⚠️ AI motoru cevap verdi ama içerik tamamen boş. API Kotasını kontrol edin.")
 
         with c2:
             if st.button("🗑️ Temizle", use_container_width=True):
