@@ -4,6 +4,7 @@ from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine
 from dilekce_engine import DilekceEngine
 from akademik_sinav_modu import AkademikSinavEngine
+from ictihat_engine import IctihatEngine
 from fpdf import FPDF
 import os
 import urllib.request
@@ -694,22 +695,18 @@ elif menu == "⚖️ İçtihat Sorgulama":
         
     with tab2:
         st.subheader("🔎 Olaydan Emsal Bul")
-        olay_input = st.text_area("Olayı Anlatın", height=250, key="o_input_final")
+        olay_input = st.text_area("Olayı Anlatın", height=150, key="emsal_input_final_v3")
         
-        # ARAMA BUTONLARI
-        c1, c2 = st.columns([1, 1])
+        c1, c2 = st.columns(2)
+        
         with c1:
             if st.button("🔎 İçtihatları Getir", use_container_width=True):
                 if olay_input:
-                    # DİKKAT: Import satırı tam olarak bu hizada olmalı (Sıfır hata için)
-                    from ictihat_engine import IctihatEngine
-                    
-                    
-                    # AI'dan yanıtı alıyoruz
+                    st.info("🔎 Kütüphane taranıyor...")
+                    # Import yukarıda olduğu için direkt çağırıyoruz
                     stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
                     tam_metin = "".join([p.text for p in stream if hasattr(p, 'text')])
                     
-                    # Sayfalara bölüyoruz (Test için 400 kelime idealdir ustam)
                     st.session_state.kitap_sayfalari = metni_sayfalara_bol(tam_metin, 400)
                     st.session_state.aktif_sayfa = 0
                     st.rerun()
