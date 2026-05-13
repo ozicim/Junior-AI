@@ -52,21 +52,25 @@ class IctihatEngine:
 
  
     @classmethod
-    def serper_search(cls, query, api_key):
-        """Serper.dev üzerinden Google araması yapar."""
-        url = "https://google.serper.dev/search"
-        payload = json.dumps({
-            "q": f"site:kararara.com OR site:kazanci.com.tr OR site:leperas.com.tr {query}",
-            "gl": "tr",
-            "hl": "tr"
-        })
-        headers = {
-            'X-API-KEY': api_key,
-            'Content-Type': 'application/json'
-        }
+def serper_search(cls, query, api_key):
+    """3 farklı koldan arama yaparak emsal yakalama şansını artırır."""
+    url = "https://google.serper.dev/search"
+    # Sadece olayı değil, 'Esas Karar No' gibi teknik kelimeleri de zorluyoruz.
+    queries = [
+        f"Yargıtay emsal karar Esas Karar No {query}",
+        f"site:kararara.com {query} ispat yükü",
+        f"site:barobirlik.org.tr {query} yargıtay kararı"
+    ]
+    
+    combined_results = []
+    for q in queries:
+        payload = json.dumps({"q": q, "gl": "tr", "hl": "tr", "num": 5}) # Her sorgudan 5 sonuç
+        headers = {'X-API-KEY': api_key, 'Content-Type': 'application/json'}
         response = requests.request("POST", url, headers=headers, data=payload)
-        return response.json()
-
+        combined_results.extend(response.json().get('organic', []))
+    
+    return combined_results
+    
     @classmethod
     def emsal_ara(cls, gemini_key, serper_key, olay_ozeti):
         try:
