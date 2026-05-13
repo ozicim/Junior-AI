@@ -232,6 +232,10 @@ if "Adliye" in menu:
                     madde_no, 
                     mevzuat_sorusu, # 'soru' buraya 5. parametre olarak eklenmeli
                 )
+                    def stream_izleyici(akistan_gelenler):
+                        for parca in akistan_gelenler:
+                            if parca.text:
+                                yield parca.text
             
                     st.write_stream(stream)
                 else:
