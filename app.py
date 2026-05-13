@@ -48,7 +48,7 @@ def kanun_sec(kanun):
     st.session_state.arama_sonuclari = []
     ekran_degistir('maddeSecim')
     
-def metni_sayfalara_bol(metin, kelime_siniri=400):
+def metni_sayfalara_bol(metin, kelime_siniri=300):
     """
     Verilen metni yaklaşık 400 kelimelik sayfalara böler.
     """
