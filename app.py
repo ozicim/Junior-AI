@@ -20,6 +20,7 @@ st.set_page_config(page_title="JUNIOR AI", page_icon="⚖️", layout="centered"
 
 # --- API ANAHTARINI BURAYA YAZ ---
 MY_API_KEY = st.secrets["GEMINI_API_KEY"]
+SERPER_API_KEY = st.secrets["SERPER_API_KEY"]
 
 
 # 2. SESSION STATE BAŞLATMA
