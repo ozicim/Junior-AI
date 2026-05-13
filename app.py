@@ -349,10 +349,10 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 # Akışı ekrana basıyoruz
                 st.write_stream(stream)
                     
-                    if not not_metni:
-                        not_metni = "Öğrenci sisteme henüz güncel bir PDF metni okutmadı, lütfen genel hukuk bilginle detaylıca anlat."
-                    else:
-                        not_metni = str(not_metni)
+                if not not_metni:
+                    not_metni = "Öğrenci sisteme henüz güncel bir PDF metni okutmadı, lütfen genel hukuk bilginle detaylıca anlat."
+                else:
+                    not_metni = str(not_metni)
                         
                     try:
                         # 1. AI'dan Tam Cevabı Al
