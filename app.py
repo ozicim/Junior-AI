@@ -205,14 +205,14 @@ if "Adliye" in menu:
         st.divider()
         st.subheader("🤖 JUNIOR AI Analizi")
         if st.button("⚖️ Maddeyi Analiz Et"):
-        if mevzuat_sorusu:
-            st.markdown("### 🤖 JUNILEX Analizi:")
+            if mevzuat_sorusu:
+                st.markdown("### 🤖 JUNILEX Analizi:")
         
-            # Fonksiyonu çağırıyoruz
-            stream = MevzuatBulutEngine.mevzuat_yorumlama(MY_API_KEY, madde_metni, mevzuat_sorusu)
+                # Fonksiyonu çağırıyoruz
+                stream = MevzuatBulutEngine.mevzuat_yorumlama(MY_API_KEY, madde_metni, mevzuat_sorusu)
         
-            # PSIKOLOJİK HIZ: Kullanıcı metni anında görmeye başlar
-            tam_metin = st.write_stream(stream)
+                # PSIKOLOJİK HIZ: Kullanıcı metni anında görmeye başlar
+                tam_metin = st.write_stream(stream)
 
 # --- MOD 2: AKADEMİ ---
 elif menu == "🎓 Akademi (Ders Notları)":
