@@ -48,28 +48,27 @@ class IctihatEngine:
 
     @classmethod
     def emsal_ara(cls, api_key, olay_ozeti):
-        """
-        Kullanıcının anlattığı olaya benzer yerleşik içtihat yaklaşımlarını bulur.
-        """
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            model = genai.GenerativeModel('gemini-1.5-flash')
             
-            # PROMPT GÜNCELLEME: Kısa ve öz "Özet Kart" formatı
+            # PROMPT: Artik spesifik karar numaralari istiyoruz
             prompt = f"""
-            Sen kıdemli bir Yargıtay tetkik hakimisin. Aşağıdaki olayı en kısa ve öz şekilde analiz et. 
-            SADECE şu 3 başlığı kullan ve her birini maksimum 2-3 cümleyle açıkla:
-
-            1. **⚖️ Hukuki Teşhis:** Olayın kanundaki tam karşılığı ve ilgili madde.
-            2. **📌 Yargıtay'ın Kırmızı Çizgisi:** Bu konuda asla taviz verilmeyen ana ilke.
-            3. **🔍 Emsal Yaklaşım:** Mahkemelerin bu durumda verdiği standart karar ve gerekçesi.
+            Sen Yargıtay yayınlarını ezbere bilen kıdemli bir hukukçusun. 
+            Aşağıdaki olayı analiz et ve bu konuda verilmiş gerçek emsal kararlara atıf yap.
 
             OLAY: {olay_ozeti}
+
+            GÖREVİN:
+            Aşağıdaki formatta, hukuki terminolojiye uygun bir "Emsal Notu" hazırla:
+
+            1. **⚖️ Hukuki Teşhis:** Olayın kanuni niteliği (Örn: TBK m. 379 - Kullanım Ödüncü).
+            2. **🔍 Emsal Karar Atıfları:** Bu konuda karar vermiş Yargıtay Dairelerini (Örn: 3. HD, 13. HD vb.) ve varsa örnek Esas/Karar numaralarını belirt.
+            3. **📌 Karar Özeti:** Yargıtay'ın bu tip olaylarda ispat yükü ve kusur konusundaki yerleşik içtihadını açıkla.
+            4. **📢 Netice:** Müvekkilin haklılık durumunu bu içtihatlar ışığında yorumla.
             """
             
             response = model.generate_content(prompt, stream=True)
             return response
-            
         except Exception as e:
-            # Hata durumunda boş bir liste yerine hata mesajı döndüren generator yapısı
-            return f"Emsal arama hatası: {str(e)}"
+            return f"HATA: {str(e)}"
