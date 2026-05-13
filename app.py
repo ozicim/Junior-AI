@@ -379,22 +379,22 @@ elif menu == "🎓 Akademi (Ders Notları)":
         
                 # 3. Akışı ekrana basıyoruz
                 st.write_stream(hoca_suzucu)
-                    try:
-                        # 1. AI'dan Tam Cevabı Al
-                        cevap = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
+                try:
+                    # 1. AI'dan Tam Cevabı Al
+                    cevap = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
                         
-                        # 2. Cevabı Sayfalara Böl (Fermanı Kitaba Çevirme İşlemi)
-                        paragraflar = cevap.split('\n\n')
-                        sayfalar = []
-                        suanki_sayfa = ""
+                    # 2. Cevabı Sayfalara Böl (Fermanı Kitaba Çevirme İşlemi)
+                    paragraflar = cevap.split('\n\n')
+                    sayfalar = []
+                    suanki_sayfa = ""
                         
-                        for p in paragraflar:
-                            # Her sayfa yaklaşık 1200 karakter olsun (Okuma kolaylığı için)
-                            if len(suanki_sayfa) + len(p) > 2000:
-                                sayfalar.append(suanki_sayfa.strip())
-                                suanki_sayfa = p + "\n\n"
-                            else:
-                                suanki_sayfa += p + "\n\n"
+                    for p in paragraflar:
+                        # Her sayfa yaklaşık 1200 karakter olsun (Okuma kolaylığı için)
+                        if len(suanki_sayfa) + len(p) > 2000:
+                            sayfalar.append(suanki_sayfa.strip())
+                            suanki_sayfa = p + "\n\n"
+                        else:
+                            suanki_sayfa += p + "\n\n"
                                 
                         # Kalan son kısmı da son sayfa olarak ekle
                         if suanki_sayfa.strip():
