@@ -404,8 +404,8 @@ elif menu == "🎓 Akademi (Ders Notları)":
                         st.session_state.hoca_sayfalar = sayfalar
                         st.session_state.hoca_aktif_sayfa = 0
                         
-                    except Exception as e:
-                        st.error(f"Hoca cevaplarken bir sorun oluştu: {e}")
+                        except Exception as e:
+                            st.error(f"Hoca cevaplarken bir sorun oluştu: {e}")
             else:
                 st.warning("Lütfen bir soru girin.")
 
