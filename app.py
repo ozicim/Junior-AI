@@ -609,62 +609,46 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
     # --- MOD 4: İÇTİHAT SORGULAMA (Eksik Olan Kısım) ---
-elif "İçtihat" in menu:
-    st.header("⚖️ Yüksek Yargı Karar Analizi")
-    st.info("Yargıtay, Danıştay veya AYM kararlarını buraya yapıştırarak Junilex'in profesyonel şerhini alabilirsiniz.")
-    st.warning("🛡️ **Güvenlik Modu:** Analizler sadece yapıştırdığınız metinle sınırlı tutulur (Sıfır Halüsinasyon).")
+elif menu == "⚖️ İçtihat Sorgulama":
+    st.header("⚖️ İçtihat ve Emsal Merkezi")
     
-    karar_input = st.text_area("Karar Metni", height=350, placeholder="Karar metnini buraya yapıştırın...")
-    soru_input = st.text_input("Bu kararda neyi analiz etmemi istersiniz?", placeholder="Örn: Yerleşik içtihatlara uygun mu?")
-
-    if st.button("⚖️ Kararı Şerh Düş"):
-        if karar_input and soru_input:
-            st.info("📊 Karar dosyası tetkik ediliyor...")
-            
-            try:
-                # ictihat_engine.py dosyasındaki sınıfı çağırıyoruz
+    # Mevzuattaki gibi ikili pencere yapısı
+    tab1, tab2 = st.tabs(["🔍 Karar Analizi (Şerh)", "🔎 Emsal Karar Bulucu"])
+    
+    with tab1:
+        st.subheader("📄 Mevcut Kararı İncele")
+        karar_input = st.text_area("Karar Metni", height=300, key="karar_serh", placeholder="İncelemek istediğiniz kararı yapıştırın...")
+        soru_input = st.text_input("Bu kararda neyi arıyoruz?", key="karar_soru")
+        
+        if st.button("⚖️ Kararı Şerh Düş"):
+            if karar_input and soru_input:
+                st.info("📊 Karar tetkik ediliyor...")
                 from ictihat_engine import IctihatEngine
-                
-                # 1. Akışı başlatıyoruz
                 stream = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_input, soru_input)
                 
-                # 2. Süzgeç fonksiyonu (Generator)
                 def ictihat_suzucu():
                     for parca in stream:
                         if hasattr(parca, 'text') and parca.text:
                             yield parca.text
-                
-                # 3. Ekrana daktilo hızıyla yazdırıyoruz
                 st.write_stream(ictihat_suzucu)
+            else:
+                st.warning("Lütfen alanları doldurunuz.")
+
+    with tab2:
+        st.subheader("🔎 Olaydan Emsal Bul")
+        st.write("Olayı anlatın, Junilex benzer içtihatları ve Yargıtay görüşlerini getirsin.")
+        olay_input = st.text_area("Olay Özeti", height=300, key="olay_emsal", placeholder="Örn: Mirasçının saklı payının ihlali durumunda...")
+        
+        if st.button("🔎 Benzer İçtihatları Getir"):
+            if olay_input:
+                st.info("🔎 Emsal kararlar ve yerleşik içtihatlar taranıyor...")
+                from ictihat_engine import IctihatEngine
+                stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
                 
-                st.divider()
-                st.caption("⚠️ Not: Bu analiz yapay zeka tarafından sağlanan bir özet olup, resmi evrak yerine geçmez.")
-                
-            except Exception as e:
-                st.error(f"Analiz motoru başlatılamadı: {e}")
-        else:
-            st.warning("Ustam, analiz için hem karar metnini hem de sorunu girmelisin!")
-        # app.py içine eklenecek yeni mantık
-elif menu == "🔎 Emsal Karar Bulucu":
-    st.header("🔎 Olaydan İçtihat Bulma")
-    st.info("Olayı detaylıca anlatın, Junilex benzer yargı kararlarını ve yerleşik içtihatları bulsun.")
-    
-    olay_ozeti = st.text_area("Olayı Anlatın", height=250, placeholder="Örn: İşçinin iş yerinde kavga etmesi üzerine tazminatsız kovulması...")
-    
-    if st.button("⚖️ Emsal Ara"):
-        if olay_ozeti:
-            st.info("🔎 Veritabanı taranıyor ve emsaller analiz ediliyor...")
-            
-            # Burada 'IctihatEngine.emsal_bul' gibi bir fonksiyon çağıracağız
-            # Şimdilik Gemini'nin kendi içindeki genel hukuk bilgisini kullanabiliriz
-            # Ama asıl güç, ona bir karar arşivi verdiğimizde ortaya çıkacak.
-            
-            from ictihat_engine import IctihatEngine
-            stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_ozeti)
-            
-            def emsal_suzucu():
-                for parca in stream:
-                    if hasattr(parca, 'text') and parca.text:
-                        yield parca.text
-            
-            st.write_stream(emsal_suzucu)      
+                def emsal_suzucu():
+                    for parca in stream:
+                        if hasattr(parca, 'text') and parca.text:
+                            yield parca.text
+                st.write_stream(emsal_suzucu)
+            else:
+                st.warning("Lütfen olay özetini giriniz.")      
