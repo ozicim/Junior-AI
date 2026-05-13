@@ -644,4 +644,27 @@ elif "İçtihat" in menu:
                 st.error(f"Analiz motoru başlatılamadı: {e}")
         else:
             st.warning("Ustam, analiz için hem karar metnini hem de sorunu girmelisin!")
-                
+        # app.py içine eklenecek yeni mantık
+elif menu == "🔎 Emsal Karar Bulucu":
+    st.header("🔎 Olaydan İçtihat Bulma")
+    st.info("Olayı detaylıca anlatın, Junilex benzer yargı kararlarını ve yerleşik içtihatları bulsun.")
+    
+    olay_ozeti = st.text_area("Olayı Anlatın", height=250, placeholder="Örn: İşçinin iş yerinde kavga etmesi üzerine tazminatsız kovulması...")
+    
+    if st.button("⚖️ Emsal Ara"):
+        if olay_ozeti:
+            st.info("🔎 Veritabanı taranıyor ve emsaller analiz ediliyor...")
+            
+            # Burada 'IctihatEngine.emsal_bul' gibi bir fonksiyon çağıracağız
+            # Şimdilik Gemini'nin kendi içindeki genel hukuk bilgisini kullanabiliriz
+            # Ama asıl güç, ona bir karar arşivi verdiğimizde ortaya çıkacak.
+            
+            from ictihat_engine import IctihatEngine
+            stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_ozeti)
+            
+            def emsal_suzucu():
+                for parca in stream:
+                    if hasattr(parca, 'text') and parca.text:
+                        yield parca.text
+            
+            st.write_stream(emsal_suzucu)      
