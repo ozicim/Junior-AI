@@ -701,55 +701,55 @@ elif menu == "⚖️ İçtihat Sorgulama":
                 st.warning("Lütfen alanları doldurunuz.")
         
     with tab2:
-    st.subheader("🔎 Emsal Karar ve Mevzuat Bulucu")
-    olay_input = st.text_area("Hukuki Olayı Detaylıca Anlatın", height=150, placeholder="Örn: Sıfır alınan aracın şanzıman arızası...")
+        st.subheader("🔎 Emsal Karar ve Mevzuat Bulucu")
+        olay_input = st.text_area("Hukuki Olayı Detaylıca Anlatın", height=150, placeholder="Örn: Sıfır alınan aracın şanzıman arızası...")
+        
+        if st.button("🔎 İçtihatları Getir", use_container_width=True):
+            if olay_input:
+                with st.spinner("Junilex kütüphaneleri tarıyor ve analiz ediyor..."):
+                    from ictihat_engine import IctihatEngine
+                    
+                    # Serper ve Gemini ile operasyonu başlat
+                    sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
+                    
+                    if sonuc and not sonuc.startswith("HATA"):
+                        # Metni sayfalara böl ve session_state'e kaydet
+                        st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 400)
+                        st.session_state.aktif_sayfa = 0
+                        st.rerun()
+                    else:
+                        st.error(f"Bir sorun oluştu: {sonuc}")
     
-    if st.button("🔎 İçtihatları Getir", use_container_width=True):
-        if olay_input:
-            with st.spinner("Junilex kütüphaneleri tarıyor ve analiz ediyor..."):
-                from ictihat_engine import IctihatEngine
-                
-                # Serper ve Gemini ile operasyonu başlat
-                sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
-                
-                if sonuc and not sonuc.startswith("HATA"):
-                    # Metni sayfalara böl ve session_state'e kaydet
-                    st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 400)
-                    st.session_state.aktif_sayfa = 0
-                    st.rerun()
-                else:
-                    st.error(f"Bir sorun oluştu: {sonuc}")
-
-    # --- SAYFALAMA VE GÖRÜNTÜLEME BLOĞU ---
-    if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
-        sayfalar = st.session_state.kitap_sayfalari
-        aktif = st.session_state.aktif_sayfa
-        
-        # Junilex Şerh Kartı Tasarımı
-        st.markdown(f"""
-        <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); color: #2c3e50; font-family: 'Georgia', serif;">
-            <div style="font-size: 12px; text-transform: uppercase; color: #8d6e63; margin-bottom: 10px; font-weight: bold;">🏛️ Junilex Karar Şerhi - Sayfa {aktif + 1}</div>
-            <div style="font-size: 16px; line-height: 1.6; text-align: justify;">
-                {sayfalar[aktif].replace("\n", "<br>")}
+        # --- SAYFALAMA VE GÖRÜNTÜLEME BLOĞU ---
+        if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
+            sayfalar = st.session_state.kitap_sayfalari
+            aktif = st.session_state.aktif_sayfa
+            
+            # Junilex Şerh Kartı Tasarımı
+            st.markdown(f"""
+            <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); color: #2c3e50; font-family: 'Georgia', serif;">
+                <div style="font-size: 12px; text-transform: uppercase; color: #8d6e63; margin-bottom: 10px; font-weight: bold;">🏛️ Junilex Karar Şerhi - Sayfa {aktif + 1}</div>
+                <div style="font-size: 16px; line-height: 1.6; text-align: justify;">
+                    {sayfalar[aktif].replace("\n", "<br>")}
+                </div>
+                <div style="text-align: right; font-size: 10px; color: #aaa; margin-top: 20px;">Toplam {len(sayfalar)} sayfa mevcuttur.</div>
             </div>
-            <div style="text-align: right; font-size: 10px; color: #aaa; margin-top: 20px;">Toplam {len(sayfalar)} sayfa mevcuttur.</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Navigasyon Butonları
-        st.write("") # Boşluk
-        col1, col2, col3 = st.columns([1, 2, 1])
-        
-        with col1:
-            if aktif > 0:
-                if st.button("⬅️ Geri", use_container_width=True):
-                    st.session_state.aktif_sayfa -= 1
-                    st.rerun()
-        
-        with col3:
-            if aktif < len(sayfalar) - 1:
-                if st.button("İleri ➡️", use_container_width=True):
-                    st.session_state.aktif_sayfa += 1
-                    st.rerun()
+            """, unsafe_allow_html=True)
+            
+            # Navigasyon Butonları
+            st.write("") # Boşluk
+            col1, col2, col3 = st.columns([1, 2, 1])
+            
+            with col1:
+                if aktif > 0:
+                    if st.button("⬅️ Geri", use_container_width=True):
+                        st.session_state.aktif_sayfa -= 1
+                        st.rerun()
+            
+            with col3:
+                if aktif < len(sayfalar) - 1:
+                    if st.button("İleri ➡️", use_container_width=True):
+                        st.session_state.aktif_sayfa += 1
+                        st.rerun()
         
               
