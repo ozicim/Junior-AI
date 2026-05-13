@@ -85,6 +85,8 @@ class MevzuatBulutEngine:
             Madde No: {madde_no}
             Madde Metni: {madde_metni}
             """
+            response = model.generate_content(prompt, stream=True)
+            return response
             
             response = model.generate_content(prompt)
             return response.text
