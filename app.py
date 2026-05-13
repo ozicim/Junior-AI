@@ -461,7 +461,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 
                 # Fontu normale çevirip detayları yazıyoruz
                 pdf.set_font("Roboto", "", size=10)
-                pdf.cell(0, 6, f"İncelenen Evrak: {aktif_not}", ln=True, align='C')
+                pdf.cell(0, 6, f"İncelenen Evrak: {aktif_not_ismi}", ln=True, align='C')
                 pdf.cell(0, 6, "Hazırlayan: Ozan Şahin Sicim (Çankırı Karatekin Üniversitesi Hukuk Fakültesi)", ln=True, align='C')
                 pdf.ln(10)
                 
