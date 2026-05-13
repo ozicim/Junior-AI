@@ -335,10 +335,14 @@ elif menu == "🎓 Akademi (Ders Notları)":
         if "hoca_aktif_sayfa" not in st.session_state:
             st.session_state.hoca_aktif_sayfa = 0
 
-        if st.button("Hocam Anlatır mısınız?"):
-            if soru:
-                with st.spinner("Hocanız notları inceliyor... ⏳"):
-                    not_metni = st.session_state.get('islenmis_not')
+        if st.button("👨‍🏫 Hocaya Sor"):
+        if soru and not_metni:
+            st.markdown("### 🎓 Hoca Anlatıyor...")
+            
+            stream = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru, not_metni)
+            
+            # Akışı ekrana basıyoruz
+            st.write_stream(stream)
                     
                     if not not_metni:
                         not_metni = "Öğrenci sisteme henüz güncel bir PDF metni okutmadı, lütfen genel hukuk bilginle detaylıca anlat."
