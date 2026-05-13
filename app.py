@@ -48,11 +48,17 @@ def kanun_sec(kanun):
     st.session_state.arama_sonuclari = []
     ekran_degistir('maddeSecim')
     
-def metni_sayfalara_bol(metin, kelime_siniri=300):
+def metni_sayfalara_bol(metin, kelime_siniri=400):
+    """
+    Verilen metni yaklaşık 400 kelimelik sayfalara böler.
+    """
+    if not metin:
+        return []
     kelimeler = metin.split()
     sayfalar = []
     for i in range(0, len(kelimeler), kelime_siniri):
-        sayfalar.append(" ".join(kelimeler[i:i + kelime_siniri]))
+        sayfa_icerigi = " ".join(kelimeler[i:i + kelime_siniri])
+        sayfalar.append(sayfa_icerigi)
     return sayfalar
 
 # 4. CSS BLOĞU (TAŞMAYI ÖNLEYEN KESİN ÇÖZÜM)
