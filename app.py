@@ -256,33 +256,76 @@ elif menu == "🎓 Akademi (Ders Notları)":
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
     with tab_mufredat:
-        mufredat = AkademikEngine.get_akademik_mufredat()
-        
-        for sinif, dersler in mufredat.items():
-            with st.expander(f"📍 {sinif}", expanded=False):
-                for ders in dersler:
-                    col_d, col_b = st.columns([4, 1])
-                    with col_d:
-                        st.markdown(f"{ders['ikon']} **{ders['isim']}**")
-                    with col_b:
-                        if st.button("Notları Aç", key=f"notes_{ders['id']}"):
-                            st.session_state.secili_ders = ders
-                            st.session_state.akademi_ekran = 'konular'
-                            st.rerun()
+        st.subheader("📚 Ders ve Konu Seçimi")
+        # Burada ders_listesi ve konu_listesi olduğunu varsayıyoruz (CSV'den gelen)
+        col1, col2 = st.columns(2)
+        with col1:
+            secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi) # Liste senin kodunda tanımlı olmalı
+        with col2:
+            secilen_konu = st.selectbox("Konu Seçiniz", options=konu_listesi)
 
-        # Eğer bir ders seçildiyse alt konuları gösterelim
-        if st.session_state.get('akademi_ekran') == 'konular':
-            st.divider()
-            secili = st.session_state.get('secili_ders', {})
-            if secili:
-                st.markdown(f"### 📑 {secili.get('isim', '')} Konu Başlıkları")
-                konular = ["Genel Kavramlar", "Temel İlkeler", "Uygulama Örnekleri"]
+        if st.button("👨‍🏫 AI Hoca Analiz Et", use_container_width=True):
+            if secilen_ders and secilen_konu:
+                st.info(f"📊 AI Hoca {secilen_ders} - {secilen_konu} konusunu hazırlıyor...")
                 
-                for konu in konular:
-                    with st.expander(f"📙 {konu}"):
-                        st.write("Bu konuya dair özet notlar burada yer alacak.")
-                        if st.button("Hocadan Dinle (AI)", key=f"ai_{konu}_{secili['id']}"):
-                            st.info(f"AI Hoca '{konu}' konusunu hazırlıyor...")
+                # --- İŞTE EKSİK OLAN KISIM BURASI ---
+                try:
+                    # IctihatEngine'i akademi için de kullanabiliriz veya özel bir AkademiEngine yazabilirsin
+                    from ictihat_engine import IctihatEngine 
+                    
+                    # AI'ya ders anlatma talimatı veriyoruz
+                    akademi_prompt = f"{secilen_ders} dersinin {secilen_konu} konusunu bir hukuk profesörü edasıyla, önemli kavramlar ve güncel içtihatlar eşliğinde kapsamlı şekilde anlat."
+                    
+                    # Not: emsal_ara fonksiyonunu genel bir "analiz" motoru gibi kullanıyoruz
+                    stream = IctihatEngine.emsal_ara(MY_API_KEY, akademi_prompt)
+                    
+                    tam_ders_notu = ""
+                    placeholder = st.empty()
+                    
+                    for parca in stream:
+                        if hasattr(parca, 'text') and parca.text:
+                            tam_ders_notu += parca.text
+                            placeholder.markdown(tam_ders_notu + "▌")
+                    
+                    # 2. Analiz bittiğinde Dijital Kitap formatına çevir
+                    st.session_state.akademi_notlari = metni_sayfalara_bol(tam_ders_notu, 400)
+                    st.session_state.akademi_aktif_sayfa = 0
+                    placeholder.empty()
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"Hoca derse giremedi ustam: {e}")
+            else:
+                st.warning("Lütfen ders ve konu seçin!")
+
+        # --- DİJİTAL KİTAP GÖRÜNÜMÜ (Müfredat İçin) ---
+        if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
+            sayfalar = st.session_state.akademi_notlari
+            aktif = st.session_state.akademi_aktif_sayfa
+            
+            # İçerik Düzenleme (Görseli güzelleştiriyoruz)
+            icerik = sayfalar[aktif].replace("### ", "<h3>").replace("#### ", "<h4>").replace("**", "<b>").replace("\n", "<br>")
+            
+            st.markdown(f"""
+            <div style="background-color: #fdfaf1; padding: 40px; border-left: 15px solid #2e7d32; border-radius: 5px; box-shadow: 5px 5px 20px rgba(0,0,0,0.1); color: #263238; font-family: 'Times New Roman', serif;">
+                <div style="text-align: right; font-size: 12px; color: #2e7d32; font-weight: bold;">DERS NOTU: SAYFA {aktif + 1} / {len(sayfalar)}</div>
+                <h2 style="color: #1b5e20; border-bottom: 1px solid #c8e6c9; margin-bottom: 20px;">🎓 AKADEMİK ŞERH</h2>
+                <div style="font-size: 18px; line-height: 1.7; text-align: justify;">{icerik}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Navigasyon
+            n1, n2, n3 = st.columns([1, 2, 1])
+            with n1:
+                if aktif > 0:
+                    if st.button("⬅️ Önceki Sayfa", key="akademi_prev"):
+                        st.session_state.akademi_aktif_sayfa -= 1
+                        st.rerun()
+            with n3:
+                if aktif < len(sayfalar) - 1:
+                    if st.button("Sonraki Sayfa ➡️", key="akademi_next"):
+                        st.session_state.akademi_aktif_sayfa += 1
+                        st.rerun()
 
 # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
