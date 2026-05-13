@@ -1,4 +1,4 @@
-import streamlit as st
+"import streamlit as st
 import firebase_admin
 from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine
@@ -349,65 +349,64 @@ elif menu == "🎓 Akademi (Ders Notları)":
 
         st.markdown("---")
 
-       # --- 3. KISIM: SORU SORMA ALANI (DİJİTAL KİTAP MODU) ---
+      # --- 3. KISIM: SORU SORMA ALANI (DİJİTAL KİTAP MODU) ---
         st.subheader("❓ Notlara Soru Sor")
         
-        aktif_not = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
-        st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not}")
+        aktif_not_ismi = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
+        st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not_ismi}")
         
-        soru = st.text_input("Notlarda hangi kısmı anlamadın?", placeholder="Örn: Butlan ve İptal farkı", key="akademi_soru_kutusu_1")
+        # Değişkenleri session_state'den güvenli bir şekilde alalım
+        not_icerigi = st.session_state.get('islenmis_not', "")
         
-        # Kitap Sayfalarını Tutacağımız Hafıza (Session State)
+        # Sadece bir tane soru kutusu kalsın ustam, eskilerini sildim
+        soru_input = st.text_input("Hocaya sormak istediğin soru nedir?", placeholder="Örn: Butlan ve İptal farkı")
+        
+        # Sayfaları tutmak için session state hazırlığı
         if "hoca_sayfalar" not in st.session_state:
             st.session_state.hoca_sayfalar = []
         if "hoca_aktif_sayfa" not in st.session_state:
             st.session_state.hoca_aktif_sayfa = 0
-            
-        soru = st.text_input("Hocaya sormak istediğin soru nedir?")
+
         if st.button("👨‍🏫 Hocaya Sor"):
-            if soru:
+            if soru_input:
                 st.markdown("### 🎓 JUNILEX Hoca Anlatıyor:")
-        
-                # 1. Akışı başlatıyoruz
-                stream = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru,)
-        
-                # 2. Hoca anlatımını süzerek getiren yardımcı fonksiyon
-                def hoca_suzucu():
-                    for parca in stream:
-                        if parca.text:
-                            yield parca.text
-        
-                # 3. Akışı ekrana basıyoruz
-                st.write_stream(hoca_suzucu)
+                
                 try:
-                    # 1. AI'dan Tam Cevabı Al
-                    cevap = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru,)
-                        
-                    # 2. Cevabı Sayfalara Böl (Fermanı Kitaba Çevirme İşlemi)
-                    paragraflar = cevap.split('\n\n')
+                    # 1. Akışı (Streaming) başlatıyoruz - 3. parametre olarak notu ekledik
+                    stream = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru_input, not_icerigi)
+            
+                    # 2. SÜZGEÇ: Gelen ham paketlerden sadece metni çekiyoruz
+                    def hoca_suzucu():
+                        for parca in stream:
+                            if hasattr(parca, 'text') and parca.text:
+                                yield parca.text
+            
+                    # 3. Ekrana daktilo hızıyla basıyoruz ve TAM METNİ yakalıyoruz
+                    tam_cevap = st.write_stream(hoca_suzucu)
+                    
+                    # 4. Yakaladığımız tam cevabı sayfalara bölüyoruz (Kitap Modu İçin)
+                    paragraflar = tam_cevap.split('\n\n')
                     sayfalar = []
                     suanki_sayfa = ""
-                        
+                    
                     for p in paragraflar:
-                        # Her sayfa yaklaşık 1200 karakter olsun (Okuma kolaylığı için)
-                        if len(suanki_sayfa) + len(p) > 2000:
+                        if len(suanki_sayfa) + len(p) > 1500:
                             sayfalar.append(suanki_sayfa.strip())
                             suanki_sayfa = p + "\n\n"
                         else:
                             suanki_sayfa += p + "\n\n"
-                                
-                        # Kalan son kısmı da son sayfa olarak ekle
-                        if suanki_sayfa.strip():
-                            sayfalar.append(suanki_sayfa.strip())
-                            
-                        # Hafızaya Kaydet ve Sayfayı 1. Sayfaya Sıfırla
-                        st.session_state.hoca_sayfalar = sayfalar
-                        st.session_state.hoca_aktif_sayfa = 0
-                        
+                    
+                    if suanki_sayfa.strip():
+                        sayfalar.append(suanki_sayfa.strip())
+                    
+                    # Sayfaları kaydedelim
+                    st.session_state.hoca_sayfalar = sayfalar
+                    st.session_state.hoca_aktif_sayfa = 0
+                    
                 except Exception as e:
-                    st.error(f"Hoca cevaplarken bir sorun oluştu: {e}")
+                    st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
             else:
-                st.warning("Lütfen bir soru girin.")
+                st.warning("Lütfen bir soru girin ustam.")
 
         if st.session_state.hoca_sayfalar:
             st.markdown("---")
