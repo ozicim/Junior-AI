@@ -18,7 +18,7 @@ class IctihatEngine:
             }
             
             model = genai.GenerativeModel(
-                model_name='gemini-3-flash',
+                model_name='gemini-2.5-flash',
                 generation_config=generation_config
             )
 
@@ -75,7 +75,7 @@ class IctihatEngine:
 
             # 3. Gemini'a veriyi "kanıt" olarak sun
             genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel('gemini-3-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             
             # PROMPT DÜZELTİLDİ: Tırnaklar ve format birleştirildi
             prompt = f"""
