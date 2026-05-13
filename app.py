@@ -363,7 +363,6 @@ elif menu == "🎓 Akademi (Ders Notları)":
         if "hoca_aktif_sayfa" not in st.session_state:
             st.session_state.hoca_aktif_sayfa = 0
             
-        not_metni = st.text_area("Ders Notlarını Buraya Yapıştır veya Dosyadan Oku", height=250)
         soru = st.text_input("Hocaya sormak istediğin soru nedir?")
         if st.button("👨‍🏫 Hocaya Sor"):
             if soru and not_metni:
@@ -380,11 +379,6 @@ elif menu == "🎓 Akademi (Ders Notları)":
         
                 # 3. Akışı ekrana basıyoruz
                 st.write_stream(hoca_suzucu)
-                    
-                if not not_metni:
-                    not_metni = "Öğrenci sisteme henüz güncel bir PDF metni okutmadı, lütfen genel hukuk bilginle detaylıca anlat."
-                else:
-                    not_metni = str(not_metni)
                         
                     try:
                         # 1. AI'dan Tam Cevabı Al
