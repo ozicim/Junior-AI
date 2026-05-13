@@ -691,14 +691,45 @@ elif menu == "⚖️ İçtihat Sorgulama":
                 st.info("📊 Karar tetkik ediliyor...")
                 from ictihat_engine import IctihatEngine
                 stream = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_input, soru_input)
-                
-                def ictihat_suzucu():
-                    for parca in stream:
-                        if hasattr(parca, 'text') and parca.text:
-                            yield parca.text
-                st.write_stream(ictihat_suzucu)
-            else:
-                st.warning("Lütfen alanları doldurunuz.")
+                    st.session_state.analiz_sayfalari = metni_sayfalara_bol(tam_metn, 300)
+                    st.session_state.analiz_aktif_sayfa = 0
+                    st.rerun()
+    
+        # --- GÖRÜNTÜLEME VE BUTONLAR ---
+        if "analiz_sayfalari" in st.session_state and st.session_state.analiz_sayfalari:
+            sayfalar = st.session_state.analiz_sayfalari
+            aktif = st.session_state.analiz_aktif_sayfa
+            
+            # Junilex Şerh Kartı
+            st.markdown(f"""
+            <div style="background-color: #fdfaf1; padding: 25px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50;">
+                <div style="font-size: 12px; color: #8d6e63; font-weight: bold;">🏛️ ANALİZ ŞERHİ - Sayfa {aktif + 1}</div>
+                <div style="font-size: 16px; line-height: 1.6; margin-top: 15px;">
+                    {sayfalar[aktif].replace("\n", "<br>")}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Sayfa Navigasyonu
+            c1, c2, c3 = st.columns([1, 2, 1])
+            with c1:
+                if aktif > 0:
+                    if st.button("⬅️ Geri", key="analiz_geri"):
+                        st.session_state.analiz_aktif_sayfa -= 1
+                        st.rerun()
+            with c3:
+                if aktif < len(sayfalar) - 1:
+                    if st.button("İleri ➡️", key="analiz_ileri"):
+                        st.session_state.analiz_aktif_sayfa += 1
+                        st.rerun()
+                    
+                    def ictihat_suzucu():
+                        for parca in stream:
+                            if hasattr(parca, 'text') and parca.text:
+                                yield parca.text
+                    st.write_stream(ictihat_suzucu)
+                else:
+                    st.warning("Lütfen alanları doldurunuz.")
         
     with tab2:
         st.subheader("🔎 Emsal Karar ve Mevzuat Bulucu")
