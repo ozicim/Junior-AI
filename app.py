@@ -204,6 +204,7 @@ if "Adliye" in menu:
         
         st.divider()
         st.subheader("🤖 JUNIOR AI Analizi")
+        mevzuat_sorusu = st.text_input("Bu madde hakkında neyi merak ediyorsun?", placeholder="Örn: Bu madde neyi amaçlıyor?")
         if st.button("⚖️ Maddeyi Analiz Et"):
             if mevzuat_sorusu:
                 st.markdown("### 🤖 JUNILEX Analizi:")
