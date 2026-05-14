@@ -323,7 +323,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 st.error(f"Usul hatası: {e}")
 
                     # 2. Motoru Çağırıyoruz (3 Parametre: Gemini Key, Serper Key, Sorgu)
-                    sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, final_sorgu)
+                sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, final_sorgu)
                     
                     if sonuc:
                         # 3. Sonucu sayfalara böl ve hafızaya al
