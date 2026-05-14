@@ -476,14 +476,20 @@ elif menu == "🎓 Akademi (Ders Notları)":
         if "hoca_aktif_sayfa" not in st.session_state:
             st.session_state.hoca_aktif_sayfa = 0
 
-        if st.button("👨‍🏫 Hocaya Sor"):
-            if soru_input:
-                st.markdown("### 🎓 JUNILEX Hoca Anlatıyor:")
-                    sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
-                        MY_API_KEY, 
-                        not_adi, 
-                        st.session_state.islenmis_not # Eksik olan 3. parça burası ustam!
-                    )
+        # ... önceki kodlar ...
+        if st.button("Hocadan Dinle"):
+            with st.spinner("Hoca notları inceliyor..."):
+                # Bu satır tam olarak 'with' ifadesinin 4 boşluk içerisinde olmalı
+                sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
+                    MY_API_KEY,
+                    not_adi,
+                    st.session_state.islenmis_not
+                )
+                
+                if sonuc:
+                    st.session_state.akademi_notlari = sonuc.split("\n\n")
+                    st.session_state.akademi_aktif_sayfa = 0
+                    st.rerun()
                 
                 try:
                     # 1. Akışı (Streaming) başlatıyoruz - 3. parametre olarak notu ekledik
