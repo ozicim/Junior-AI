@@ -740,15 +740,15 @@ elif menu == "⚖️ İçtihat Sorgulama":
             analiz_icerik = sayfalar[aktif].replace("\n", "<br>")
             
             # 733. satır civarındaki kodun düzeltilmiş hali:
-st.markdown(f"""
-<div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); color: #2c3e50; font-family: 'Georgia', serif;">
-    <div style="font-size: 12px; color: #8d6e63; font-weight: bold;">\U0001F3DB ANALİZ ŞERHİ - Sayfa {aktif + 1}</div>
-    <div style="font-size: 16px; line-height: 1.6; text-align: justify;">
-        {sayfalar[aktif].replace("\n", "<br>")}
-    </div>
-    <div style="text-align: right; font-size: 10px; color: #aaa; margin-top: 20px;">Toplam {len(sayfalar)} sayfa mevcuttur.</div>
-</div>
-""", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); color: #2c3e50; font-family: 'Georgia', serif;">
+                <div style="font-size: 12px; color: #8d6e63; font-weight: bold;">\U0001F3DB ANALİZ ŞERHİ - Sayfa {aktif + 1}</div>
+                <div style="font-size: 16px; line-height: 1.6; text-align: justify;">
+                    {sayfalar[aktif].replace("\n", "<br>")}
+                </div>
+                <div style="text-align: right; font-size: 10px; color: #aaa; margin-top: 20px;">Toplam {len(sayfalar)} sayfa mevcuttur.</div>
+            </div>
+            """, unsafe_allow_html=True)
             
             # Sayfa Navigasyonu
             c1, c2, c3 = st.columns([1, 2, 1])
