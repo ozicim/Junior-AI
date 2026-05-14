@@ -328,64 +328,33 @@ elif menu == "🎓 Akademi (Ders Notları)":
             sayfalar = st.session_state.akademi_notlari
             aktif = st.session_state.get('akademi_aktif_sayfa', 0)
             
-            # 1. METİN TEMİZLİĞİ (Dev Yazı Hatasını Kesin Önler)
+            # 1. METİN TEMİZLİĞİ (Alt Başlık Hizalaması ve Kitap Boyutu)
             icerik = sayfalar[aktif]
             
-            # SÜZGEÇ: AI'ın koyduğu #, ##, ###, #### gibi TÜM başlık işaretlerini yakalayıp eziyoruz!
-            # Streamlit'in devasa H1/H2 yapmasını engelleyip, kendi zarif 18px başlığımıza hapsediyoruz.
-            icerik = re.sub(r"#{1,5}\s+(.*?)(?=\n|$)", r"<h3 style='color:#1b5e20; font-family:Georgia; border-bottom: 2px solid #2e7d32; padding-bottom:5px; margin-top:20px; font-size:18px;'>\1</h3>", icerik)
+            # 1. SADECE ANA BAŞLIĞI (###) yakala, altına ekstra bir <br> (Enter) koy
+            icerik = re.sub(r"#{3}\s+(.*?)(?=\n|$)", r"<h3 style='color:#1b5e20; font-family:Georgia; border-bottom: 2px solid #2e7d32; padding-bottom:5px; margin-top:20px; font-size:18px;'>\1</h3><br>", icerik)
             
-            # Kalın yazıları düzelt
+            # 2. AI'ın attığı GEREKSİZ BÜYÜK başlıkları (# veya ##) ezip normal kalın yazı yapıyoruz!
+            icerik = re.sub(r"#{1,2}\s+(.*?)(?=\n|$)", r"<br><br><b style='color:#3e2723; font-size:16px;'>\1</b><br>", icerik)
+            icerik = re.sub(r"#{4,5}\s+(.*?)(?=\n|$)", r"<br><b style='color:#3e2723; font-size:15px;'>\1</b><br>", icerik)
+            
+            # 3. NUMARALI MADDELERİ (Örn: **1. Teorik Çerçeve:**) YAKALA: Önüne net bir Enter (<br><br>) at!
+            icerik = re.sub(r"\n\s*\*\*(.*?)\*\*", r"<br><br><b>\1</b>", icerik)
+            
+            # 4. Cümle içinde kalan diğer kalın yazıları düzelt
             icerik = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", icerik)
             
-            # Özel vurgular
-            icerik = icerik.replace("🔍 GERÇEK EMSAL:", "<br><b style='color:#2e7d32;'>🔍 GERÇEK EMSAL:</b>")
-            icerik = icerik.replace("⚖️ HUKUKİ DAYANAK:", "<br><b style='color:#795548;'>⚖️ HUKUKİ DAYANAK:</b>")
-            icerik = icerik.replace("📢 SONUÇ:", "<br><b style='color:#1565c0;'>📢 SONUÇ:</b>")
+            # 5. Özel kutulara nefes aldır (Önlerine boşluk koyduk)
+            icerik = icerik.replace("🔍 GERÇEK EMSAL:", "<br><br><b style='color:#2e7d32;'>🔍 GERÇEK EMSAL:</b>")
+            icerik = icerik.replace("⚖️ HUKUKİ DAYANAK:", "<br><br><b style='color:#795548;'>⚖️ HUKUKİ DAYANAK:</b>")
+            icerik = icerik.replace("📢 SONUÇ:", "<br><br><b style='color:#1565c0;'>📢 SONUÇ:</b>")
             
-            # Markdown listeleri ve satır atlamaları
+            # 6. Kalan satır sonlarını standart alt satıra çevir
             icerik = icerik.replace("* ", "• ").replace("\n", "<br>")
 
-            # 2. HTML GİYDİRME (Gövde metni 18px'den 15px'e düşürüldü, daha zarif!)
+            # 2. HTML GİYDİRME (Gövde metni 15px, tam kitap kıvamı!)
             st.markdown(f"""
-<div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #2c3e50; font-family: 'Georgia', serif;">
-    <div style="text-align: center; font-variant: small-caps; letter-spacing: 2px; color: #1b5e20; font-size: 22px; margin-bottom: 25px; border-bottom: 1px double #d7ccc8; padding-bottom: 10px; font-weight: bold;">
-        🏛️ Akademik Not Özeti
-    </div>
-    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9e9e9e; margin-bottom: 20px; font-weight: bold; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px;">
-        <span>ÇANKIRI KARATEKİN ÜNİVERSİTESİ HUKUK FAKÜLTESİ</span>
-        <span>SAYFA {aktif + 1} / {len(sayfalar)}</span>
-    </div>
-    <div style="font-size: 15px; line-height: 1.8; text-align: justify; color: #37474f;">
-        {icerik}
-    </div>
-    <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #bcaaa4; letter-spacing: 2px; border-top: 1px dashed #e0e0e0; padding-top: 10px;">
-        - JUNIOR AI HUKUK KÜTÜPHANESİ ARŞİVİ -
-    </div>
-</div>
-""", unsafe_allow_html=True)
-            
-            # --- NAVİGASYON BUTONLARI ---
-            st.write("") # Görsel nefes payı
-            n1, n2, n3 = st.columns([1, 2, 1]) # Butonları yanlara yaslamak için kolonlar
-            
-            with n1:
-                # Eğer ilk sayfada değilsek 'Geri' butonu görünsün
-                if aktif > 0:
-                    if st.button("⬅️ Geri", key="ak_sayfa_geri", use_container_width=True):
-                        st.session_state.akademi_aktif_sayfa -= 1
-                        st.rerun() # Sayfayı yenile ki yeni içerik gelsin
-            
-            with n2:
-                # Orta sütun boş kalsın veya sayfa numarasını yazalım
-                st.markdown(f"<center style='color:#8d6e63;'>{aktif + 1} / {len(sayfalar)}</center>", unsafe_allow_html=True)
-
-            with n3:
-                # Eğer son sayfada değilsek 'İleri' butonu görünsün
-                if aktif < len(sayfalar) - 1:
-                    if st.button("İleri ➡️", key="ak_sayfa_ileri", use_container_width=True):
-                        st.session_state.akademi_aktif_sayfa += 1
-                        st.rerun() # Sayfayı yenile ki yeni içerik gelsin
+<div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #2c3e50; font-family:
 
     # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
