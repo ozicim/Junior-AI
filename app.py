@@ -287,6 +287,9 @@ elif menu == "🎓 Akademi (Ders Notları)":
     # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
+   # ==========================================
+    # 1. SEKME: MÜFREDAT (Ders Listesi)
+    # ==========================================
     tab_mufredat, tab_soru = st.tabs(["📚 Müfredat Analizi", "❓ Hocaya Soru Sor"])
     with tab_mufredat:
         st.subheader("📚 Ders ve Konu Seçimi")
@@ -296,87 +299,76 @@ elif menu == "🎓 Akademi (Ders Notları)":
         with col2:
             secilen_konu = st.selectbox("Konu Seçiniz", options=konu_listesi, key="akademi_konu_v3")
         
-        # Eğer kullanıcı ek not girmek isterse (Opsiyonel)
         akademik_input = st.text_area("Eklemek istediğiniz ders notları veya sorular (Opsiyonel)", height=100, key="akademi_text")
 
-        # app.py içindeki müfredat butonu altı
         if st.button("📚 Notları Analiz Et / Özetle", use_container_width=True):
             try:
                 with st.spinner("Hoca ders notlarını hazırlıyor..."):
+                    # AKADEMİK MOTORU KULLANIYORUZ
                     from akademik_engine import AkademikEngine
                     
-                    # ESKİ: sonuc = IctihatEngine.emsal_ara(...) çağrısını sildik
-                    # YENİ: AkademikEngine üzerinden profesör metodunu çağırıyoruz
+                    # Motoru çağır (Ders, Konu ve Ek Notu gönderiyoruz)
                     sonuc = AkademikEngine.mufredat_hoca_anlat(
                         MY_API_KEY, 
                         SERPER_API_KEY, 
                         secilen_ders, 
                         secilen_konu, 
-                        akademik_text # text_area key'inize göre güncelleyin
+                        akademik_input
                     )
                     
                     if sonuc:
-                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
-                        st.session_state.akademi_aktif_sayfa = 0
-                        st.rerun()
-            except Exception as e:
-                st.error(f"Usul hatası: {e}")
-
-                    # 2. Motoru Çağırıyoruz (3 Parametre: Gemini Key, Serper Key, Sorgu)
-                sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, final_sorgu)
-                    
-                    if sonuc:
-                        # 3. Sonucu sayfalara böl ve hafızaya al
+                        # Sonucu sayfalara böl ve hafızaya al
                         st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
                         st.session_state.akademi_aktif_sayfa = 0
                         st.success("✅ Ders notları başarıyla hazırlandı!")
-                        st.rerun() # Kitap görünümünü tetiklemek için yenile
+                        st.rerun() # Sayfayı yenileyerek kitabı göster
                     else:
                         st.error("AI bir sonuç döndürmedi. Lütfen API anahtarını kontrol edin.")
-
             except Exception as e:
                 st.error(f"Hoca derse giremedi ustam: {e}")
 
-        # --- DİJİTAL KİTAP GÖRÜNÜMÜ (ULTRA PREMİUM TASARIM) ---
+        # --- DİJİTAL KİTAP GÖRÜNÜMÜ ---
         if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
             sayfalar = st.session_state.akademi_notlari
-            # HATA ÖNLEME: Eğer session_state'de anahtar yoksa varsayılan 0 kullan
             aktif = st.session_state.get('akademi_aktif_sayfa', 0)
             
-            # 1. Metni "Hukuk Kitabı" Formatına Çevir (Derin Temizlik)
+            # Metin Temizleme ve Giydirme
             icerik = sayfalar[aktif]
-            
-            # Listelerdeki inatçı yıldızları ve başlıkları temizliyoruz
             icerik = icerik.replace("####", "<br><b style='color:#1b5e20; font-size:1.1em;'>")
             icerik = icerik.replace("###", "<h3 style='color:#2e7d32; border-bottom:1px solid #c8e6c9;'>")
-            
-            # Kutuları temizle: Yıldızları silip kutuyu başlatıyoruz
-            icerik = icerik.replace("* **🔍 Gerçek Emsal:**", "</div><div style='background: #e8f5e9; padding: 15px; border-left: 5px solid #2e7d32; border-radius: 4px; margin: 15px 0;'><b>🔍 Gerçek Emsal:</b>")
-            icerik = icerik.replace("* **⚖️ Hukuki Dayanak:**", "</div><div style='background: #fff3e0; padding: 15px; border-left: 5px solid #ef6c00; border-radius: 4px; margin: 15px 0;'><b>⚖️ Hukuki Dayanak:</b>")
-            icerik = icerik.replace("* **📢 Sonuç:**", "</div><div style='background: #e3f2fd; padding: 15px; border-left: 5px solid #1565c0; border-radius: 4px; margin: 15px 0;'><b>📢 Sonuç:</b>")
-            
-            # Markdown kalın yazıları HTML'e çevir
+            icerik = icerik.replace("**🔍 Gerçek Emsal:**", "</div><div style='background: #e8f5e9; padding: 15px; border-left: 5px solid #2e7d32; border-radius: 4px; margin: 15px 0;'><b>🔍 Gerçek Emsal:</b>")
+            icerik = icerik.replace("**⚖️ Hukuki Dayanak:**", "</div><div style='background: #fff3e0; padding: 15px; border-left: 5px solid #ef6c00; border-radius: 4px; margin: 15px 0;'><b>⚖️ Hukuki Dayanak:</b>")
+            icerik = icerik.replace("**📢 Sonuç:**", "</div><div style='background: #e3f2fd; padding: 15px; border-left: 5px solid #1565c0; border-radius: 4px; margin: 15px 0;'><b>📢 Sonuç:</b>")
             icerik = icerik.replace("**", "<b>").replace("**", "</b>")
-            # Satır sonlarını düzgün boşluklara çevir
             icerik = icerik.replace("\n", "<br>")
 
-            # 2. Ekrana Basma
             st.markdown(f"""
             <div style="background-color: #fdfaf1; padding: 45px; border-left: 15px solid #2e7d32; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); color: #2c3e50; font-family: 'Georgia', serif;">
                 <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 25px;">
                     <span style="font-size: 14px; font-weight: bold; color: #2e7d32;">🏛️ JUNİLEX AKADEMİK ŞERH</span>
                     <span style="font-size: 12px; color: #8d6e63;">SAYFA {aktif + 1} / {len(sayfalar)}</span>
                 </div>
-                
                 <div style="font-size: 18px; line-height: 1.8; text-align: justify; color: #37474f;">
                     {icerik}
                 </div>
-                
                 <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #bcaaa4; border-top: 1px dashed #d7ccc8; padding-top: 10px;">
                     Çankırı Karatekin Üniversitesi Hukuk Fakültesi Arşiv Kaydı
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+            # Navigasyon
+            n1, n2, n3 = st.columns([1, 2, 1])
+            with n1:
+                if aktif > 0:
+                    if st.button("⬅️ Geri", key="ak_prev"):
+                        st.session_state.akademi_aktif_sayfa -= 1
+                        st.rerun()
+            with n3:
+                if aktif < len(sayfalar) - 1:
+                    if st.button("İleri ➡️", key="ak_next"):
+                        st.session_state.akademi_aktif_sayfa += 1
+                        st.rerun()
             
 
             # Navigasyon Butonları (Kodun devamı...)
