@@ -194,7 +194,7 @@ class AkademikEngine:
 
             # Gemini Yapılandırması
             genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('models/gemini-2.5-flash')
 
             prompt = f"""
             SEN BİR HUKUK FAKÜLTESİ ÖĞRETİM ÜYESİSİN.
