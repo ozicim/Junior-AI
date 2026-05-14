@@ -301,17 +301,24 @@ elif menu == "🎓 Akademi (Ders Notları)":
 
         if st.button("📚 Notları Analiz Et / Özetle", use_container_width=True):
             try:
-                with st.spinner("Hoca cübbesini giyiyor, ders notları hazırlanıyor..."):
-                    from ictihat_engine import IctihatEngine
+                with st.spinner("Hoca ders notlarını hazırlıyor..."):
+                    from akademik_engine import AkademikEngine
                     
-                    # 1. Önce Hoca için Promptu Hazırlıyoruz
-                    akademi_prompt = f"{secilen_ders} dersinin {secilen_konu} konusunu bir hukuk öğretim üyesi tarzıyla, örnekler vererek ve güncel içtihatlara değinerek anlat."
+                    # YENİ MOTOR: AkademikEngine üzerinden çağırıyoruz
+                    sonuc = AkademikEngine.mufredat_hoca_anlat(
+                        MY_API_KEY, 
+                        SERPER_API_KEY, 
+                        secilen_ders, 
+                        secilen_konu, 
+                        akademik_text # Text_area'dan gelen ek not
+                    )
                     
-                    # Eğer kullanıcı kutuya not yazdıysa onu da ekliyoruz
-                    if akademik_input:
-                        final_sorgu = f"{akademi_prompt}\n\nÖğrenci Notu/Sorusu: {akademik_input}"
-                    else:
-                        final_sorgu = akademi_prompt
+                    if sonuc:
+                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
+                        st.session_state.akademi_aktif_sayfa = 0
+                        st.rerun()
+            except Exception as e:
+                st.error(f"Usul hatası oluştu: {e}")
 
                     # 2. Motoru Çağırıyoruz (3 Parametre: Gemini Key, Serper Key, Sorgu)
                     sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, final_sorgu)
