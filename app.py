@@ -898,11 +898,11 @@ elif menu == "💬 JUNILEX Chat":
         st.session_state.chat_mode = "Özet"
 
     # 2. Popover Menüsü - Başlık dinamik olarak session_state'ten besleniyor
-    with st.popover(f"⚡ Mod: {st.session_state.chat_mode}"):
+    with st.popover(f" Mod: {st.session_state.chat_mode}"):
         st.markdown("### 🧠 Zeka Yapılandırması")
         secilen_mod = st.radio(
             "Yanıt derinliğini seçin:",
-            ["Özet", "Detaylı Analiz"],
+            ["⚡Özet", "⚖️Detaylı Analiz"],
             index=0 if st.session_state.chat_mode == "Özet" else 1,
             key="chat_mode_radio",
             help="Özet: Hızlı ve net. Detaylı: Derin mütalaa ve kanun analizi."
