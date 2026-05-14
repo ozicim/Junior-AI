@@ -459,74 +459,111 @@ elif menu == "🎓 Akademi (Ders Notları)":
         st.markdown("---")
 
       # --- 3. KISIM: SORU SORMA ALANI (DİJİTAL KİTAP MODU) ---
-        st.subheader("❓ Notlardan Soru Sor")
-        
-        aktif_not_ismi = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
-        st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not_ismi}")
-        
-        # Değişkenleri session_state'den güvenli bir şekilde alalım
-        not_icerigi = st.session_state.get('islenmis_not', "")
-        
-        # Sadece bir tane soru kutusu kalsın ustam, eskilerini sildim
-        soru_input = st.text_input("Hocaya sormak istediğin soru nedir?", placeholder="Örn: Butlan ve İptal farkı")
-        
-        # Sayfaları tutmak için session state hazırlığı
-        if "hoca_sayfalar" not in st.session_state:
-            st.session_state.hoca_sayfalar = []
-        if "hoca_aktif_sayfa" not in st.session_state:
-            st.session_state.hoca_aktif_sayfa = 0
+st.subheader("❓ Notlardan Soru Sor")
 
-        # ... önceki kodlar ...
-        if st.button("Hocadan Dinle"):
-            # 1. Notun varlığını kontrol et
-            if "islenmis_not" in st.session_state and st.session_state.islenmis_not:
-                with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
-                    try:
-                        # 2. Hoca motorunu çağır (Not: Streaming kapalı, tam metin alıyoruz)
-                        # Buradaki 'not_adi' değişkeninin yukarıda tanımlandığından emin ol
-                        # 482. satır civarındaki çağrıyı böyle güncelle:
-                        sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
-                            MY_API_KEY, 
-                            st.session_state.aktif_dosya, # 2. Parametre (Konu/Not Adı)
-                            st.session_state.islenmis_not   # 3. Parametre (Eksik olan not içeriği buydu!)
-                        )
-                        
-                        if sonuc:
-                            # 3. GELEN METNİ SAYFALARA BÖLME MANTIĞI
-                            paragraflar = sonuc.split('\n\n')
-                            sayfalar = []
-                            suanki_sayfa = ""
-                            
-                            for p in paragraflar:
-                                # Her sayfayı yaklaşık 1500 karakter civarında tutuyoruz
-                                if len(suanki_sayfa) + len(p) > 1500:
-                                    sayfalar.append(suanki_sayfa.strip())
-                                    suanki_sayfa = p + "\n\n"
-                                else:
-                                    suanki_sayfa += p + "\n\n"
-                            
-                            if suanki_sayfa.strip():
-                                sayfalar.append(suanki_sayfa.strip())
-                            
-                            # 4. SONUÇLARI KAYDET VE EKRANI YENİLE
-                            st.session_state.akademi_notlari = sayfalar
-                            st.session_state.akademi_aktif_sayfa = 0
-                            st.rerun()
+aktif_not_ismi = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
+st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not_ismi}")
+
+# Değişkenleri session_state'den güvenli bir şekilde alalım
+not_icerigi = st.session_state.get('islenmis_not', "")
+
+# Soru kutusu
+soru_input = st.text_input("Hocaya sormak istediğin soru nedir?", placeholder="Örn: Butlan ve İptal farkı")
+
+if st.button("Hocadan Dinle"):
+    if not_icerigi:
+        with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
+            try:
+                # 1. Analizi yap
+                sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
+                    MY_API_KEY, 
+                    aktif_not_ismi, 
+                    not_icerigi
+                )
+                
+                if sonuc:
+                    # 2. Metni sayfalara böl
+                    paragraflar = sonuc.split('\n\n')
+                    sayfalar = []
+                    suanki_sayfa = ""
+                    for p in paragraflar:
+                        if len(suanki_sayfa) + len(p) > 1500:
+                            sayfalar.append(suanki_sayfa.strip())
+                            suanki_sayfa = p + "\n\n"
                         else:
-                            st.error("Hoca notlarda anlatılacak bir içerik bulamadı.")
-                            
-                    except Exception as e:
-                        st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
-            else:
-                st.warning("Lütfen önce bir not yükleyin ustam.")
-                if st.session_state.hoca_sayfalar:
-                    st.markdown("---")
-            
-            # Başlık ve İndirme Butonunu yan yana koyalım
-            col_baslik, col_indir = st.columns([3, 1])
-            with col_baslik:
-                st.markdown("### 📖 Hoca'nın Notu")
-            with col_indir:
+                            suanki_sayfa += p + "\n\n"
+                    if suanki_sayfa.strip():
+                        sayfalar.append(suanki_sayfa.strip())
+                    
+                    # 3. BURASI KRİTİK: 'hoca_sayfalar' olarak kaydet!
+                    st.session_state.hoca_sayfalar = sayfalar
+                    st.session_state.hoca_aktif_sayfa = 0
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
+    else:
+        st.warning("Lütfen önce bir not yükleyin ustam.")
+
+# --- GÖRÜNTÜLEME ALANI (Her şey bu if'in içinde olmalı) ---
+if "hoca_sayfalar" in st.session_state and st.session_state.hoca_sayfalar:
+    st.markdown("---")
+
+# --- 3. KISIM: SORU SORMA ALANI (DİJİTAL KİTAP MODU) ---
+st.subheader("❓ Notlardan Soru Sor")
+
+aktif_not_ismi = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
+st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not_ismi}")
+
+# Değişkenleri session_state'den güvenli bir şekilde alalım
+not_icerigi = st.session_state.get('islenmis_not', "")
+
+# Soru kutusu
+soru_input = st.text_input("Hocaya sormak istediğin soru nedir?", placeholder="Örn: Butlan ve İptal farkı")
+
+if st.button("Hocadan Dinle"):
+    if not_icerigi:
+        with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
+            try:
+                # 1. Analizi yap
+                sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
+                    MY_API_KEY, 
+                    aktif_not_ismi, 
+                    not_icerigi
+                )
+                
+                if sonuc:
+                    # 2. Metni sayfalara böl
+                    paragraflar = sonuc.split('\n\n')
+                    sayfalar = []
+                    suanki_sayfa = ""
+                    for p in paragraflar:
+                        if len(suanki_sayfa) + len(p) > 1500:
+                            sayfalar.append(suanki_sayfa.strip())
+                            suanki_sayfa = p + "\n\n"
+                        else:
+                            suanki_sayfa += p + "\n\n"
+                    if suanki_sayfa.strip():
+                        sayfalar.append(suanki_sayfa.strip())
+                    
+                    # 3. BURASI KRİTİK: 'hoca_sayfalar' olarak kaydet!
+                    st.session_state.hoca_sayfalar = sayfalar
+                    st.session_state.hoca_aktif_sayfa = 0
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
+    else:
+        st.warning("Lütfen önce bir not yükleyin ustam.")
+
+# --- GÖRÜNTÜLEME ALANI (Her şey bu if'in içinde olmalı) ---
+if "hoca_sayfalar" in st.session_state and st.session_state.hoca_sayfalar:
+    st.markdown("---")
+    
+    # Başlık ve İndirme Butonu
+    col_baslik, col_indir = st.columns([3, 1])
+    with col_baslik:
+        st.markdown("### 📖 Hoca'nın Notu")
+    
+    with col_indir:
                 # 1. Metni Al (Filtre yok, orijinal Türkçe metin!)
                 tam_metin = "\n\n".join(st.session_state.hoca_sayfalar)
                 
@@ -592,32 +629,37 @@ elif menu == "🎓 Akademi (Ders Notları)":
                     use_container_width=True
                 )
             
-            aktif = st.session_state.hoca_aktif_sayfa
-            toplam_sayfa = len(st.session_state.hoca_sayfalar)
-            
-            # Estetik Kitap Sayfası
-            with st.container(border=True):
-                st.markdown(st.session_state.hoca_sayfalar[aktif])
-                
-            st.write("") 
-            
-            # Sayfa Navigasyonu
-            col_sol, col_orta, col_sag = st.columns([1, 2, 1])
-            
-            with col_sol:
-                if aktif > 0:
-                    if st.button("⬅️ Önceki", key="btn_geri", use_container_width=True):
-                        st.session_state.hoca_aktif_sayfa -= 1
-                        st.rerun()
-                        
-            with col_orta:
-                st.markdown(f"<div style='text-align: center; font-weight: bold; color: #4CAF50;'>Sayfa {aktif + 1} / {toplam_sayfa}</div>", unsafe_allow_html=True)
-                
-            with col_sag:
-                if aktif < toplam_sayfa - 1:
-                    if st.button("Sonraki ➡️", key="btn_ileri", use_container_width=True):
-                        st.session_state.hoca_aktif_sayfa += 1
-                        st.rerun()
+            # --- KİTAP GÖRÜNÜMÜ ---
+    aktif = st.session_state.hoca_aktif_sayfa
+    sayfalar = st.session_state.hoca_sayfalar
+    
+    # Kitap şerh kartı (Müfredat kısmındakini buraya kopyalıyoruz ama değişkenleri hoca_sayfalar yapıyoruz)
+    icerik = sayfalar[aktif]
+    
+    # HTML Tasarımı (Burada senin paylaştığın Prestige Şerh tasarımını kullanabilirsin)
+    st.markdown(f"""
+    <div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; color: #2c3e50;">
+        <div style="font-size: 12px; color: #2e7d32; font-weight: bold; margin-bottom: 20px;">
+            🎓 NOT ANALİZİ - Sayfa {aktif + 1} / {len(sayfalar)}
+        </div>
+        <div style="font-size: 18px; line-height: 1.8;">
+            {icerik.replace("\n", "<br>")}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Navigasyon
+    col_sol, col_orta, col_sag = st.columns([1, 2, 1])
+    with col_sol:
+        if aktif > 0:
+            if st.button("⬅️ Önceki", key="hoca_geri"):
+                st.session_state.hoca_aktif_sayfa -= 1
+                st.rerun()
+    with col_sag:
+        if aktif < len(sayfalar) - 1:
+            if st.button("Sonraki ➡️", key="hoca_ileri"):
+                st.session_state.hoca_aktif_sayfa += 1
+                st.rerun()
     # ==========================================
     # 3. SEKME: SINAV MODU
     # ==========================================
