@@ -353,9 +353,21 @@ elif menu == "🎓 Akademi (Ders Notları)":
             icerik = icerik.replace("* ", "• ").replace("\n", "<br>")
 
             # 2. HTML GİYDİRME (Gövde metni 15px, tam kitap kıvamı!)
-            st.markdown(f"""
-<div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #2c3e50; font-family:
-)
+            # 356. satır civarındaki st.markdown bloğu
+st.markdown(f"""
+<div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #2c3e50; font-family: 'Georgia', serif;">
+    <div style="font-size: 12px; color: #2e7d32; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 1px solid #e0dcd0; padding-bottom: 10px;">
+        🎓 AKADEMİK ANALİZ ŞERHİ - Sayfa {aktif + 1}
+    </div>
+    <div style="font-size: 18px; line-height: 1.8; text-align: justify;">
+        {icerik.replace("\n", "<br>")}
+    </div>
+    <div style="text-align: right; font-size: 11px; color: #999; margin-top: 30px; font-style: italic;">
+        Junilex Akademik Kaynaklarından derlenmiştir. Toplam {len(sayfalar)} sayfa.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
     # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
     # ==========================================
