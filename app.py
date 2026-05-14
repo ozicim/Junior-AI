@@ -299,18 +299,20 @@ elif menu == "🎓 Akademi (Ders Notları)":
         # Eğer kullanıcı ek not girmek isterse (Opsiyonel)
         akademik_input = st.text_area("Eklemek istediğiniz ders notları veya sorular (Opsiyonel)", height=100, key="akademi_text")
 
+        # app.py içindeki müfredat butonu altı
         if st.button("📚 Notları Analiz Et / Özetle", use_container_width=True):
             try:
                 with st.spinner("Hoca ders notlarını hazırlıyor..."):
                     from akademik_engine import AkademikEngine
                     
-                    # YENİ MOTOR: AkademikEngine üzerinden çağırıyoruz
+                    # ESKİ: sonuc = IctihatEngine.emsal_ara(...) çağrısını sildik
+                    # YENİ: AkademikEngine üzerinden profesör metodunu çağırıyoruz
                     sonuc = AkademikEngine.mufredat_hoca_anlat(
                         MY_API_KEY, 
                         SERPER_API_KEY, 
                         secilen_ders, 
                         secilen_konu, 
-                        akademik_text # Text_area'dan gelen ek not
+                        akademik_text # text_area key'inize göre güncelleyin
                     )
                     
                     if sonuc:
@@ -318,7 +320,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                         st.session_state.akademi_aktif_sayfa = 0
                         st.rerun()
             except Exception as e:
-                st.error(f"Usul hatası oluştu: {e}")
+                st.error(f"Usul hatası: {e}")
 
                     # 2. Motoru Çağırıyoruz (3 Parametre: Gemini Key, Serper Key, Sorgu)
                     sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, final_sorgu)
