@@ -27,7 +27,7 @@ class ChatEngine:
                 generation_config={
                     "max_output_tokens": 600, 
                     "temperature": 0.7, # Bir tık daha odaklanmış cevaplar için
-    }
+                }
             )
             
             # Streamlit geçmişini Gemini'nin anladığı 'history' formatına çeviriyoruz
