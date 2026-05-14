@@ -281,10 +281,10 @@ elif menu == "🎓 Akademi (Ders Notları)":
             ders_listesi.append(f"{ders['ikon']} {ders['isim']}")
             
     konu_listesi = ["Genel Tanımlar", "Hoca Notları", "Özet Analiz"]
-   # ==========================================
+    
+    # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
-    tab_mufredat, tab_soru = st.tabs(["📚 Müfredat Analizi", "❓ Hocaya Soru Sor"])
     with tab_mufredat:
         st.subheader("📚 Ders ve Konu Seçimi")
         col1, col2 = st.columns(2)
@@ -321,91 +321,51 @@ elif menu == "🎓 Akademi (Ders Notları)":
             except Exception as e:
                 st.error(f"Hoca derse giremedi ustam: {e}")
 
-        # --- DİJİTAL KİTAP GÖRÜNÜMÜ ---
-        if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
-            sayfalar = st.session_state.akademi_notlari
-            aktif = st.session_state.get('akademi_aktif_sayfa', 0)
-            
-            # Metin Temizleme ve Giydirme
-            icerik = sayfalar[aktif]
-            icerik = icerik.replace("####", "<br><b style='color:#1b5e20; font-size:1.1em;'>")
-            icerik = icerik.replace("###", "<h3 style='color:#2e7d32; border-bottom:1px solid #c8e6c9;'>")
-            icerik = icerik.replace("**🔍 Gerçek Emsal:**", "</div><div style='background: #e8f5e9; padding: 15px; border-left: 5px solid #2e7d32; border-radius: 4px; margin: 15px 0;'><b>🔍 Gerçek Emsal:</b>")
-            icerik = icerik.replace("**⚖️ Hukuki Dayanak:**", "</div><div style='background: #fff3e0; padding: 15px; border-left: 5px solid #ef6c00; border-radius: 4px; margin: 15px 0;'><b>⚖️ Hukuki Dayanak:</b>")
-            icerik = icerik.replace("**📢 Sonuç:**", "</div><div style='background: #e3f2fd; padding: 15px; border-left: 5px solid #1565c0; border-radius: 4px; margin: 15px 0;'><b>📢 Sonuç:</b>")
-            icerik = icerik.replace("**", "<b>").replace("**", "</b>")
-            icerik = icerik.replace("\n", "<br>")
-
-            # --- PRESTİGE ŞERH TASARIMI (MİNAMALİST VE AĞIRBAŞLI) ---
-        if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
-            sayfalar = st.session_state.akademi_notlari
-            aktif = st.session_state.get('akademi_aktif_sayfa', 0)
-            
-            # İçerik Temizliği (Abartılı kutulardan kaçınıp zarif vurgulara geçtik)
-            icerik = sayfalar[aktif]
-            icerik = icerik.replace("####", "<br><b style='color:#3e2723; font-size:1.1em; border-bottom: 1px solid #d7ccc8;'>")
-            icerik = icerik.replace("###", "<h3 style='color:#1b5e20; font-family:Georgia; border-bottom: 2px solid #2e7d32; padding-bottom:5px;'>")
-            
-            # Başlıkları ikon yerine sadece kalın ve zarif renkli yapıyoruz
-            icerik = icerik.replace("**🔍 Gerçek Emsal:**", "<br><b style='color:#2e7d32;'>🔍 GERÇEK EMSAL:</b>")
-            icerik = icerik.replace("**⚖️ Hukuki Dayanak:**", "<br><b style='color:#795548;'>⚖️ HUKUKİ DAYANAK:</b>")
-            icerik = icerik.replace("**📢 Sonuç:**", "<br><b style='color:#1565c0;'>📢 SONUÇ:</b>")
-            
-            # Markdown temizliği
-            icerik = icerik.replace("**", "<b>").replace("**", "</b>")
-            icerik = icerik.replace("\n", "<br>")
-
-            # --- PRESTİGE ŞERH TASARIMI (GÜVENLİ VE NİZAMLI) ---
+        # --- DİJİTAL KİTAP GÖRÜNÜMÜ (PRESTİGE ŞERH - KESİN ÇÖZÜM) ---
         if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
             import re
             
             sayfalar = st.session_state.akademi_notlari
             aktif = st.session_state.get('akademi_aktif_sayfa', 0)
             
-            # 1. Metin Temizleme (Hatalı etiketleri kapatıyoruz)
+            # 1. METİN TEMİZLİĞİ
             icerik = sayfalar[aktif]
             
-            # Başlıkları düzelt (Hem aç hem kapat)
-            icerik = re.sub(r"### (.*)", r"<h3 style='color:#1b5e20; font-family:Georgia; border-bottom: 2px solid #2e7d32; padding-bottom:5px;'>\1</h3>", icerik)
-            icerik = re.sub(r"#### (.*)", r"<br><b style='color:#3e2723; font-size:1.1em; border-bottom: 1px solid #d7ccc8;'>\1</b><br>", icerik)
+            # Başlıkları yakala ve ZORLA KAPAT (</h3> ve </b> ile)
+            icerik = re.sub(r"### (.*?)(?=\n|$)", r"<h3 style='color:#1b5e20; font-family:Georgia; border-bottom: 2px solid #2e7d32; padding-bottom:5px; margin-top:20px;'>\1</h3>", icerik)
+            icerik = re.sub(r"#### (.*?)(?=\n|$)", r"<br><b style='color:#3e2723; font-size:1.1em; border-bottom: 1px solid #d7ccc8;'>\1</b><br>", icerik)
             
-            # Kalın yazıları düzelt (**metin** -> <b>metin</b>)
+            # Kalın yazıları yakala ve kapat
             icerik = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", icerik)
             
-            # Özel vurguları şıklaştır
             icerik = icerik.replace("🔍 GERÇEK EMSAL:", "<br><b style='color:#2e7d32;'>🔍 GERÇEK EMSAL:</b>")
             icerik = icerik.replace("⚖️ HUKUKİ DAYANAK:", "<br><b style='color:#795548;'>⚖️ HUKUKİ DAYANAK:</b>")
             icerik = icerik.replace("📢 SONUÇ:", "<br><b style='color:#1565c0;'>📢 SONUÇ:</b>")
             
-            # Gereksiz yıldızları temizle ve satır sonlarını ekle
+            # Markdown listelerini ve satır atlamalarını temizle
             icerik = icerik.replace("* ", "• ").replace("\n", "<br>")
 
-            # 2. Ekrana Basma
+            # 2. HTML GİYDİRME (Siyah Ekran Hatasını Önler)
+            # DİKKAT: st.markdown altındaki HTML kodları SOLA YASLI olmak ZORUNDADIR!
             st.markdown(f"""
-            <div style="background-color: #fcfaf5; padding: 45px; border: 1px solid #e0dcd0; border-top: 10px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); color: #2c3e50; font-family: 'Georgia', serif;">
-                
-                <div style="text-align: center; font-variant: small-caps; letter-spacing: 3px; color: #1b5e20; font-size: 26px; margin-bottom: 30px; border-bottom: 1px double #d7ccc8; padding-bottom: 15px; font-weight: bold;">
-                    🏛️ Akademik Not Özezti
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9e9e9e; margin-bottom: 25px; font-weight: bold; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px;">
-                    <span>ÇANKIRI KARATEKİN ÜNİVERSİTESİ HUKUK FAKÜLTESİ</span>
-                    <span>SAYFA {aktif + 1} / {len(sayfalar)}</span>
-                </div>
-                
-                <div style="font-size: 18px; line-height: 1.9; text-align: justify; color: #37474f;">
-                    {icerik}
-                </div>
-                
-                <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #bcaaa4; letter-spacing: 2px; border-top: 1px dashed #e0e0e0; padding-top: 15px;">
-                    - JUNIOR AI HUKUK KÜTÜPHANESİ ARŞİVİ -
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+<div style="background-color: #fcfaf5; padding: 45px; border: 1px solid #e0dcd0; border-top: 10px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); color: #2c3e50; font-family: 'Georgia', serif;">
+    <div style="text-align: center; font-variant: small-caps; letter-spacing: 3px; color: #1b5e20; font-size: 26px; margin-bottom: 30px; border-bottom: 1px double #d7ccc8; padding-bottom: 15px; font-weight: bold;">
+        🏛️ Akademik Not Özeti
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9e9e9e; margin-bottom: 25px; font-weight: bold; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px;">
+        <span>ÇANKIRI KARATEKİN ÜNİVERSİTESİ HUKUK FAKÜLTESİ</span>
+        <span>SAYFA {aktif + 1} / {len(sayfalar)}</span>
+    </div>
+    <div style="font-size: 18px; line-height: 1.9; text-align: justify; color: #37474f;">
+        {icerik}
+    </div>
+    <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #bcaaa4; letter-spacing: 2px; border-top: 1px dashed #e0e0e0; padding-top: 15px;">
+        - JUNIOR AI HUKUK KÜTÜPHANESİ ARŞİVİ -
+    </div>
+</div>
+""", unsafe_allow_html=True)
             
-
-            # Navigasyon Butonları (Kodun devamı...)
-    # --- NAVİGASYON BUTONLARI ---
+            # --- NAVİGASYON BUTONLARI ---
             st.write("") # Görsel nefes payı
             n1, n2, n3 = st.columns([1, 2, 1]) # Butonları yanlara yaslamak için kolonlar
             
@@ -426,7 +386,8 @@ elif menu == "🎓 Akademi (Ders Notları)":
                     if st.button("İleri ➡️", key="ak_sayfa_ileri", use_container_width=True):
                         st.session_state.akademi_aktif_sayfa += 1
                         st.rerun() # Sayfayı yenile ki yeni içerik gelsin
-# ==========================================
+
+    # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
     # ==========================================
     with tab_notlar:
@@ -845,28 +806,4 @@ elif menu == "⚖️ İçtihat Sorgulama":
             # Junilex Şerh Kartı Tasarımı
             st.markdown(f"""
             <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); color: #2c3e50; font-family: 'Georgia', serif;">
-                <div style="font-size: 12px; text-transform: uppercase; color: #8d6e63; margin-bottom: 10px; font-weight: bold;">🏛️ Junilex Karar Şerhi - Sayfa {aktif + 1}</div>
-                <div style="font-size: 16px; line-height: 1.6; text-align: justify;">
-                    {sayfalar[aktif].replace("\n", "<br>")}
-                </div>
-                <div style="text-align: right; font-size: 10px; color: #aaa; margin-top: 20px;">Toplam {len(sayfalar)} sayfa mevcuttur.</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Navigasyon Butonları
-            st.write("") # Boşluk
-            col1, col2, col3 = st.columns([1, 2, 1])
-            
-            with col1:
-                if aktif > 0:
-                    if st.button("⬅️ Geri", use_container_width=True):
-                        st.session_state.aktif_sayfa -= 1
-                        st.rerun()
-            
-            with col3:
-                if aktif < len(sayfalar) - 1:
-                    if st.button("İleri ➡️", use_container_width=True):
-                        st.session_state.aktif_sayfa += 1
-                        st.rerun()
-        
-              
+                <div style="font-size: 12px; text-transform: uppercase; color: #8d6e
