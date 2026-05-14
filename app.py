@@ -13,26 +13,6 @@ try:
     AkademikEngine.veritabanini_baslat()
 except Exception as e:
     st.error(f"Veritabanı başlatılamadı: {e}")
-    
-    def metni_sayfalara_bol(metin, sayfa_boyutu=1000):
-    """Metni belirtilen karakter sınırına göre sayfalara böler."""
-    if not metin:
-        return []
-    # Paragrafları koruyarak bölmek daha estetiktir
-    paragraflar = metin.split('\n')
-    sayfalar = []
-    suanki_sayfa = ""
-        
-    for p in paragraflar:
-        if len(suanki_sayfa) + len(p) > sayfa_boyutu:
-            sayfalar.append(suanki_sayfa.strip())
-            suanki_sayfa = p + "\n"
-        else:
-            suanki_sayfa += p + "\n"
-                
-    if suanki_sayfa.strip():
-        sayfalar.append(suanki_sayfa.strip())
-    return sayfalar
 
 
 # 1. SAYFA AYARLARI
@@ -82,17 +62,24 @@ def kanun_sec(kanun):
     st.session_state.arama_sonuclari = []
     ekran_degistir('maddeSecim')
     
-def metni_sayfalara_bol(metin, kelime_siniri=300):
-    """
-    Verilen metni yaklaşık 400 kelimelik sayfalara böler.
-    """
+def metni_sayfalara_bol(metin, sayfa_boyutu=1000):
+    """Metni belirtilen karakter sınırına göre sayfalara böler."""
     if not metin:
         return []
-    kelimeler = metin.split()
+    # Paragrafları koruyarak bölmek daha estetiktir
+    paragraflar = metin.split('\n')
     sayfalar = []
-    for i in range(0, len(kelimeler), kelime_siniri):
-        sayfa_icerigi = " ".join(kelimeler[i:i + kelime_siniri])
-        sayfalar.append(sayfa_icerigi)
+    suanki_sayfa = ""
+        
+    for p in paragraflar:
+        if len(suanki_sayfa) + len(p) > sayfa_boyutu:
+            sayfalar.append(suanki_sayfa.strip())
+            suanki_sayfa = p + "\n"
+        else:
+            suanki_sayfa += p + "\n"
+                
+    if suanki_sayfa.strip():
+        sayfalar.append(suanki_sayfa.strip())
     return sayfalar
 
 # 4. CSS BLOĞU (TAŞMAYI ÖNLEYEN KESİN ÇÖZÜM)
