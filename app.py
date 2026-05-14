@@ -36,6 +36,20 @@ if 'islenmis_not' not in st.session_state:
     st.session_state.islenmis_not = None
 if 'su_anki_sinav' not in st.session_state: 
     st.session_state.su_anki_sinav = None
+    # --- SESSION STATE BAŞLATMA (GÜVENLİK KİLİDİ) ---
+# Eğer bu anahtarlar yoksa, hata vermemesi için sıfır olarak tanımlıyoruz
+if "aktif_sayfa" not in st.session_state:
+    st.session_state.aktif_sayfa = 0
+if "analiz_aktif_sayfa" not in st.session_state:
+    st.session_state.analiz_aktif_sayfa = 0
+if "akademi_aktif_sayfa" not in st.session_state:
+    st.session_state.akademi_aktif_sayfa = 0
+if "kitap_sayfalari" not in st.session_state:
+    st.session_state.kitap_sayfalari = []
+if "analiz_sayfalari" not in st.session_state:
+    st.session_state.analiz_sayfalari = []
+if "akademi_notlari" not in st.session_state:
+    st.session_state.akademi_notlari = []
 
 
 # 3. YARDIMCI FONKSİYONLAR
