@@ -355,7 +355,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
             # 2. HTML GİYDİRME (Gövde metni 15px, tam kitap kıvamı!)
             st.markdown(f"""
 <div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #2c3e50; font-family:
-
+)
     # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
     # ==========================================
