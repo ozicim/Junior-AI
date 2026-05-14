@@ -169,3 +169,54 @@ class AkademikEngine:
             return response.text
         except Exception as e:
             return f"Hoca notları okurken bir sorun yaşadı: {str(e)}"
+    @classmethod
+    def mufredat_hoca_anlat(cls, gemini_key, serper_key, ders, konu, ek_not=""):
+        """
+        Müfredat konularını Serper desteğiyle bir profesör gibi anlatır.
+        """
+        try:
+            import requests
+            import json
+            
+            # 1. Akademik Tarama (Doktrin odaklı)
+            url = "https://google.serper.dev/search"
+            payload = json.dumps({
+                "q": f"{ders} {konu} hukuku ders notları doktrin makale",
+                "gl": "tr", "hl": "tr"
+            })
+            headers = {'X-API-KEY': serper_key, 'Content-Type': 'application/json'}
+            search_response = requests.request("POST", url, headers=headers, data=payload)
+            search_results = search_response.json()
+
+            context = ""
+            for result in search_results.get('organic', []):
+                context += f"\nKaynak: {result.get('title')}\nÖzet: {result.get('snippet')}\n"
+
+            # 2. Gemini Yapılandırması
+            genai.configure(api_key=gemini_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+
+            prompt = f"""
+            SEN BİR HUKUK FAKÜLTESİ ÖĞRETİM ÜYESİSİN.
+            Ders: {ders}
+            Konu: {konu}
+            
+            GÖREVİN:
+            1. Bu konuyu bir hukuk öğrencisine (Ozan Şahin Sicim) anlatır gibi, akademik derinlikle ama anlaşılır bir dille anlat.
+            2. Varsa öğrencinin eklediği notu dikkate al: {ek_not}
+            3. İnternetten gelen şu akademik verileri de sentezle: {context}
+
+            FORMAT:
+            ### 🎓 {konu.upper()} HAKKINDA DERS NOTU
+            **1. Teorik Çerçeve:** Tanım ve doktrindeki yer.
+            **2. Önemli Kavramlar:** Anahtar terimler.
+            **3. Örnek Senaryo:** Somut olay üzerinden anlatım.
+            **⚖️ Hukuki Dayanak:** İlgili kanun maddeleri.
+            **🔍 Gerçek Emsal:** Konuyla ilgili meşhur bir Yargıtay kararı özeti.
+            """
+
+            response = model.generate_content(prompt)
+            return response.text
+
+        except Exception as e:
+            return f"Hoca odasında bulunamadı: {str(e)}"
