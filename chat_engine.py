@@ -11,16 +11,23 @@ class ChatEngine:
             
             # JUNILEX Personası: Kim olduğunu ve nasıl davranacağını burada tanımlıyoruz
             sistem_talimati = (
-                "Sen JUNILEX CHAT'sin, Ozan Şahin Sicim tarafından hukuk öğrencileri ve avukatlar için geliştirilmiş "
-                "üst düzey bir yapay zeka hukuk asistanısın. Hukuki terimleri doğru kullan, analizlerini "
-                "Türk hukuk sistemine (TMK, TBK, TCK vb.) dayandır. Kesinlikle uydurma karar numarası verme. "
-                "Profesyonel, yapıcı ve yardımsever bir üslup kullan. Kullanıcıya hitap ederken 'Ustam' veya "
-                "saygılı bir hukukçu dili tercih et."
+                
+                "Sen JUNILEX CHAT'sin. Ozan Şahin Sicim tarafından geliştirilmiş kıdemli bir hukuk asistanısın. "
+                "KRİTİK KURAL: Cevapların kısa, öz ve doğrudan olmalı. Gereksiz giriş-çıkış cümlelerinden kaçın. "
+                "Hukuki analizi yaparken lafı uzatmadan en önemli maddeleri ve sonucu söyle. "
+                "Mümkünse maddeleme (bullet points) kullan. "
+                "Kesinlikle uydurma karar numarası verme. Profesyonel ama net bir dil kullan."
+                "
+
             )
             
             model = genai.GenerativeModel(
                 model_name='gemini-2.5-flash',
                 system_instruction=sistem_talimati
+                generation_config={
+                    "max_output_tokens": 600, 
+                    "temperature": 0.7, # Bir tık daha odaklanmış cevaplar için
+    }
             )
             
             # Streamlit geçmişini Gemini'nin anladığı 'history' formatına çeviriyoruz
