@@ -14,7 +14,7 @@ class ChatEngine:
                     "Resmi mütalaa formatından kaçın, sanki bir arkadaşına hızlıca bilgi veriyormuşsun gibi yaz."
                     "Sakın karar uydurma."
                 )
-                yapilandirma = {"max_output_tokens": 800, "temperature": 0.5}
+                yapilandirma = {"max_output_tokens": 1000, "temperature": 0.5}
             else: # Detay Modu
                 sistem_talimati = (
                     "Sen JUNILEX'sin. Bilgili ama çok samimi bir hukukçu dost gibi davran. "
@@ -24,7 +24,7 @@ class ChatEngine:
                     "akıcı bir sohbet diliyle yaz."
                     "Sakın karar uydurma."
                 )
-                yapilandirma = {"max_output_tokens": 1600, "temperature": 0.8}
+                yapilandirma = {"max_output_tokens": 2000, "temperature": 0.8}
 
             model = genai.GenerativeModel(
                 model_name='gemini-2.5-flash', # Hız için flash, derinlik için gerekirse pro
