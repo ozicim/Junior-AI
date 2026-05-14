@@ -906,6 +906,9 @@ elif menu == "💬 JUNILEX Chat":
         )
         st.session_state.chat_mode = yeni_mod
         st.info(f"Şu an '{yeni_mod}' modundasın ustam.")
+        if secilen_mod != st.session_state.chat_mode:
+            st.session_state.chat_mode = secilen_mod
+            st.rerun() # Buton isminin anında değişmesi için şart ustam
 
     # Sohbet Hafızası Başlatma
     if "chat_messages" not in st.session_state:
