@@ -356,19 +356,6 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 </div>
             </div>
             """, unsafe_allow_html=True)
-
-            # Navigasyon
-            n1, n2, n3 = st.columns([1, 2, 1])
-            with n1:
-                if aktif > 0:
-                    if st.button("⬅️ Geri", key="ak_prev"):
-                        st.session_state.akademi_aktif_sayfa -= 1
-                        st.rerun()
-            with n3:
-                if aktif < len(sayfalar) - 1:
-                    if st.button("İleri ➡️", key="ak_next"):
-                        st.session_state.akademi_aktif_sayfa += 1
-                        st.rerun()
             
 
             # Navigasyon Butonları (Kodun devamı...)
