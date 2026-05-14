@@ -254,10 +254,6 @@ if "Adliye" in menu:
 
 # --- MOD 2: AKADEMİ ---
 # app.py içinde İçtihat veya Akademi butonunun tam içine:
-if st.button("🔎 İçtihatları Getir"):
-    from ictihat_engine import IctihatEngine  # <--- Buraya, tam bu hizaya ekleyin
-    stream = IctihatEngine.emsal_ara(MY_API_KEY, olay_input)
-    # ... devamı aynı
 elif menu == "🎓 Akademi (Ders Notları)":
     st.header("🎓 Akademik Asistan")
     
