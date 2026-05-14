@@ -767,6 +767,11 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
 
 # --- MOD 4: İÇTİHAT SORGULAMA (Tamamen Düzeltilmiş) ---
 elif menu == "⚖️ İçtihat Sorgulama":
+    # --- KESİN ÇÖZÜM BURASI ---
+    # Değişkeni en başta, hiçbir bloğa girmeden 'boş' olarak tanımlıyoruz.
+    olay_input = "" 
+    karar_metni = ""
+    soru_input = ""
     st.header("⚖️ İçtihat ve Emsal Merkezi")
     
     tab1, tab2 = st.tabs(["🔍 Karar Analizi (Şerh)", "🔎 Emsal Karar Bulucu"])
