@@ -832,8 +832,6 @@ elif menu == "⚖️ İçtihat Sorgulama":
 
     with tab2:
         st.subheader("🔎 Emsal Karar ve Mevzuat Bulucu")
-        with tab2:
-    st.subheader("🔎 Yargıtay Yönelim Analizi")
     
     # 1. ÖNCE TANIMLA: Kullanıcının metin girdiği kutu burası
     olay_input = st.text_area(
