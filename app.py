@@ -891,26 +891,32 @@ elif menu == "⚖️ İçtihat Sorgulama":
 # ... diğer elif (Akademi, Adliye vb.) bloklarından sonra ekle:
 
 elif menu == "💬 JUNILEX Chat":
-    st.header("💬 JUNILEX Hukuk Asistanı")
+    # Başlık ve Mod Göstergesi yan yana olsun
+    st.header("💬 JUNILEX Chat")
     
-    # --- MOD SEÇİM BUTONLARI ---
-    # Sidebar'a veya sayfa üstüne şık bir seçim alanı koyalım
-    chat_modu = st.radio(
-        "Zeka Modunu Seçin:",
-        ["Özet", "Detaylı Analiz"],
-        horizontal=True,
-        help="Özet modunda kısa cevaplar, Detaylı modda kapsamlı mütalaalar alırsınız."
-    )
-    
-    st.markdown("---")
+    # 1. Zeka Modu Menüsü (Popover - Tıklayınca açılan kısım)
+    # Soru sorma kutusunun hemen üzerinde şık bir buton olarak görünecek
+    with st.popover(f"⚡ Mod: {st.session_state.get('chat_mode', 'Özet')}"):
+        st.markdown("### 🧠 Zeka Yapılandırması")
+        yeni_mod = st.radio(
+            "Yanıt derinliğini seçin:",
+            ["Özet", "Detaylı Analiz"],
+            key="chat_mode_radio",
+            help="Özet: Hızlı ve net. Detaylı: Derin mütalaa ve kanun analizi."
+        )
+        st.session_state.chat_mode = yeni_mod
+        st.info(f"Şu an '{yeni_mod}' modundasın ustam.")
 
+    # Sohbet Hafızası Başlatma
     if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, bugün hangi meseleyi çözelim?"}]
+        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi hukuki meseleyi istişare edelim?"}]
 
+    # Mesajları Görüntüle
     for message in st.session_state.chat_messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+    # 2. Soru Sorma Kısmı
     if prompt := st.chat_input("Mesajınızı yazın..."):
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -921,12 +927,15 @@ elif menu == "💬 JUNILEX Chat":
             full_response = ""
             
             from chat_engine import ChatEngine
-            # MOTORU ÇAĞIRIRKEN MODU GÖNDERİYORUZ
+            
+            # Seçilen modu Session State'den alıp motora gönderiyoruz
+            aktif_mod = st.session_state.get('chat_mode', 'Özet')
+            
             response = ChatEngine.yanit_uret(
                 MY_API_KEY, 
                 st.session_state.chat_messages[:-1], 
                 prompt,
-                mod=chat_modu
+                mod=aktif_mod
             )
             
             if isinstance(response, str) and response.startswith("HATA"):
