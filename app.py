@@ -893,11 +893,15 @@ elif menu == "⚖️ İçtihat Sorgulama":
 elif menu == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
     
-    # 1. Mod Hafızası
+    # 1. Mod ve Hafıza Başlatma
     if 'chat_mode' not in st.session_state:
         st.session_state.chat_mode = "Özet"
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = [
+            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
+        ]
 
-    # 2. Dinamik Popover (Seçtiğin an güncellenir)
+    # 2. Dinamik Popover (Zeka Modu Seçimi)
     with st.popover(f"⚡ Mod: {st.session_state.chat_mode}"):
         st.markdown("### 🧠 Zeka Yapılandırması")
         secilen_mod = st.radio(
@@ -910,28 +914,58 @@ elif menu == "💬 JUNILEX Chat":
             st.session_state.chat_mode = secilen_mod
             st.rerun()
 
-    # 3. Mesaj Geçmişini Göster
-    if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi istişare edelim?"}]
-
+    # 3. Mesaj Geçmişini Görüntüle
     for message in st.session_state.chat_messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # 4. Soru Sorma ve Cevap Üretme (BURASI KRİTİK)
+    # 4. "Devam Et" Butonu Mantığı
+    # Sadece son mesaj asistandansa ve konuşma başlamışsa görünür
+    if len(st.session_state.chat_messages) > 1 and st.session_state.chat_messages[-1]["role"] == "assistant":
+        if st.button("⏭️ Devam Et", help="Cevap yarıda kaldıysa tıklayın."):
+            devam_komutu = "Lütfen kaldığın yerden, konuyu bozmadan devam et."
+            
+            # Kullanıcı mesajını hafızaya ekle ve ekranda göster
+            st.session_state.chat_messages.append({"role": "user", "content": "Devam et..."})
+            
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                full_response = ""
+                from chat_engine import ChatEngine
+                
+                # Mevcut tüm geçmişi göndererek devam etmesini sağlıyoruz
+                response = ChatEngine.yanit_uret(
+                    MY_API_KEY, 
+                    st.session_state.chat_messages[:-1], 
+                    devam_komutu,
+                    mod=st.session_state.chat_mode
+                )
+                
+                if isinstance(response, str) and response.startswith("HATA"):
+                    st.error(response)
+                else:
+                    for chunk in response:
+                        if hasattr(chunk, "text") and chunk.text:
+                            full_response += chunk.text
+                            message_placeholder.markdown(full_response + " ▌")
+                    
+                    message_placeholder.markdown(full_response)
+                    st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
+                    st.rerun()
+
+    # 5. Ana Soru Girişi (Chat Input - Tek sefer tanımlanmalı)
     if prompt := st.chat_input("Mesajınızı yazın..."):
-        # Kullanıcı mesajını ekle ve göster
+        # Kullanıcı mesajını ekle ve anlık göster
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Hemen asistan cevabına geçiyoruz (rerun yapmadan!)
+        # Asistan yanıtını üret
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
-            
             from chat_engine import ChatEngine
-            # Aktif modu motora gönder
+            
             response = ChatEngine.yanit_uret(
                 MY_API_KEY, 
                 st.session_state.chat_messages[:-1], 
@@ -948,79 +982,10 @@ elif menu == "💬 JUNILEX Chat":
                         message_placeholder.markdown(full_response + " ▌")
                 
                 message_placeholder.markdown(full_response)
-                # Cevap bitince hafızaya ekle
                 st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-                # Butonların (Devam Et vb.) görünmesi için şimdi yenileyebiliriz
                 st.rerun()
 
-        # 5. "Devam Et" Butonu (Sadece en son asistan konuşmuşsa çıkar)
-    if st.session_state.chat_messages[-1]["role"] == "assistant" and len(st.session_state.chat_messages) > 1:
-        if st.button("⏭️ Devam Et", use_container_width=False):
-            # Devam etme mantığını buraya da ekleyebilirsin ustam
-            devam_komutu = "Lütfen kaldığın yerden, konuyu bozmadan devam et."
-                        
-                with st.chat_message("user"):
-                    st.markdown("Devam et...")
-                        
-                with st.chat_message("assistant"):
-                    message_placeholder = st.empty()
-                    full_response = ""
-                            
-                    from chat_engine import ChatEngine
-                    # Mevcut tüm geçmişi gönderiyoruz ki nerede kaldığını bilsin
-                    response = ChatEngine.yanit_uret(
-                        MY_API_KEY, 
-                        st.session_state.chat_messages, 
-                        devam_komutu,
-                        mod=st.session_state.chat_mode
-                    )
-            pass
-                    
-                    if isinstance(response, str) and response.startswith("HATA"):
-                        st.error(response)
-                    else:
-                        for chunk in response:
-                            if hasattr(chunk, "text") and chunk.text:
-                                full_response += chunk.text
-                                message_placeholder.markdown(full_response + " ▌")
-                        
-                        message_placeholder.markdown(full_response)
-                        # Yeni parçayı hafızaya ekle ve sayfayı tazele
-                        st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-                        st.rerun()
-
-    # 4. Normal Soru Girişi (Chat Input)
-    if prompt := st.chat_input("Mesajınızı yazın..."):
-        st.session_state.chat_messages.append({"role": "user", "content": prompt})
-        st.rerun() # Mesajı hemen ekrana basmak için
-
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-            
-            from chat_engine import ChatEngine
-            # MOTORU ÇAĞIRIRKEN AKTİF MODU GÖNDERİYORUZ
-            response = ChatEngine.yanit_uret(
-                MY_API_KEY, 
-                st.session_state.chat_messages[:-1], 
-                prompt,
-                mod=st.session_state.chat_mode
-            )
-            
-            # (Stream ve çıktı kodların burada devam edecek...)
-            
-            if isinstance(response, str) and response.startswith("HATA"):
-                st.error(response)
-            else:
-                for chunk in response:
-                    if hasattr(chunk, "text") and chunk.text:
-                        full_response += chunk.text
-                        message_placeholder.markdown(full_response + " ▌")
-                
-                message_placeholder.markdown(full_response)
-                st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-
-    # Sidebar Temizleme Butonu
+    # 6. Sidebar Temizleme Butonu
     if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
         st.session_state.chat_messages = [
             {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
