@@ -769,9 +769,7 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
 elif menu == "⚖️ İçtihat Sorgulama":
     # --- KESİN ÇÖZÜM BURASI ---
     # Değişkeni en başta, hiçbir bloğa girmeden 'boş' olarak tanımlıyoruz.
-    olay_input = "" 
-    karar_metni = ""
-    soru_input = ""
+    
     st.header("⚖️ İçtihat ve Emsal Merkezi")
     
     tab1, tab2 = st.tabs(["🔍 Karar Analizi (Şerh)", "🔎 Emsal Karar Bulucu"])
@@ -837,27 +835,22 @@ elif menu == "⚖️ İçtihat Sorgulama":
     with tab2:
         st.subheader("🔎 Yargıtay Yönelim Analizi")
         
-        # 1. DEĞİŞKENİ KEY PARAMETRESİYLE TANIMLIYORUZ
-        # Bu sayede Streamlit bu metni otomatik olarak 'st.session_state.emsal_olay_girdisi' içine saklar.
-        st.text_area(
+        # 1. DEĞİŞKENİ TANIMLIYORUZ (Hizaya dikkat: with tab2'nin 1 tab içinde)
+        olay_input = st.text_area(
             "Hukuki Olayı Detaylıca Anlatın", 
             height=150, 
             placeholder="Örn: Banka hesabından rıza dışı para çekilmesi...", 
-            key="emsal_olay_girdisi" # <-- BU ANAHTAR ÇOK ÖNEMLİ
+            key="emsal_olay_girdisi_v4" # Benzersiz bir key verdik
         )
         
-        if st.button("🔎 Analiz Et", use_container_width=True, key="btn_emsal_bul"):
-            # 2. DEĞİŞKENİ HAFIZADAN ÇEKİYORUZ
-            # Artık 'olay_input' ismine muhtaç değiliz, direkt kasadan alıyoruz.
-            girdimiz = st.session_state.get("emsal_olay_girdisi", "")
-            
-            if girdimiz: 
+        if st.button("🔎 Analiz Et", use_container_width=True, key="btn_emsal_bul_v4"):
+            if olay_input: 
                 with st.spinner("Junilex kütüphaneleri tarıyor ve analiz ediyor..."):
                     try:
                         from ictihat_engine import IctihatEngine
                         
-                        # Motoru çağırırken kasadaki veriyi gönderiyoruz
-                        sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, girdimiz)
+                        # Artık 'olay_input' burada %100 tanımlı
+                        sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
                         
                         if sonuc:
                             st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 1200)
@@ -869,44 +862,28 @@ elif menu == "⚖️ İçtihat Sorgulama":
                         st.error(f"⚠️ Teknik bir hata oluştu: {e}")
             else:
                 st.warning("Ustam, önce bir olay anlatman lazım.")
-    
-        # --- GÖRÜNTÜLEME BLOĞU (BUTONUN DIŞINDA OLMALI) ---
-        # Bu kısım sayfa yenilendiğinde (rerun) sonucun ekranda kalmasını sağlar
+
+        # --- GÖRÜNTÜLEME BLOĞU (Hala tab2 içinde kalmalı!) ---
         if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
-            st.markdown("---") # Ayırıcı çizgi
-            
+            st.markdown("---")
             sayfalar_emsal = st.session_state.kitap_sayfalari
             aktif_emsal = st.session_state.aktif_sayfa
             
-            # Junilex Şerh Kartı Tasarımı
             st.markdown(f"""
             <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50; font-family: 'Georgia', serif;">
-                <div style="font-size: 12px; text-transform: uppercase; color: #8d6e63; margin-bottom: 10px; font-weight: bold;">
-                    🏛️ Yargıtay Yönelim Şerhi - Sayfa {aktif_emsal + 1} / {len(sayfalar_emsal)}
-                </div>
-                <div style="font-size: 16px; line-height: 1.8; text-align: justify;">
-                    {sayfalar_emsal[aktif_emsal].replace("\n", "<br>")}
-                </div>
+                <div style="font-size: 12px; text-transform: uppercase; color: #8d6e63; margin-bottom: 10px; font-weight: bold;">🏛️ Yargıtay Yönelim Şerhi - Sayfa {aktif_emsal + 1} / {len(sayfalar_emsal)}</div>
+                <div style="font-size: 16px; line-height: 1.8; text-align: justify;">{sayfalar_emsal[aktif_emsal].replace("\n", "<br>")}</div>
             </div>
             """, unsafe_allow_html=True)
             
-            # Navigasyon Butonları
-            st.write("") 
-            col1, col2, col3 = st.columns([1, 2, 1])
-            
-            with col1:
+            c1, c2, c3 = st.columns([1, 2, 1])
+            with c1:
                 if aktif_emsal > 0:
-                    if st.button("⬅️ Geri", key="emsal_geri_btn_nav", use_container_width=True):
+                    if st.button("⬅️ Geri", key="emsal_nav_geri"):
                         st.session_state.aktif_sayfa -= 1
                         st.rerun()
-            
-            with col3:
+            with c3:
                 if aktif_emsal < len(sayfalar_emsal) - 1:
-                    if st.button("İleri ➡️", key="emsal_ileri_btn_nav", use_container_width=True):
+                    if st.button("İleri ➡️", key="emsal_nav_ileri"):
                         st.session_state.aktif_sayfa += 1
                         st.rerun()
-                        
-            # Analizi Temizle Butonu (Opsiyonel)
-            if st.button("🗑️ Analizi Kapat", key="clear_emsal"):
-                del st.session_state.kitap_sayfalari
-                st.rerun()
