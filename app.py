@@ -459,96 +459,96 @@ elif menu == "🎓 Akademi (Ders Notları)":
         st.markdown("---")
 
       
-if st.button("Hocadan Dinle"):
-    if not_icerigi:
-        with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
-            try:
-                # 1. Analizi yap
-                sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
-                    MY_API_KEY, 
-                    aktif_not_ismi, 
-                    not_icerigi
-                )
-                
-                if sonuc:
-                    # 2. Metni sayfalara böl
-                    paragraflar = sonuc.split('\n\n')
-                    sayfalar = []
-                    suanki_sayfa = ""
-                    for p in paragraflar:
-                        if len(suanki_sayfa) + len(p) > 1500:
-                            sayfalar.append(suanki_sayfa.strip())
-                            suanki_sayfa = p + "\n\n"
-                        else:
-                            suanki_sayfa += p + "\n\n"
-                    if suanki_sayfa.strip():
-                        sayfalar.append(suanki_sayfa.strip())
-                    
-                    # 3. BURASI KRİTİK: 'hoca_sayfalar' olarak kaydet!
-                    st.session_state.hoca_sayfalar = sayfalar
-                    st.session_state.hoca_aktif_sayfa = 0
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
-    else:
-        st.warning("Lütfen önce bir not yükleyin ustam.")
-
-# --- GÖRÜNTÜLEME ALANI (Her şey bu if'in içinde olmalı) ---
-if "hoca_sayfalar" in st.session_state and st.session_state.hoca_sayfalar:
-    st.markdown("---")
-
-# --- 3. KISIM: SORU SORMA ALANI (DİJİTAL KİTAP MODU) ---
-st.subheader("❓ Notlardan Soru Sor")
-
-aktif_not_ismi = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
-st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not_ismi}")
-
-# Değişkenleri session_state'den güvenli bir şekilde alalım
-not_icerigi = st.session_state.get('islenmis_not', "")
-
-# Soru kutusu
-# 521. satırı bu şekilde değiştir ustam:
-soru_input = st.text_input(
-    "Hocaya sormak istediğin soru nedir?", 
-    placeholder="Örn: Butlan ve İptal farkı", 
-    key="hoca_not_soru_input" # Bu anahtar bu kutuyu benzersiz yapar
-)
-
-# Eğer butonlarda da hata alırsan:
-if st.button("Hocadan Dinle", key="btn_hoca_dinle_notlar"):
-    # ... işlemler
-    if not_icerigi:
-        with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
-            try:
-                # 1. Analizi yap
-                sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
-                    MY_API_KEY, 
-                    aktif_not_ismi, 
-                    not_icerigi
-                )
-                
-                if sonuc:
-                    # 2. Metni sayfalara böl
-                    paragraflar = sonuc.split('\n\n')
-                    sayfalar = []
-                    suanki_sayfa = ""
-                    for p in paragraflar:
-                        if len(suanki_sayfa) + len(p) > 1500:
-                            sayfalar.append(suanki_sayfa.strip())
-                            suanki_sayfa = p + "\n\n"
-                        else:
-                            suanki_sayfa += p + "\n\n"
-                    if suanki_sayfa.strip():
-                        sayfalar.append(suanki_sayfa.strip())
-                    
-                    # 3. BURASI KRİTİK: 'hoca_sayfalar' olarak kaydet!
-                    st.session_state.hoca_sayfalar = sayfalar
-                    st.session_state.hoca_aktif_sayfa = 0
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
-    else:
-        st.warning("Lütfen önce bir not yükleyin ustam.")
+        if st.button("Hocadan Dinle"):
+            if not_icerigi:
+                with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
+                    try:
+                        # 1. Analizi yap
+                        sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
+                            MY_API_KEY, 
+                            aktif_not_ismi, 
+                            not_icerigi
+                        )
+                        
+                        if sonuc:
+                            # 2. Metni sayfalara böl
+                            paragraflar = sonuc.split('\n\n')
+                            sayfalar = []
+                            suanki_sayfa = ""
+                            for p in paragraflar:
+                                if len(suanki_sayfa) + len(p) > 1500:
+                                    sayfalar.append(suanki_sayfa.strip())
+                                    suanki_sayfa = p + "\n\n"
+                                else:
+                                    suanki_sayfa += p + "\n\n"
+                            if suanki_sayfa.strip():
+                                sayfalar.append(suanki_sayfa.strip())
+                            
+                            # 3. BURASI KRİTİK: 'hoca_sayfalar' olarak kaydet!
+                            st.session_state.hoca_sayfalar = sayfalar
+                            st.session_state.hoca_aktif_sayfa = 0
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
+            else:
+                st.warning("Lütfen önce bir not yükleyin ustam.")
+        
+        # --- GÖRÜNTÜLEME ALANI (Her şey bu if'in içinde olmalı) ---
+        if "hoca_sayfalar" in st.session_state and st.session_state.hoca_sayfalar:
+            st.markdown("---")
+        
+        # --- 3. KISIM: SORU SORMA ALANI (DİJİTAL KİTAP MODU) ---
+        st.subheader("❓ Notlardan Soru Sor")
+        
+        aktif_not_ismi = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
+        st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not_ismi}")
+        
+        # Değişkenleri session_state'den güvenli bir şekilde alalım
+        not_icerigi = st.session_state.get('islenmis_not', "")
+        
+        # Soru kutusu
+        # 521. satırı bu şekilde değiştir ustam:
+        soru_input = st.text_input(
+            "Hocaya sormak istediğin soru nedir?", 
+            placeholder="Örn: Butlan ve İptal farkı", 
+            key="hoca_not_soru_input" # Bu anahtar bu kutuyu benzersiz yapar
+        )
+        
+        # Eğer butonlarda da hata alırsan:
+        if st.button("Hocadan Dinle", key="btn_hoca_dinle_notlar"):
+            # ... işlemler
+            if not_icerigi:
+                with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
+                    try:
+                        # 1. Analizi yap
+                        sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
+                            MY_API_KEY, 
+                            aktif_not_ismi, 
+                            not_icerigi
+                        )
+                        
+                        if sonuc:
+                            # 2. Metni sayfalara böl
+                            paragraflar = sonuc.split('\n\n')
+                            sayfalar = []
+                            suanki_sayfa = ""
+                            for p in paragraflar:
+                                if len(suanki_sayfa) + len(p) > 1500:
+                                    sayfalar.append(suanki_sayfa.strip())
+                                    suanki_sayfa = p + "\n\n"
+                                else:
+                                    suanki_sayfa += p + "\n\n"
+                            if suanki_sayfa.strip():
+                                sayfalar.append(suanki_sayfa.strip())
+                            
+                            # 3. BURASI KRİTİK: 'hoca_sayfalar' olarak kaydet!
+                            st.session_state.hoca_sayfalar = sayfalar
+                            st.session_state.hoca_aktif_sayfa = 0
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
+            else:
+                st.warning("Lütfen önce bir not yükleyin ustam.")
 
 # --- GÖRÜNTÜLEME ALANI (Her şey bu if'in içinde olmalı) ---
 if "hoca_sayfalar" in st.session_state and st.session_state.hoca_sayfalar:
