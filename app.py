@@ -372,7 +372,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
             with col1:
                 if aktif > 0:
                     if st.button("⬅️ Geri"):
-                        st.session_state.aktif_sayfa -= 1
+                        st.session_state.akademi_aktif_sayfa -= 1
                         st.rerun()
             
             with col2:
@@ -382,7 +382,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
             with col3:
                 if aktif < len(sayfalar) - 1:
                     if st.button("İleri ➡️"):
-                        st.session_state.aktif_sayfa += 1
+                        st.session_state.akademi_aktif_sayfa += 1
                         st.rerun()
 
     # ==========================================
