@@ -156,7 +156,7 @@ class AkademikEngine:
             Konu: {konu_adi}
             
             ELİNDEKİ DERS NOTU İÇERİĞİ:
-            {ders_notu}
+            {ders_notu_metni}
             
             GÖREVİN:
             Bu konuyu, yukarıdaki ders notlarını temel alarak bir AKADEMİSYEN gibi anlat. 
