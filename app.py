@@ -780,8 +780,17 @@ elif menu == "⚖️ İçtihat Sorgulama":
                     
                     # Stream yanıtını tam metne dönüştür
                     tam_metn = ""
+                    # 784. satır civarındaki döngüyü bu hale getir ustam:
                     for chunk in response:
-                        tam_metn += chunk.text
+                        try:
+                            # 1. Paket içerisinde metin var mı kontrol et (En güvenli yöntem)
+                            if hasattr(chunk, "text") and chunk.text:
+                                tam_metn += chunk.text
+                                # Eğer st.write_stream kullanmıyorsan, anlık ekrana basmak için:
+                                # placeholder.markdown(tam_metn + " ▌") 
+                        except (ValueError, AttributeError):
+                            # 2. Eğer paket güvenlik filtresine takılırsa veya text özelliği yoksa hata verme, pas geç
+                            continue
                     
                     # İŞTE BURASI: Analiz sonucunu da sayfalara bölüyoruz
                     st.session_state.analiz_sayfalari = metni_sayfalara_bol(tam_metn, 400)
