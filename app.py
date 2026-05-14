@@ -274,6 +274,9 @@ elif menu == "🎓 Akademi (Ders Notları)":
     # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
+    # ==========================================
+    # 1. SEKME: MÜFREDAT (Ders Listesi)
+    # ==========================================
     tab_mufredat, tab_soru = st.tabs(["📚 Müfredat Analizi", "❓ Hocaya Soru Sor"])
     with tab_mufredat:
         st.subheader("📚 Ders ve Konu Seçimi")
@@ -282,50 +285,44 @@ elif menu == "🎓 Akademi (Ders Notları)":
             secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi, key="akademi_ders_v3")
         with col2:
             secilen_konu = st.selectbox("Konu Seçiniz", options=konu_listesi, key="akademi_konu_v3")
-       # Akademik Asistan sekmesindeki butonun altı
-        if st.button("📚 Notları Analiz Et / Özetle", use_container_width=True):
-            if akademik_input:
-                with st.spinner("Junilex akademik inceleme yapıyor..."):
-                    from ictihat_engine import IctihatEngine
-                    # DİKKAT: 3 parametre gönderiyoruz!
-                    sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, akademik_input)
-            
-                    if sonuc:
-                        st.session_state.akademik_sayfalar = metni_sayfalara_bol(sonuc, 300)
-                        st.session_state.akademik_aktif_sayfa = 0
-                        st.rerun()
-                            akademi_prompt = f"{secilen_ders} dersinin {secilen_konu} konusunu bir hukuk öğretim üyesi tarzıyla, örnekler vererek ve güncel içtihatlara değinerek anlaşılır şekilde anlat."
-                    
-                    # 1. AKIŞI BAŞLATIYORUZ (Streaming)
-                    stream = IctihatEngine.emsal_ara(MY_API_KEY, akademi_prompt, SERPER_API_KEY)
-                    
-                    tam_not = ""
-                    placeholder = st.empty() # Yazının akacağı geçici alan
-                    
-                    for parca in stream:
-                        if hasattr(parca, 'text') and parca.text:
-                            tam_not += parca.text
-                            # Daktilo efektiyle ekrana basıyoruz
-                            placeholder.markdown(tam_not + "▌")
-                    
-                    # 2. AKIŞ BİTTİĞİNDE: Sayfalara böl ve kalıcı hafızaya al
-                    st.session_state.akademi_notlari = metni_sayfalara_bol(tam_not, 300)
-                    st.session_state.akademi_aktif_sayfa = 0
-                    
-                    placeholder.empty() # Akış bitti, geçici alanı temizle
-                    st.rerun() # Sayfayı yenile ki aşağıdaki kitap görünümü tetiklensin
+        
+        # Eğer kullanıcı ek not girmek isterse (Opsiyonel)
+        akademik_input = st.text_area("Eklemek istediğiniz ders notları veya sorular (Opsiyonel)", height=100, key="akademi_text")
 
-                except Exception as e:
-                    st.error(f"Hoca derse giremedi ustam: {e}")
-            else:
-                st.warning("Lütfen ders ve konu seçin!")
+        if st.button("📚 Notları Analiz Et / Özetle", use_container_width=True):
+            try:
+                with st.spinner("Hoca cübbesini giyiyor, ders notları hazırlanıyor..."):
+                    from ictihat_engine import IctihatEngine
+                    
+                    # 1. Önce Hoca için Promptu Hazırlıyoruz
+                    akademi_prompt = f"{secilen_ders} dersinin {secilen_konu} konusunu bir hukuk öğretim üyesi tarzıyla, örnekler vererek ve güncel içtihatlara değinerek anlat."
+                    
+                    # Eğer kullanıcı kutuya not yazdıysa onu da ekliyoruz
+                    if akademik_input:
+                        final_sorgu = f"{akademi_prompt}\n\nÖğrenci Notu/Sorusu: {akademik_input}"
+                    else:
+                        final_sorgu = akademi_prompt
+
+                    # 2. Motoru Çağırıyoruz (3 Parametre: Gemini Key, Serper Key, Sorgu)
+                    sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, final_sorgu)
+                    
+                    if sonuc:
+                        # 3. Sonucu sayfalara böl ve hafızaya al
+                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
+                        st.session_state.akademi_aktif_sayfa = 0
+                        st.success("✅ Ders notları başarıyla hazırlandı!")
+                        st.rerun() # Kitap görünümünü tetiklemek için yenile
+                    else:
+                        st.error("AI bir sonuç döndürmedi. Lütfen API anahtarını kontrol edin.")
+
+            except Exception as e:
+                st.error(f"Hoca derse giremedi ustam: {e}")
 
         # --- DİJİTAL KİTAP GÖRÜNÜMÜ ---
         if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
             sayfalar = st.session_state.akademi_notlari
             aktif = st.session_state.akademi_aktif_sayfa
             
-            # Kitap Tasarımı
             st.markdown(f"""
             <div style="background-color: #fdfaf1; padding: 40px; border-left: 15px solid #2e7d32; border-radius: 5px; box-shadow: 10px 10px 25px rgba(0,0,0,0.1); color: #263238; font-family: 'Times New Roman', serif;">
                 <div style="text-align: right; font-size: 12px; color: #2e7d32; font-weight: bold;">SAYFA {aktif + 1} / {len(sayfalar)}</div>
@@ -334,7 +331,8 @@ elif menu == "🎓 Akademi (Ders Notları)":
             </div>
             """, unsafe_allow_html=True)
 
-            # Navigasyon
+            # Navigasyon Butonları
+            st.write("")
             n1, n2, n3 = st.columns([1, 2, 1])
             with n1:
                 if aktif > 0:
@@ -346,7 +344,6 @@ elif menu == "🎓 Akademi (Ders Notları)":
                     if st.button("İleri ➡️", key="ak_next"):
                         st.session_state.akademi_aktif_sayfa += 1
                         st.rerun()
-
 # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
     # ==========================================
