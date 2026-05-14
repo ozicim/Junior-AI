@@ -21,6 +21,14 @@ st.set_page_config(page_title="JUNIOR AI", page_icon="⚖️", layout="centered"
 # --- API ANAHTARINI BURAYA YAZ ---
 MY_API_KEY = st.secrets["GEMINI_API_KEY"]
 SERPER_API_KEY = st.secrets["SERPER_API_KEY"]
+import google.generativeai as genai
+import streamlit as st
+
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+
+for m in genai.list_models():
+    if 'generateContent' in m.supported_generation_methods:
+        print(f"Aktif Model İsmi: {m.name}")
 
 
 # 2. SESSION STATE BAŞLATMA
