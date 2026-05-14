@@ -458,18 +458,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
 
         st.markdown("---")
 
-      # --- 3. KISIM: SORU SORMA ALANI (DİJİTAL KİTAP MODU) ---
-st.subheader("❓ Notlardan Soru Sor")
-
-aktif_not_ismi = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
-st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not_ismi}")
-
-# Değişkenleri session_state'den güvenli bir şekilde alalım
-not_icerigi = st.session_state.get('islenmis_not', "")
-
-# Soru kutusu
-soru_input = st.text_input("Hocaya sormak istediğin soru nedir?", placeholder="Örn: Butlan ve İptal farkı")
-
+      
 if st.button("Hocadan Dinle"):
     if not_icerigi:
         with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
