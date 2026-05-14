@@ -484,10 +484,11 @@ elif menu == "🎓 Akademi (Ders Notları)":
                     try:
                         # 2. Hoca motorunu çağır (Not: Streaming kapalı, tam metin alıyoruz)
                         # Buradaki 'not_adi' değişkeninin yukarıda tanımlandığından emin ol
+                        # 482. satır civarındaki çağrıyı böyle güncelle:
                         sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
-                            MY_API_KEY,
-                            not_adi, 
-                            st.session_state.islenmis_not
+                            MY_API_KEY, 
+                            st.session_state.aktif_dosya, # 2. Parametre (Konu/Not Adı)
+                            st.session_state.islenmis_not   # 3. Parametre (Eksik olan not içeriği buydu!)
                         )
                         
                         if sonuc:
