@@ -833,71 +833,71 @@ elif menu == "⚖️ İçtihat Sorgulama":
     with tab2:
         st.subheader("🔎 Emsal Karar ve Mevzuat Bulucu")
     
-    # 1. ÖNCE TANIMLA: Kullanıcının metin girdiği kutu burası
-    olay_input = st.text_area(
-        "Hukuki Olayı Detaylıca Anlatın", 
-        height=150, 
-        placeholder="Örn: Banka hesabından rıza dışı para çekilmesi...", 
-        key="emsal_text_area" # Anahtar (key) mutlaka olsun
-    )
-    
-    # 2. SONRA KULLAN: Butona basıldığında yukarıdaki 'olay_input'u motorun içine gönderiyoruz
-    if st.button("🔎 Analiz Et", use_container_width=True, key="btn_emsal_bul"):
-        if olay_input: # Burada 'olay_input'u kontrol ediyoruz
-            with st.spinner("Junilex kütüphaneleri tarıyor..."):
-                from ictihat_engine import IctihatEngine
-                
-                # 'olay_input' burada tanımlı olduğu için hata vermeyecek
-                sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
-                
-                if sonuc:
-                    st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 1200)
-                    st.session_state.aktif_sayfa = 0
-                    st.rerun()
-        else:
-            st.warning("Ustam, önce bir olay anlatman lazım ki analiz yapalım!")
+        # 1. ÖNCE TANIMLA: Kullanıcının metin girdiği kutu burası
+        olay_input = st.text_area(
+            "Hukuki Olayı Detaylıca Anlatın", 
+            height=150, 
+            placeholder="Örn: Banka hesabından rıza dışı para çekilmesi...", 
+            key="emsal_text_area" # Anahtar (key) mutlaka olsun
+        )
         
-        if st.button("🔎 İçtihatları Getir", use_container_width=True, key="btn_emsal_bul"):
-            if olay_input:
+        # 2. SONRA KULLAN: Butona basıldığında yukarıdaki 'olay_input'u motorun içine gönderiyoruz
+        if st.button("🔎 Analiz Et", use_container_width=True, key="btn_emsal_bul"):
+            if olay_input: # Burada 'olay_input'u kontrol ediyoruz
                 with st.spinner("Junilex kütüphaneleri tarıyor..."):
                     from ictihat_engine import IctihatEngine
+                    
+                    # 'olay_input' burada tanımlı olduğu için hata vermeyecek
                     sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
                     
-                    if sonuc and not sonuc.startswith("HATA"):
+                    if sonuc:
                         st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 1200)
                         st.session_state.aktif_sayfa = 0
                         st.rerun()
-                    else:
-                        st.error(f"Bir sorun oluştu: {sonuc}")
-
-        # --- SAYFALAMA VE GÖRÜNTÜLEME BLOĞU (EMSAL) ---
-        if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
-            sayfalar_emsal = st.session_state.kitap_sayfalari
-            aktif_emsal = st.session_state.aktif_sayfa
+            else:
+                st.warning("Ustam, önce bir olay anlatman lazım ki analiz yapalım!")
             
-            st.markdown(f"""
-            <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50; font-family: 'Georgia', serif;">
-                <div style="font-size: 12px; color: #8d6e63; font-weight: bold; text-transform: uppercase;">🏛️ Emsal Karar Şerhi - Sayfa {aktif_emsal + 1} / {len(sayfalar_emsal)}</div>
-                <div style="font-size: 16px; line-height: 1.7; text-align: justify; margin-top: 15px;">
-                    {sayfalar_emsal[aktif_emsal].replace("\n", "<br>")}
+            if st.button("🔎 İçtihatları Getir", use_container_width=True, key="btn_emsal_bul"):
+                if olay_input:
+                    with st.spinner("Junilex kütüphaneleri tarıyor..."):
+                        from ictihat_engine import IctihatEngine
+                        sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
+                        
+                        if sonuc and not sonuc.startswith("HATA"):
+                            st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 1200)
+                            st.session_state.aktif_sayfa = 0
+                            st.rerun()
+                        else:
+                            st.error(f"Bir sorun oluştu: {sonuc}")
+    
+            # --- SAYFALAMA VE GÖRÜNTÜLEME BLOĞU (EMSAL) ---
+            if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
+                sayfalar_emsal = st.session_state.kitap_sayfalari
+                aktif_emsal = st.session_state.aktif_sayfa
+                
+                st.markdown(f"""
+                <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50; font-family: 'Georgia', serif;">
+                    <div style="font-size: 12px; color: #8d6e63; font-weight: bold; text-transform: uppercase;">🏛️ Emsal Karar Şerhi - Sayfa {aktif_emsal + 1} / {len(sayfalar_emsal)}</div>
+                    <div style="font-size: 16px; line-height: 1.7; text-align: justify; margin-top: 15px;">
+                        {sayfalar_emsal[aktif_emsal].replace("\n", "<br>")}
+                    </div>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col1:
-                if aktif_emsal > 0:
-                    if st.button("⬅️ Geri", key="emsal_geri_btn", use_container_width=True):
-                        st.session_state.aktif_sayfa -= 1
-                        st.rerun()
-            with col3:
-                if aktif_emsal < len(sayfalar_emsal) - 1:
-                    if st.button("İleri ➡️", key="emsal_ileri_btn", use_container_width=True):
-                        st.session_state.aktif_sayfa += 1
-                        st.rerun()
-            
-            with col3:
-                if aktif < len(sayfalar) - 1:
-                    if st.button("İleri ➡️", use_container_width=True):
-                        st.session_state.aktif_sayfa += 1
-                        st.rerun()
+                """, unsafe_allow_html=True)
+                
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col1:
+                    if aktif_emsal > 0:
+                        if st.button("⬅️ Geri", key="emsal_geri_btn", use_container_width=True):
+                            st.session_state.aktif_sayfa -= 1
+                            st.rerun()
+                with col3:
+                    if aktif_emsal < len(sayfalar_emsal) - 1:
+                        if st.button("İleri ➡️", key="emsal_ileri_btn", use_container_width=True):
+                            st.session_state.aktif_sayfa += 1
+                            st.rerun()
+                
+                with col3:
+                    if aktif < len(sayfalar) - 1:
+                        if st.button("İleri ➡️", use_container_width=True):
+                            st.session_state.aktif_sayfa += 1
+                            st.rerun()
