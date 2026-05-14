@@ -150,70 +150,32 @@ class AkademikEngine:
             
             
             prompt = f"""
-            Sen profesyonel bir hukuk hocasısın. Aşağıda bir öğrencinin sana sağladığı 'Ders Notları' bulunmaktadır.
-            
-            ÖĞRENCİ NOTLARI:
-            {ders_notu_metni} 
-            
-            GÖREVİN:
-            Öğrencinin sorduğu "{konu_adi}" konusunu, ÖNCELİKLE YUKARIDAKİ DERS NOTLARINA DAYANARAK anlat. 
-            Eğer notlarda bilgi eksikse, genel hukuk bilginle tamamla ama notlardaki özel vurguları (hocanın görüşü, sınav tüyosu vb.) asla atlama.
-            """
-            # stream=True ekledik:
-            response = model.generate_content(prompt, stream=True)
-            return response
-        except Exception as e:
-            return f"Hata: {str(e)}"
-            
-            response = model.generate_content(prompt)
-            return response.text
-        except Exception as e:
-            return f"Hoca notları okurken bir sorun yaşadı: {str(e)}"
-    @classmethod
-    def mufredat_hoca_anlat(cls, gemini_key, serper_key, ders, konu, ek_not=""):
-        """
-        Müfredat konularını Serper desteğiyle bir profesör gibi anlatır.
-        """
-        try:
-            import requests
-            import json
-            
-            # Akademik doktrin odaklı arama
-            url = "https://google.serper.dev/search"
-            payload = json.dumps({
-                "q": f"{ders} {konu} hukuku ders notları doktrin makale",
-                "gl": "tr", "hl": "tr"
-            })
-            headers = {'X-API-KEY': serper_key, 'Content-Type': 'application/json'}
-            search_response = requests.request("POST", url, headers=headers, data=payload)
-            search_results = search_response.json()
-
-            context = ""
-            for result in search_results.get('organic', []):
-                context += f"\nKaynak: {result.get('title')}\nÖzet: {result.get('snippet')}\n"
-
-            # Gemini Yapılandırması
-            genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel('models/gemini-2.5-flash')
-
-            prompt = f"""
-            SEN BİR HUKUK FAKÜLTESİ ÖĞRETİM ÜYESİSİN.
+            SEN KIDEMLI BİR HUKUK PROFESÖRÜSÜN. Kürsüdesin ve karşında hukuk öğrencileri var.
             Ders: {ders} | Konu: {konu}
             
             GÖREVİN:
-            1. Bu konuyu akademik derinlikle ama anlaşılır bir dille anlat.
-            2. Varsa öğrencinin (Ozan Şahin Sicim) notunu dikkate al: {ek_not}
-            3. Şu akademik verileri sentezle: {context}
+            Bu konuyu bir 'İçtihat Arama Motoru' gibi değil, bir AKADEMİSYEN gibi anlat. 
+            Yargıtay kararlarından ziyade kanunun ruhuna, doktrindeki tartışmalara ve teorik temellere odaklan.
 
-            FORMAT:
-            ### 🎓 {konu.upper()} HAKKINDA DERS NOTU
-            **1. Teorik Çerçeve:** Tanım ve doktrindeki yer.
-            **2. Önemli Kavramlar:** Anahtar terimler.
-            **3. Örnek Senaryo:** Somut olay anlatımı.
-            **⚖️ Hukuki Dayanak:** İlgili kanun maddeleri.
-            **🔍 Gerçek Emsal:** Meşhur Yargıtay kararı özeti.
+            ANLATIM TARZI:
+            - "Hukuki niteliği şudur...", "Doktrinde baskın görüş...", "Kanun koyucunun amacı..." gibi akademik kalıplar kullan.
+            - Konuyu öğrencinin (Ozan Şahin Sicim) anlayacağı şekilde basitleştir ama ciddiyeti bozma.
+
+            FORMAT (Sadece bu başlıkları kullan):
+            ### 🏛️ {konu.upper()} - KÜRSÜ NOTLARI
+            **1. Konunun Teorik Temeli:** Bu kurumun hukuk sistemindeki yeri ve mantığı nedir?
+            **2. Doktrindeki Tartışmalar:** Yazarlar ve hocalar bu konuda hangi noktalarda ayrılıyor? (Burası akademik modun kalbidir).
+            **3. Kanunun Ruhu ve Analiz:** Maddenin lafzı ne der, ruhu neyi amaçlar?
+            **💡 Hocanın Notu (Sınav Tüyosu):** Öğrenci bu konunun en çok neresine dikkat etmeli? Sınavda nereden vururlar?
+            **📚 İleri Okuma Önerisi:** Hangi hocanın kitabına veya hangi kavramlara bakılmalı?
             """
+            
             response = model.generate_content(prompt)
-            return response.text
+            
+            if response and response.candidates:
+                return response.text
+            else:
+                return "⚠️ Hoca bugün izinli, teknik bir sorun nedeniyle kürsüye çıkamadı."
+
         except Exception as e:
             return f"Hoca odasında bulunamadı: {str(e)}"
