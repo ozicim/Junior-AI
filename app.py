@@ -291,7 +291,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                     akademi_prompt = f"{secilen_ders} dersinin {secilen_konu} konusunu bir hukuk öğretim üyesi tarzıyla, örnekler vererek ve güncel içtihatlara değinerek anlaşılır şekilde anlat."
                     
                     # 1. AKIŞI BAŞLATIYORUZ (Streaming)
-                    stream = IctihatEngine.emsal_ara(MY_API_KEY, akademi_prompt)
+                    stream = IctihatEngine.emsal_ara(MY_API_KEY, akademi_prompt, SERPER_API_KEY)
                     
                     tam_not = ""
                     placeholder = st.empty() # Yazının akacağı geçici alan
@@ -303,7 +303,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                             placeholder.markdown(tam_not + "▌")
                     
                     # 2. AKIŞ BİTTİĞİNDE: Sayfalara böl ve kalıcı hafızaya al
-                    st.session_state.akademi_notlari = metni_sayfalara_bol(tam_not, 400)
+                    st.session_state.akademi_notlari = metni_sayfalara_bol(tam_not, 300)
                     st.session_state.akademi_aktif_sayfa = 0
                     
                     placeholder.empty() # Akış bitti, geçici alanı temizle
