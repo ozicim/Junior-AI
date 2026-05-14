@@ -372,6 +372,27 @@ elif menu == "🎓 Akademi (Ders Notları)":
             
 
             # Navigasyon Butonları (Kodun devamı...)
+    # --- NAVİGASYON BUTONLARI ---
+            st.write("") # Görsel nefes payı
+            n1, n2, n3 = st.columns([1, 2, 1]) # Butonları yanlara yaslamak için kolonlar
+            
+            with n1:
+                # Eğer ilk sayfada değilsek 'Geri' butonu görünsün
+                if aktif > 0:
+                    if st.button("⬅️ Geri", key="ak_sayfa_geri", use_container_width=True):
+                        st.session_state.akademi_aktif_sayfa -= 1
+                        st.rerun() # Sayfayı yenile ki yeni içerik gelsin
+            
+            with n2:
+                # Orta sütun boş kalsın veya sayfa numarasını yazalım
+                st.markdown(f"<center style='color:#8d6e63;'>{aktif + 1} / {len(sayfalar)}</center>", unsafe_allow_html=True)
+
+            with n3:
+                # Eğer son sayfada değilsek 'İleri' butonu görünsün
+                if aktif < len(sayfalar) - 1:
+                    if st.button("İleri ➡️", key="ak_sayfa_ileri", use_container_width=True):
+                        st.session_state.akademi_aktif_sayfa += 1
+                        st.rerun() # Sayfayı yenile ki yeni içerik gelsin
 # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
     # ==========================================
