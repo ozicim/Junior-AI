@@ -281,12 +281,6 @@ elif menu == "🎓 Akademi (Ders Notları)":
             ders_listesi.append(f"{ders['ikon']} {ders['isim']}")
             
     konu_listesi = ["Genel Tanımlar", "Hoca Notları", "Özet Analiz"]
-    # ==========================================
-    # 1. SEKME: MÜFREDAT (Ders Listesi)
-    # ==========================================
-    # ==========================================
-    # 1. SEKME: MÜFREDAT (Ders Listesi)
-    # ==========================================
    # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
@@ -342,17 +336,65 @@ elif menu == "🎓 Akademi (Ders Notları)":
             icerik = icerik.replace("**", "<b>").replace("**", "</b>")
             icerik = icerik.replace("\n", "<br>")
 
+            # --- PRESTİGE ŞERH TASARIMI (MİNAMALİST VE AĞIRBAŞLI) ---
+        if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
+            sayfalar = st.session_state.akademi_notlari
+            aktif = st.session_state.get('akademi_aktif_sayfa', 0)
+            
+            # İçerik Temizliği (Abartılı kutulardan kaçınıp zarif vurgulara geçtik)
+            icerik = sayfalar[aktif]
+            icerik = icerik.replace("####", "<br><b style='color:#3e2723; font-size:1.1em; border-bottom: 1px solid #d7ccc8;'>")
+            icerik = icerik.replace("###", "<h3 style='color:#1b5e20; font-family:Georgia; border-bottom: 2px solid #2e7d32; padding-bottom:5px;'>")
+            
+            # Başlıkları ikon yerine sadece kalın ve zarif renkli yapıyoruz
+            icerik = icerik.replace("**🔍 Gerçek Emsal:**", "<br><b style='color:#2e7d32;'>🔍 GERÇEK EMSAL:</b>")
+            icerik = icerik.replace("**⚖️ Hukuki Dayanak:**", "<br><b style='color:#795548;'>⚖️ HUKUKİ DAYANAK:</b>")
+            icerik = icerik.replace("**📢 Sonuç:**", "<br><b style='color:#1565c0;'>📢 SONUÇ:</b>")
+            
+            # Markdown temizliği
+            icerik = icerik.replace("**", "<b>").replace("**", "</b>")
+            icerik = icerik.replace("\n", "<br>")
+
             st.markdown(f"""
-            <div style="background-color: #fdfaf1; padding: 45px; border-left: 15px solid #2e7d32; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); color: #2c3e50; font-family: 'Georgia', serif;">
-                <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 25px;">
-                    <span style="font-size: 14px; font-weight: bold; color: #2e7d32;">🏛️ JUNİLEX AKADEMİK ŞERH</span>
-                    <span style="font-size: 12px; color: #8d6e63;">SAYFA {aktif + 1} / {len(sayfalar)}</span>
+            <style>
+                .prestige-box {{
+                    background-color: #fcfaf5;
+                    padding: 50px;
+                    border: 1px solid #e0dcd0;
+                    border-top: 8px solid #2e7d32; /* Sadece üstte ince bir prestij çizgisi */
+                    border-radius: 4px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+                    color: #2c3e50;
+                    font-family: 'Georgia', serif;
+                }}
+                .kitap-baslik {{
+                    text-align: center;
+                    font-variant: small-caps;
+                    letter-spacing: 2px;
+                    color: #1b5e20;
+                    font-size: 24px;
+                    margin-bottom: 30px;
+                    border-bottom: 1px double #d7ccc8;
+                    padding-bottom: 10px;
+                }}
+            </style>
+            
+            <div class="prestige-box">
+                <div class="kitap-baslik">
+                    🏛️ Akademik İçtihat Şerhi
                 </div>
-                <div style="font-size: 18px; line-height: 1.8; text-align: justify; color: #37474f;">
+                
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9e9e9e; margin-bottom: 20px; font-weight: bold;">
+                    <span>ÇANKIRI KARATEKİN ÜNİVERSİTESİ</span>
+                    <span>SAYFA {aktif + 1} / {len(sayfalar)}</span>
+                </div>
+                
+                <div style="font-size: 17px; line-height: 1.8; text-align: justify; color: #37474f;">
                     {icerik}
                 </div>
-                <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #bcaaa4; border-top: 1px dashed #d7ccc8; padding-top: 10px;">
-                    Çankırı Karatekin Üniversitesi Hukuk Fakültesi Arşiv Kaydı
+                
+                <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #bcaaa4; letter-spacing: 1px;">
+                    - JUNIOR AI HUKUK KÜTÜPHANESİ -
                 </div>
             </div>
             """, unsafe_allow_html=True)
