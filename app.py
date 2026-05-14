@@ -837,41 +837,38 @@ elif menu == "⚖️ İçtihat Sorgulama":
     with tab2:
         st.subheader("🔎 Yargıtay Yönelim Analizi")
         
-        olay_input = st.text_area(
+        # 1. DEĞİŞKENİ KEY PARAMETRESİYLE TANIMLIYORUZ
+        # Bu sayede Streamlit bu metni otomatik olarak 'st.session_state.emsal_olay_girdisi' içine saklar.
+        st.text_area(
             "Hukuki Olayı Detaylıca Anlatın", 
             height=150, 
             placeholder="Örn: Banka hesabından rıza dışı para çekilmesi...", 
-            key="emsal_text_area"
+            key="emsal_olay_girdisi" # <-- BU ANAHTAR ÇOK ÖNEMLİ
         )
         
         if st.button("🔎 Analiz Et", use_container_width=True, key="btn_emsal_bul"):
-            if olay_input:
+            # 2. DEĞİŞKENİ HAFIZADAN ÇEKİYORUZ
+            # Artık 'olay_input' ismine muhtaç değiliz, direkt kasadan alıyoruz.
+            girdimiz = st.session_state.get("emsal_olay_girdisi", "")
+            
+            if girdimiz: 
                 with st.spinner("Junilex kütüphaneleri tarıyor ve analiz ediyor..."):
                     try:
                         from ictihat_engine import IctihatEngine
                         
-                        # 1. ADIM: Motoru çağırıyoruz
-                        sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
+                        # Motoru çağırırken kasadaki veriyi gönderiyoruz
+                        sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, girdimiz)
                         
-                        # 2. ADIM: Sonuç boş mu kontrol ediyoruz (Debug için)
-                        if not sonuc:
-                            st.error("⚠️ Motor hiçbir sonuç döndürmedi. API anahtarlarını veya internet bağlantısını kontrol edin.")
-                        elif sonuc.startswith("HATA"):
-                            st.error(f"❌ Motor hatası: {sonuc}")
-                        else:
-                            # 3. ADIM: Başarılıysa sayfalara böl ve kaydet
-                            # 1200 karakter ideal sayfa boyutudur
+                        if sonuc:
                             st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 1200)
                             st.session_state.aktif_sayfa = 0
-                            
-                            # Debug için kaç sayfa oluştuğunu görelim
-                            # st.write(f"Başarılı! {len(st.session_state.kitap_sayfalari)} sayfa oluşturuldu.")
-                            
                             st.rerun()
+                        else:
+                            st.error("⚠️ Analiz sonucu boş döndü.")
                     except Exception as e:
-                        st.error(f"⚠️ Kritik bir hata oluştu: {str(e)}")
+                        st.error(f"⚠️ Teknik bir hata oluştu: {e}")
             else:
-                st.warning("Lütfen önce bir olay anlatın ustam.")
+                st.warning("Ustam, önce bir olay anlatman lazım.")
     
         # --- GÖRÜNTÜLEME BLOĞU (BUTONUN DIŞINDA OLMALI) ---
         # Bu kısım sayfa yenilendiğinde (rerun) sonucun ekranda kalmasını sağlar
