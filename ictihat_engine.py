@@ -7,7 +7,7 @@ class IctihatEngine:
     def karar_analiz_et(cls, api_key, karar_metni, soru):
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             prompt = f"""
             Sen kıdemli bir Yargıtay Tetkik Hakimisin. Aşağıdaki hukuk metnini analiz et.
             KARAR METNİ: {karar_metni}
@@ -44,7 +44,7 @@ class IctihatEngine:
                 context += f"\nBaşlık: {result.get('title')}\nÖzet: {result.get('snippet')}\n"
 
             genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             
             # TÜM PROMPT TEK BİR TIRNAK İÇİNDE
             prompt = f"""
