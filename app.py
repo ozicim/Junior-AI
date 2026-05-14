@@ -5,6 +5,7 @@ from mevzuat_engine import MevzuatBulutEngine
 from dilekce_engine import DilekceEngine
 from akademik_sinav_modu import AkademikSinavEngine
 from ictihat_engine import IctihatEngine
+from chat_engine import ChatEngine
 from fpdf import FPDF
 import os
 import urllib.request
@@ -887,3 +888,59 @@ elif menu == "⚖️ İçtihat Sorgulama":
                     if st.button("İleri ➡️", key="emsal_nav_ileri"):
                         st.session_state.aktif_sayfa += 1
                         st.rerun()
+# --- MOD 5: JUNILEX CHAT (Motor Destekli) ---
+elif menu == "💬 JUNILEX Chat":
+    st.header("💬 JUNILEX Hukuk Asistanı")
+    st.info("💡 Hukuki her türlü soruyu sorabilir, doktrin tartışabilirsin ustam.")
+
+    # Sohbet Geçmişi Kontrolü
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = [
+            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
+        ]
+
+    # Eski Mesajları Listele
+    for message in st.session_state.chat_messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Yeni Mesaj Girişi
+    if prompt := st.chat_input("Mesajınızı yazın..."):
+        # Kullanıcı mesajını ekrana bas ve hafızaya ekle
+        st.session_state.chat_messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Yanıt Üretme (ChatEngine Çağrılıyor)
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            full_response = ""
+            
+            from chat_engine import ChatEngine
+            
+            # Mevcut geçmişi (son kullanıcı mesajı hariç) ve yeni mesajı gönderiyoruz
+            response = ChatEngine.yanit_uret(
+                MY_API_KEY, 
+                st.session_state.chat_messages[:-1], 
+                prompt
+            )
+            
+            # Hata kontrolü ve Stream yönetimi
+            if isinstance(response, str) and response.startswith("HATA"):
+                st.error(response)
+            else:
+                for chunk in response:
+                    if hasattr(chunk, "text") and chunk.text:
+                        full_response += chunk.text
+                        message_placeholder.markdown(full_response + " ▌")
+                
+                message_placeholder.markdown(full_response)
+                # Yanıtı hafızaya kaydet
+                st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
+
+    # Sidebar Temizleme Butonu
+    if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
+        st.session_state.chat_messages = [
+            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
+        ]
+        st.rerun()
