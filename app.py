@@ -385,7 +385,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
             <div style="background-color: #fcfaf5; padding: 45px; border: 1px solid #e0dcd0; border-top: 10px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); color: #2c3e50; font-family: 'Georgia', serif;">
                 
                 <div style="text-align: center; font-variant: small-caps; letter-spacing: 3px; color: #1b5e20; font-size: 26px; margin-bottom: 30px; border-bottom: 1px double #d7ccc8; padding-bottom: 15px; font-weight: bold;">
-                    🏛️ Akademik İçtihat Şerhi
+                    🏛️ Akademik Not Özezti
                 </div>
                 
                 <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9e9e9e; margin-bottom: 25px; font-weight: bold; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px;">
