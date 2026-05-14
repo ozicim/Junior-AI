@@ -832,7 +832,32 @@ elif menu == "⚖️ İçtihat Sorgulama":
 
     with tab2:
         st.subheader("🔎 Emsal Karar ve Mevzuat Bulucu")
-        olay_input = st.text_area("Hukuki Olayı Detaylıca Anlatın", height=150, placeholder="Örn: Sıfır alınan aracın şanzıman arızası...", key="emsal_text_area")
+        with tab2:
+    st.subheader("🔎 Yargıtay Yönelim Analizi")
+    
+    # 1. ÖNCE TANIMLA: Kullanıcının metin girdiği kutu burası
+    olay_input = st.text_area(
+        "Hukuki Olayı Detaylıca Anlatın", 
+        height=150, 
+        placeholder="Örn: Banka hesabından rıza dışı para çekilmesi...", 
+        key="emsal_text_area" # Anahtar (key) mutlaka olsun
+    )
+    
+    # 2. SONRA KULLAN: Butona basıldığında yukarıdaki 'olay_input'u motorun içine gönderiyoruz
+    if st.button("🔎 Analiz Et", use_container_width=True, key="btn_emsal_bul"):
+        if olay_input: # Burada 'olay_input'u kontrol ediyoruz
+            with st.spinner("Junilex kütüphaneleri tarıyor..."):
+                from ictihat_engine import IctihatEngine
+                
+                # 'olay_input' burada tanımlı olduğu için hata vermeyecek
+                sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
+                
+                if sonuc:
+                    st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 1200)
+                    st.session_state.aktif_sayfa = 0
+                    st.rerun()
+        else:
+            st.warning("Ustam, önce bir olay anlatman lazım ki analiz yapalım!")
         
         if st.button("🔎 İçtihatları Getir", use_container_width=True, key="btn_emsal_bul"):
             if olay_input:
