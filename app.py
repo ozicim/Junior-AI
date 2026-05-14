@@ -518,7 +518,12 @@ st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not_ismi}")
 not_icerigi = st.session_state.get('islenmis_not', "")
 
 # Soru kutusu
-soru_input = st.text_input("Hocaya sormak istediğin soru nedir?", placeholder="Örn: Butlan ve İptal farkı")
+# 521. satırı bu şekilde değiştir ustam:
+soru_input = st.text_input(
+    "Hocaya sormak istediğin soru nedir?", 
+    placeholder="Örn: Butlan ve İptal farkı", 
+    key="hoca_not_soru_input" # Bu anahtar bu kutuyu benzersiz yapar
+)
 
 if st.button("Hocadan Dinle"):
     if not_icerigi:
