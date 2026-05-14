@@ -525,7 +525,9 @@ soru_input = st.text_input(
     key="hoca_not_soru_input" # Bu anahtar bu kutuyu benzersiz yapar
 )
 
-if st.button("Hocadan Dinle"):
+# Eğer butonlarda da hata alırsan:
+if st.button("Hocadan Dinle", key="btn_hoca_dinle_notlar"):
+    # ... işlemler
     if not_icerigi:
         with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
             try:
