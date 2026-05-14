@@ -153,7 +153,7 @@ class AkademikEngine:
             
             prompt = f"""
             SEN KIDEMLI BİR HUKUK PROFESÖRÜSÜN. Kürsüdesin ve karşında hukuk öğrencileri var.
-            Ders: {ders} | Konu: {konu}
+            Ders: {ders_adi} | Konu: {konu_adi}
             
             GÖREVİN:
             Bu konuyu bir 'İçtihat Arama Motoru' gibi değil, bir AKADEMİSYEN gibi anlat. 
