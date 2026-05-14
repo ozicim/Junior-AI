@@ -282,6 +282,18 @@ elif menu == "🎓 Akademi (Ders Notları)":
             secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi, key="akademi_ders_v3")
         with col2:
             secilen_konu = st.selectbox("Konu Seçiniz", options=konu_listesi, key="akademi_konu_v3")
+        # Akademik Asistan sekmesindeki butonun altı
+        if st.button("📚 Notları Analiz Et / Özetle", use_container_width=True):
+            if akademik_input:
+                with st.spinner("Junilex akademik inceleme yapıyor..."):
+                    from ictihat_engine import IctihatEngine
+                    # DİKKAT: 3 parametre gönderiyoruz!
+                    sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, akademik_input)
+            
+                    if sonuc:
+                        st.session_state.akademik_sayfalar = metni_sayfalara_bol(sonuc, 300)
+                        st.session_state.akademik_aktif_sayfa = 0
+                        st.rerun()
 
         if st.button("👨‍🏫 AI Hoca Analiz Et", use_container_width=True):
             if secilen_ders and secilen_konu:
