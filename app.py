@@ -626,36 +626,36 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 )
             
             # --- KİTAP GÖRÜNÜMÜ ---
-    aktif = st.session_state.hoca_aktif_sayfa
-    sayfalar = st.session_state.hoca_sayfalar
-    
-    # Kitap şerh kartı (Müfredat kısmındakini buraya kopyalıyoruz ama değişkenleri hoca_sayfalar yapıyoruz)
-    icerik = sayfalar[aktif]
-    
-    # HTML Tasarımı (Burada senin paylaştığın Prestige Şerh tasarımını kullanabilirsin)
-    st.markdown(f"""
-    <div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; color: #2c3e50;">
-        <div style="font-size: 12px; color: #2e7d32; font-weight: bold; margin-bottom: 20px;">
-            🎓 NOT ANALİZİ - Sayfa {aktif + 1} / {len(sayfalar)}
-        </div>
-        <div style="font-size: 18px; line-height: 1.8;">
-            {icerik.replace("\n", "<br>")}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Navigasyon
-    col_sol, col_orta, col_sag = st.columns([1, 2, 1])
-    with col_sol:
-        if aktif > 0:
-            if st.button("⬅️ Önceki", key="hoca_geri"):
-                st.session_state.hoca_aktif_sayfa -= 1
-                st.rerun()
-    with col_sag:
-        if aktif < len(sayfalar) - 1:
-            if st.button("Sonraki ➡️", key="hoca_ileri"):
-                st.session_state.hoca_aktif_sayfa += 1
-                st.rerun()
+            aktif = st.session_state.hoca_aktif_sayfa
+            sayfalar = st.session_state.hoca_sayfalar
+            
+            # Kitap şerh kartı (Müfredat kısmındakini buraya kopyalıyoruz ama değişkenleri hoca_sayfalar yapıyoruz)
+            icerik = sayfalar[aktif]
+            
+            # HTML Tasarımı (Burada senin paylaştığın Prestige Şerh tasarımını kullanabilirsin)
+            st.markdown(f"""
+            <div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; color: #2c3e50;">
+                <div style="font-size: 12px; color: #2e7d32; font-weight: bold; margin-bottom: 20px;">
+                    🎓 NOT ANALİZİ - Sayfa {aktif + 1} / {len(sayfalar)}
+                </div>
+                <div style="font-size: 18px; line-height: 1.8;">
+                    {icerik.replace("\n", "<br>")}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+            # Navigasyon
+            col_sol, col_orta, col_sag = st.columns([1, 2, 1])
+            with col_sol:
+                if aktif > 0:
+                    if st.button("⬅️ Önceki", key="hoca_geri"):
+                        st.session_state.hoca_aktif_sayfa -= 1
+                        st.rerun()
+            with col_sag:
+                if aktif < len(sayfalar) - 1:
+                    if st.button("Sonraki ➡️", key="hoca_ileri"):
+                        st.session_state.hoca_aktif_sayfa += 1
+                        st.rerun()
     # ==========================================
     # 3. SEKME: SINAV MODU
     # ==========================================
