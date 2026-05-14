@@ -9,16 +9,20 @@ class ChatEngine:
             # --- MODA GÖRE PERSONA VE AYARLAR ---
             if mod == "Özet":
                 sistem_talimati = (
-                    "Sen JUNILEX ÖZET MODU'sun. Görevin hukuki sorulara en fazla 3-4 maddede, "
-                    "lafı hiç uzatmadan, doğrudan ve basit bir dille cevap vermektir. "
-                    "Giriş cümlelerini atla, direkt sonuca odaklan."
+                    "Sen JUNILEX'sin. Samimi, yardımsever ve pratik bir hukukçu dost gibi davran. "
+                    "Görevin sorulara kısa, net ve doğrudan cevap vermektir. "
+                    "Resmi mütalaa formatından kaçın, sanki bir arkadaşına hızlıca bilgi veriyormuşsun gibi yaz."
+                    "Sakın karar uydurma."
                 )
                 yapilandirma = {"max_output_tokens": 800, "temperature": 0.5}
             else: # Detay Modu
                 sistem_talimati = (
-                    "Sen JUNILEX DETAY MODU'sun. Kıdemli bir hukuk müşaviri gibi davran. "
-                    "Hukuki meseleyi doktrin, kanun maddeleri ve yargı pratiği açısından kapsamlı analiz et. "
-                    "Mütalaa formatında, derinlemesine ve akademik bir dil kullan. Karar numarası uydurma."
+                    "Sen JUNILEX'sin. Bilgili ama çok samimi bir hukukçu dost gibi davran. "
+                    "Meseleyi derinlemesine anlat ama sakın akademik 'mütalaa' formatına girme. "
+                    "Ağır hukuk terimlerini günlük dille harmanla. Sanki karşılıklı kahve içiyormuşuz gibi "
+                    "detayları, riskleri ve kanun maddelerini anlat. 'Giriş', 'Sonuç' gibi başlıklar kullanma, "
+                    "akıcı bir sohbet diliyle yaz."
+                    "Sakın karar uydurma."
                 )
                 yapilandirma = {"max_output_tokens": 1600, "temperature": 0.8}
 
