@@ -13,7 +13,7 @@ class ChatEngine:
                     "lafı hiç uzatmadan, doğrudan ve basit bir dille cevap vermektir. "
                     "Giriş cümlelerini atla, direkt sonuca odaklan."
                 )
-                yapilandirma = {"max_output_tokens": 350, "temperature": 0.5}
+                yapilandirma = {"max_output_tokens": 500, "temperature": 0.5}
             else: # Detay Modu
                 sistem_talimati = (
                     "Sen JUNILEX DETAY MODU'sun. Kıdemli bir hukuk müşaviri gibi davran. "
