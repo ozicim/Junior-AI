@@ -13,14 +13,14 @@ class ChatEngine:
                     "lafı hiç uzatmadan, doğrudan ve basit bir dille cevap vermektir. "
                     "Giriş cümlelerini atla, direkt sonuca odaklan."
                 )
-                yapilandirma = {"max_output_tokens": 500, "temperature": 0.5}
+                yapilandirma = {"max_output_tokens": 800, "temperature": 0.5}
             else: # Detay Modu
                 sistem_talimati = (
                     "Sen JUNILEX DETAY MODU'sun. Kıdemli bir hukuk müşaviri gibi davran. "
                     "Hukuki meseleyi doktrin, kanun maddeleri ve yargı pratiği açısından kapsamlı analiz et. "
                     "Mütalaa formatında, derinlemesine ve akademik bir dil kullan. Karar numarası uydurma."
                 )
-                yapilandirma = {"max_output_tokens": 1500, "temperature": 0.8}
+                yapilandirma = {"max_output_tokens": 1600, "temperature": 0.8}
 
             model = genai.GenerativeModel(
                 model_name='gemini-2.5-flash', # Hız için flash, derinlik için gerekirse pro
