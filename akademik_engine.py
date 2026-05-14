@@ -179,3 +179,64 @@ class AkademikEngine:
 
         except Exception as e:
             return f"Hoca odasında bulunamadı: {str(e)}"
+    @classmethod
+    def mufredat_hoca_anlat(cls, gemini_key, serper_key, ders, konu, ek_not=""):
+        """
+        Müfredat konularını bir Profesör edasıyla, doktrin ağırlıklı anlatan motor.
+        """
+        try:
+            # 1. SERPER İLE AKADEMİK KAYNAK TARAMASI
+            url = "https://google.serper.dev/search"
+            payload = json.dumps({
+                "q": f"{ders} {konu} hukuku ders notları doktrin tartışmaları",
+                "gl": "tr", "hl": "tr"
+            })
+            headers = {'X-API-KEY': serper_key, 'Content-Type': 'application/json'}
+            search_response = requests.request("POST", url, headers=headers, data=payload)
+            search_results = search_response.json()
+
+            context = ""
+            for result in search_results.get('organic', []):
+                context += f"\nKaynak: {result.get('title')}\nÖzet: {result.get('snippet')}\n"
+
+            # 2. GEMINI YAPILANDIRMASI (Senin 2.5-Flash modelinle)
+            genai.configure(api_key=gemini_key)
+            model = genai.GenerativeModel('models/gemini-2.5-flash')
+
+            # 3. PROFESÖR PROMPTU (İçtihatsız, Sadece Teori ve Doktrin)
+            prompt = f"""
+            SEN KIDEMLİ BİR HUKUK PROFESÖRÜSÜN. Kürsüdesin ve karşında hukuk öğrencileri var.
+            Ders: {ders} | Konu: {konu}
+            
+            GÖREVİN:
+            Bu konuyu bir 'İçtihat Arama Motoru' gibi değil, bir AKADEMİSYEN gibi anlat. 
+            Yargıtay kararlarından ziyade kanunun ruhuna, doktrindeki tartışmalara ve teorik temellere odaklan.
+
+            ANLATIM TARZI:
+            - "Hukuki niteliği şudur...", "Doktrinde baskın görüş...", "Kanun koyucunun amacı..." gibi akademik kalıplar kullan.
+            - Konuyu öğrencinin anlayacağı şekilde derinleştir ama ciddiyeti bozma.
+            - Varsa öğrencinin özel notunu dikkate al: {ek_not}
+            - Şu akademik verileri sentezle: {context}
+
+            FORMAT (Sadece bu başlıkları kullan):
+            ### 🏛️ {konu.upper()} - KÜRSÜ NOTLARI
+            **1. Konunun Teorik Temeli:** Bu kurumun hukuk sistemindeki yeri ve mantığı nedir?
+            **2. Doktrindeki Tartışmalar:** Yazarlar ve hocalar bu konuda hangi noktalarda ayrılıyor?
+            **3. Kanunun Ruhu ve Analiz:** Maddenin lafzı ne der, ruhu neyi amaçlar?
+            **💡 Hocanın Notu (Sınav Tüyosu):** Öğrenci bu konunun en çok neresine dikkat etmeli? Sınavda nereden vururlar?
+            **📚 İleri Okuma Önerisi:** Hangi hocanın kitabına veya hangi kavramlara bakılmalı?
+            """
+            
+            response = model.generate_content(prompt)
+            
+            # 4. GÜVENLİ YANIT DÖNDÜRME
+            if response and hasattr(response, 'candidates') and len(response.candidates) > 0:
+                try:
+                    return response.text
+                except (ValueError, AttributeError):
+                    return "⚠️ Hoca bugün biraz yorgun, akademik içerik oluşturulamadı."
+            else:
+                return "⚠️ Kürsü boş kaldı, model yanıt üretemedi."
+
+        except Exception as e:
+            return f"Hoca odasında bulunamadı (Teknik Hata): {str(e)}"
