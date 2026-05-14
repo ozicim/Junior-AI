@@ -892,21 +892,26 @@ elif menu == "⚖️ İçtihat Sorgulama":
 
 elif menu == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Hukuk Asistanı")
-    st.info("💡 Hukuki teoriler, kanun maddeleri veya akademik konular hakkında dilediğin her şeyi sorabilirsin.")
+    
+    # --- MOD SEÇİM BUTONLARI ---
+    # Sidebar'a veya sayfa üstüne şık bir seçim alanı koyalım
+    chat_modu = st.radio(
+        "Zeka Modunu Seçin:",
+        ["Özet", "Detaylı Analiz"],
+        horizontal=True,
+        help="Özet modunda kısa cevaplar, Detaylı modda kapsamlı mütalaalar alırsınız."
+    )
+    
+    st.markdown("---")
 
-    # 1. Hafıza Başlatma
     if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = [
-            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi istişare edelim?"}
-        ]
+        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, bugün hangi meseleyi çözelim?"}]
 
-    # 2. Geçmişi Ekrana Bas
     for message in st.session_state.chat_messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # 3. Giriş ve Yanıt Operasyonu
-    if prompt := st.chat_input("Mesajınızı buraya yazın..."):
+    if prompt := st.chat_input("Mesajınızı yazın..."):
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
@@ -915,9 +920,14 @@ elif menu == "💬 JUNILEX Chat":
             message_placeholder = st.empty()
             full_response = ""
             
-            # Motoru çağır (Daha önce yaptığımız chat_engine.py üzerinden)
             from chat_engine import ChatEngine
-            response = ChatEngine.yanit_uret(MY_API_KEY, st.session_state.chat_messages[:-1], prompt)
+            # MOTORU ÇAĞIRIRKEN MODU GÖNDERİYORUZ
+            response = ChatEngine.yanit_uret(
+                MY_API_KEY, 
+                st.session_state.chat_messages[:-1], 
+                prompt,
+                mod=chat_modu
+            )
             
             if isinstance(response, str) and response.startswith("HATA"):
                 st.error(response)
@@ -928,19 +938,6 @@ elif menu == "💬 JUNILEX Chat":
                         message_placeholder.markdown(full_response + " ▌")
                 
                 message_placeholder.markdown(full_response)
-                st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-            
-            # Hata kontrolü ve Stream yönetimi
-            if isinstance(response, str) and response.startswith("HATA"):
-                st.error(response)
-            else:
-                for chunk in response:
-                    if hasattr(chunk, "text") and chunk.text:
-                        full_response += chunk.text
-                        message_placeholder.markdown(full_response + " ▌")
-                
-                message_placeholder.markdown(full_response)
-                # Yanıtı hafızaya kaydet
                 st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
 
     # Sidebar Temizleme Butonu
