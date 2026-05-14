@@ -178,7 +178,7 @@ class AkademikEngine:
             import requests
             import json
             
-            # 1. Akademik Tarama (Doktrin odaklı)
+            # Akademik doktrin odaklı arama
             url = "https://google.serper.dev/search"
             payload = json.dumps({
                 "q": f"{ders} {konu} hukuku ders notları doktrin makale",
@@ -192,31 +192,28 @@ class AkademikEngine:
             for result in search_results.get('organic', []):
                 context += f"\nKaynak: {result.get('title')}\nÖzet: {result.get('snippet')}\n"
 
-            # 2. Gemini Yapılandırması
+            # Gemini Yapılandırması
             genai.configure(api_key=gemini_key)
             model = genai.GenerativeModel('gemini-1.5-flash')
 
             prompt = f"""
             SEN BİR HUKUK FAKÜLTESİ ÖĞRETİM ÜYESİSİN.
-            Ders: {ders}
-            Konu: {konu}
+            Ders: {ders} | Konu: {konu}
             
             GÖREVİN:
-            1. Bu konuyu bir hukuk öğrencisine (Ozan Şahin Sicim) anlatır gibi, akademik derinlikle ama anlaşılır bir dille anlat.
-            2. Varsa öğrencinin eklediği notu dikkate al: {ek_not}
-            3. İnternetten gelen şu akademik verileri de sentezle: {context}
+            1. Bu konuyu akademik derinlikle ama anlaşılır bir dille anlat.
+            2. Varsa öğrencinin (Ozan Şahin Sicim) notunu dikkate al: {ek_not}
+            3. Şu akademik verileri sentezle: {context}
 
             FORMAT:
             ### 🎓 {konu.upper()} HAKKINDA DERS NOTU
             **1. Teorik Çerçeve:** Tanım ve doktrindeki yer.
             **2. Önemli Kavramlar:** Anahtar terimler.
-            **3. Örnek Senaryo:** Somut olay üzerinden anlatım.
+            **3. Örnek Senaryo:** Somut olay anlatımı.
             **⚖️ Hukuki Dayanak:** İlgili kanun maddeleri.
-            **🔍 Gerçek Emsal:** Konuyla ilgili meşhur bir Yargıtay kararı özeti.
+            **🔍 Gerçek Emsal:** Meşhur Yargıtay kararı özeti.
             """
-
             response = model.generate_content(prompt)
             return response.text
-
         except Exception as e:
             return f"Hoca odasında bulunamadı: {str(e)}"
