@@ -479,11 +479,11 @@ elif menu == "🎓 Akademi (Ders Notları)":
         if st.button("👨‍🏫 Hocaya Sor"):
             if soru_input:
                 st.markdown("### 🎓 JUNILEX Hoca Anlatıyor:")
-                sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
-                    MY_API_KEY, 
-                    not_adi, 
-                    st.session_state.islenmis_not # Eksik olan 3. parça burası ustam!
-                )
+                    sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
+                        MY_API_KEY, 
+                        not_adi, 
+                        st.session_state.islenmis_not # Eksik olan 3. parça burası ustam!
+                    )
                 
                 try:
                     # 1. Akışı (Streaming) başlatıyoruz - 3. parametre olarak notu ekledik
