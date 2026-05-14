@@ -27,7 +27,7 @@ class ChatEngine:
                     "2. YAPI: Analizini mantıklı bir sırayla sun. Mevcut durumu, yasal dayanakları ve olası riskleri ayrı ayrı ele al.\n"
                     "3. DİL: Samimi ama son derece profesyonel bir hukukçu dili kullan. Gereksiz formalitelerden kaçın ama ciddiyeti koru.\n"
                     "4. KESİN YASAK: Asla uydurma Esas/Karar numarası verme. Bilginin kaynağını genel olarak belirt (Örn: 'Yargıtay'ın yerleşik içtihatları bu yöndedir').\n"
-                    "5. KAPSAM: Bu modda cevaplar daha kapsamlı, detaylı ve öğretici olmalıdır. Kullanıcının aklında soru işareti bırakmayacak şekilde analiz yap."
+                    "5. KAPSAM: Bu modda cevaplar daha kapsamlı, detaylı ve öğretici olmalıdır. Detaylı analiz yap ancak açıklamaları çok uzun tutma."
                 )
                 yapilandirma = {"max_output_tokens": 2500, "temperature": 0.8}
 
