@@ -229,7 +229,7 @@ if "Adliye" in menu:
                 </div>
                 <div class="madde-icerik">{p_html}</div>
             </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
         
         if st.session_state.bulunan_madde: # Eğer bir madde bulunduysa
             # 1. Önce maddenin metnini bir değişkene hapsedelim
