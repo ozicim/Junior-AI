@@ -142,7 +142,7 @@ class AkademikEngine:
             return metin
         else:
             return str(yuklenen_dosya.read(), "utf-8")
-
+    @classmethod
     def notlarla_ai_hoca_anlat(cls, api_key, konu_adi, ders_notu_metni):
         """Yüklenen ders notlarını baz alarak bir Profesör gibi konu anlatımı yapar."""
         try:
