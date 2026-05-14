@@ -902,11 +902,11 @@ elif menu == "💬 JUNILEX Chat":
         ]
 
     # 2. Dinamik Popover (Zeka Modu Seçimi)
-    with st.popover(f"⚡ Mod: {st.session_state.chat_mode}"):
+    with st.popover(f"Mod: {st.session_state.chat_mode}"):
         st.markdown("### 🧠 Zeka Yapılandırması")
         secilen_mod = st.radio(
             "Yanıt derinliğini seçin:",
-            ["Özet", "⚖️ Detaylı Analiz"],
+            ["⚡ Özet", "⚖️ Detaylı Analiz"],
             index=0 if "Özet" in st.session_state.chat_mode else 1,
             key="chat_mode_radio"
         )
