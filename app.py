@@ -8,24 +8,7 @@ from ictihat_engine import IctihatEngine
 from fpdf import FPDF
 import os
 import urllib.request
-import streamlit as st
 import google.generativeai as genai
-# Diğer importların...
-
-# --- MODEL KONTROLÜ (Bunu geçici olarak ekle) ---
-try:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    print("--- AKTİF MODELLERİN LİSTESİ ---")
-    for m in genai.list_models():
-        if 'generateContent' in m.supported_generation_methods:
-            print(f"Aktif Model İsmi: {m.name}")
-    print("-------------------------------")
-except Exception as e:
-    print(f"Model listesi alınamadı: {e}")
-
-
-
-
 try:
     AkademikEngine.veritabanini_baslat()
 except Exception as e:
@@ -154,15 +137,6 @@ with st.sidebar:
         ["🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)","⚖️ İçtihat Sorgulama"])
     st.divider()
     st.info("Ozan Şahin Sicim | JUNILEX AI v2.0")
-    import streamlit as st
-import google.generativeai as genai
-
-# Bunu geçici olarak sidebar'a veya sayfanın üstüne ekle
-with st.expander("Sistem Bilgisi: Aktif Modeller"):
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    for m in genai.list_models():
-        if 'generateContent' in m.supported_generation_methods:
-            st.code(m.name)
 
 # 6. LOGO VE ÜST BAŞLIK
 st.markdown("""
@@ -393,6 +367,23 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 </div>
             </div>
             """, unsafe_allow_html=True)
+            col1, col2, col3 = st.columns([1, 2, 1])
+    
+            with col1:
+                if aktif > 0:
+                    if st.button("⬅️ Geri"):
+                        st.session_state.aktif_sayfa -= 1
+                        st.rerun()
+            
+            with col2:
+                # Sayfa numarasını ortada göster
+                st.markdown(f"<center><b>{aktif + 1} . Sayfa</b></center>", unsafe_allow_html=True)
+                
+            with col3:
+                if aktif < len(sayfalar) - 1:
+                    if st.button("İleri ➡️"):
+                        st.session_state.aktif_sayfa += 1
+                        st.rerun()
 
     # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
