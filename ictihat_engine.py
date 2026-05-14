@@ -36,9 +36,9 @@ class IctihatEngine:
         return response.json()
     
     @classmethod
-    def emsal_ara(cls, gemini_key, serper_key, olay_ozeti):
+    def emsal_ara(cls, gemini_key, serper_key, olay_input):
         try:
-            search_results = cls.serper_search(olay_ozeti, serper_key)
+            search_results = cls.serper_search(olay_input, serper_key)
             context = ""
             for result in search_results.get('organic', []):
                 context += f"\nBaşlık: {result.get('title')}\nÖzet: {result.get('snippet')}\n"
