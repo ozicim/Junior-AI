@@ -62,15 +62,17 @@ class IctihatEngine:
             ANALİZ FORMATI (Sadece bu başlıkları kullan):
             
             ### 🏛️ YARGITAY YÖNELİM ANALİZİ
-            **1. Yerleşik Uygulama Trendi:** Yargıtay bu tip olaylara genel olarak nasıl bakıyor? (Örn: "İşçi lehine yorum ilkesini ön planda tutmaktadır", "Bankanın objektif özen yükümlülüğünü ağırlaştırmaktadır" vb.)
+            **1. Yerleşik Uygulama Trendi:** Yargıtay bu tip olaylara genel olarak nasıl bakıyor?
             
-            **2. Kritik Eşikler ve Kriterler:** Mahkemenin bir karara varırken aradığı ana şartlar nelerdir? (Hangi durumlarda davayı kabul, hangi durumlarda reddetme eğilimindedir?)
+            **2. Kritik Eşikler ve Kriterler:** Mahkemenin bir karara varırken aradığı ana şartlar nelerdir?
             
-            **3. Güncel Yaklaşım Değişiklikleri:** Varsa, son yıllarda bu konudaki içtihatlarda bir esneme veya sertleşme var mı?
+            **3. İlgili Kanun Maddeleri ve Mevzuat Dayanağı:** Bu olayda uygulanması gereken temel kanun maddelerini (Örn: TBK m. 417, TMK m. 2, İİK m. 89 vb.) ve bu maddelerin olayla bağını açıkla.
             
-            **4. Stratejik Hukuki Yorum:** Bu olayda davanın kaderini belirleyecek olan en temel hukuki argüman ne olmalıdır? (İspat yükü, kusur durumu, zaman aşımı vb. açısından yorumla.)
+            **4. Güncel Yaklaşım Değişiklikleri:** Varsa, son yıllarda bu konudaki içtihatlarda bir esneme veya sertleşme var mı?
             
-            **⚠️ ÖNEMLİ UYARI:** Karar numarası uydurma. Sadece hukuk teorisi ve yüksek mahkemenin "yerleşik uygulaması" üzerinden konuş.
+            **5. Stratejik Hukuki Yorum:** Bu olayda davanın kaderini belirleyecek olan en temel hukuki argüman ne olmalıdır?
+            
+            **⚠️ ÖNEMLİ UYARI:** Karar numarası uydurma. Sadece hukuk teorisi, kanun maddeleri ve yüksek mahkemenin "yerleşik uygulaması" üzerinden konuş.
             """
             response = model.generate_content(prompt)
             return response.text
