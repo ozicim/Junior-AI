@@ -318,32 +318,36 @@ elif menu == "🎓 Akademi (Ders Notları)":
             except Exception as e:
                 st.error(f"Hoca derse giremedi ustam: {e}")
 
-        # --- DİJİTAL KİTAP GÖRÜNÜMÜ ---
+        # --- DİJİTAL KİTAP GÖRÜNÜMÜ (GELİŞTİRİLMİŞ TASARIM) ---
         if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
             sayfalar = st.session_state.akademi_notlari
             aktif = st.session_state.akademi_aktif_sayfa
             
+            # Metni güzelleştirme: Markdown işaretlerini temizle ve ikonlarla süsle
+            sayfa_icerigi = sayfalar[aktif]
+            sayfa_icerigi = sayfa_icerigi.replace("####", "<h4 style='color: #1b5e20; margin-top: 20px;'>")
+            sayfa_icerigi = sayfa_icerigi.replace("**🔍 Gerçek Emsal:**", "<div style='background: #e8f5e9; padding: 10px; border-radius: 5px; border-left: 5px solid #2e7d32; margin: 10px 0;'><b>🔍 Gerçek Emsal:</b>")
+            sayfa_icerigi = sayfa_icerigi.replace("**⚖️ Hukuki Dayanak:**", "<div style='background: #fff3e0; padding: 10px; border-radius: 5px; border-left: 5px solid #ef6c00; margin: 10px 0;'><b>⚖️ Hukuki Dayanak:</b>")
+            sayfa_icerigi = sayfa_icerigi.replace("**📢 Sonuç:**", "<div style='background: #e3f2fd; padding: 10px; border-radius: 5px; border-left: 5px solid #1565c0; margin: 10px 0;'><b>📢 Sonuç:</b>")
+            # Div'leri kapatma simülasyonu (basit bir yöntem)
+            sayfa_icerigi = sayfa_icerigi.replace("\n\n", "</div><br>") 
+        
             st.markdown(f"""
-            <div style="background-color: #fdfaf1; padding: 40px; border-left: 15px solid #2e7d32; border-radius: 5px; box-shadow: 10px 10px 25px rgba(0,0,0,0.1); color: #263238; font-family: 'Times New Roman', serif;">
-                <div style="text-align: right; font-size: 12px; color: #2e7d32; font-weight: bold;">SAYFA {aktif + 1} / {len(sayfalar)}</div>
-                <h2 style="color: #1b5e20; border-bottom: 2px solid #c8e6c9; margin-bottom: 20px;">🎓 AKADEMİK ŞERH</h2>
-                <div style="font-size: 18px; line-height: 1.7; text-align: justify;">{sayfalar[aktif].replace('\\n', '<br>')}</div>
+            <div style="background-color: #fdfaf1; padding: 45px; border: 1px solid #d7ccc8; border-left: 15px solid #2e7d32; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); color: #2c3e50; font-family: 'Georgia', serif;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 25px;">
+                    <span style="font-size: 14px; font-weight: bold; color: #2e7d32;">🏛️ JUNİLEX AKADEMİK ARŞİV</span>
+                    <span style="font-size: 12px; color: #8d6e63;">SAYFA {aktif + 1} / {len(sayfalar)}</span>
+                </div>
+                
+                <div style="font-size: 18px; line-height: 1.8; text-align: justify; color: #37474f;">
+                    {sayfa_icerigi}
+                </div>
+                
+                <div style="margin-top: 30px; padding-top: 15px; border-top: 1px dashed #bcaaa4; text-align: center; font-style: italic; font-size: 13px; color: #8d6e63;">
+                    Çankırı Karatekin Üniversitesi Hukuk Fakültesi - Akademik Analiz Modülü
+                </div>
             </div>
             """, unsafe_allow_html=True)
-
-            # Navigasyon Butonları
-            st.write("")
-            n1, n2, n3 = st.columns([1, 2, 1])
-            with n1:
-                if aktif > 0:
-                    if st.button("⬅️ Geri", key="ak_prev"):
-                        st.session_state.akademi_aktif_sayfa -= 1
-                        st.rerun()
-            with n3:
-                if aktif < len(sayfalar) - 1:
-                    if st.button("İleri ➡️", key="ak_next"):
-                        st.session_state.akademi_aktif_sayfa += 1
-                        st.rerun()
 # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
     # ==========================================
