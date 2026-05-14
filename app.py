@@ -719,17 +719,20 @@ elif menu == "⚖️ İçtihat Sorgulama":
                     st.session_state.analiz_aktif_sayfa = 0
                     st.rerun()
     
-        # --- GÖRÜNTÜLEME VE BUTONLAR ---
+        # --- GÖRÜNTÜLEME VE BUTONLAR (KARAR ANALİZİ) ---
         if "analiz_sayfalari" in st.session_state and st.session_state.analiz_sayfalari:
             sayfalar = st.session_state.analiz_sayfalari
             aktif = st.session_state.analiz_aktif_sayfa
             
-            # Junilex Şerh Kartı
+            # Hatayı önlemek için replace işlemini dışarıda yapıyoruz
+            analiz_icerik = sayfalar[aktif].replace("\n", "<br>")
+            
+            # Junilex Şerh Kartı (Tırnaklara DİKKAT!)
             st.markdown(f"""
             <div style="background-color: #fdfaf1; padding: 25px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50;">
                 <div style="font-size: 12px; color: #8d6e63; font-weight: bold;">🏛️ ANALİZ ŞERHİ - Sayfa {aktif + 1}</div>
                 <div style="font-size: 16px; line-height: 1.6; margin-top: 15px;">
-                    {sayfalar[aktif].replace("\n", "<br>")}
+                    {analiz_icerik}
                 </div>
             </div>
             """, unsafe_allow_html=True)
