@@ -3,6 +3,7 @@ import firebase_admin
 import PyPDF2
 import io
 import json
+import requests
 import streamlit as st
 from firebase_admin import credentials, firestore
 
