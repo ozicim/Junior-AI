@@ -550,18 +550,18 @@ elif menu == "🎓 Akademi (Ders Notları)":
             else:
                 st.warning("Lütfen önce bir not yükleyin ustam.")
 
-            # --- GÖRÜNTÜLEME ALANI (Her şey bu if'in içinde olmalı) ---
-            if "hoca_sayfalar" in st.session_state and st.session_state.hoca_sayfalar:
-                st.markdown("---")
+        # --- GÖRÜNTÜLEME ALANI (Her şey bu if'in içinde olmalı) ---
+        if "hoca_sayfalar" in st.session_state and st.session_state.hoca_sayfalar:
+            st.markdown("---")
                 
-                # Başlık ve İndirme Butonu
-                col_baslik, col_indir = st.columns([3, 1])
-                with col_baslik:
-                    st.markdown("### 📖 Hoca'nın Notu")
+            # Başlık ve İndirme Butonu
+            col_baslik, col_indir = st.columns([3, 1])
+            with col_baslik:
+                st.markdown("### 📖 Hoca'nın Notu")
                 
-                with col_indir:
-                # 1. Metni Al (Filtre yok, orijinal Türkçe metin!)
-                tam_metin = "\n\n".join(st.session_state.hoca_sayfalar)
+            with col_indir:
+             # 1. Metni Al (Filtre yok, orijinal Türkçe metin!)
+            tam_metin = "\n\n".join(st.session_state.hoca_sayfalar)
                 
                 # 2. Türkçe Destekli Fontları (Roboto) Otomatik İndir
                 font_reg = "Roboto-Regular.ttf"
