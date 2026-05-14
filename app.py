@@ -560,8 +560,8 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 st.markdown("### 📖 Hoca'nın Notu")
                 
             with col_indir:
-             # 1. Metni Al (Filtre yok, orijinal Türkçe metin!)
-            tam_metin = "\n\n".join(st.session_state.hoca_sayfalar)
+                 # 1. Metni Al (Filtre yok, orijinal Türkçe metin!)
+                tam_metin = "\n\n".join(st.session_state.hoca_sayfalar)
                 
                 # 2. Türkçe Destekli Fontları (Roboto) Otomatik İndir
                 font_reg = "Roboto-Regular.ttf"
