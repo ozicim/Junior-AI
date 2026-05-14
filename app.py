@@ -478,48 +478,48 @@ elif menu == "🎓 Akademi (Ders Notları)":
 
         # ... önceki kodlar ...
         if st.button("Hocadan Dinle"):
-    # 1. Notun varlığını kontrol et
-    if "islenmis_not" in st.session_state and st.session_state.islenmis_not:
-        with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
-            try:
-                # 2. Hoca motorunu çağır (Not: Streaming kapalı, tam metin alıyoruz)
-                # Buradaki 'not_adi' değişkeninin yukarıda tanımlandığından emin ol
-                sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
-                    MY_API_KEY,
-                    not_adi, 
-                    st.session_state.islenmis_not
-                )
-                
-                if sonuc:
-                    # 3. GELEN METNİ SAYFALARA BÖLME MANTIĞI
-                    paragraflar = sonuc.split('\n\n')
-                    sayfalar = []
-                    suanki_sayfa = ""
-                    
-                    for p in paragraflar:
-                        # Her sayfayı yaklaşık 1500 karakter civarında tutuyoruz
-                        if len(suanki_sayfa) + len(p) > 1500:
-                            sayfalar.append(suanki_sayfa.strip())
-                            suanki_sayfa = p + "\n\n"
+            # 1. Notun varlığını kontrol et
+            if "islenmis_not" in st.session_state and st.session_state.islenmis_not:
+                with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
+                    try:
+                        # 2. Hoca motorunu çağır (Not: Streaming kapalı, tam metin alıyoruz)
+                        # Buradaki 'not_adi' değişkeninin yukarıda tanımlandığından emin ol
+                        sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
+                            MY_API_KEY,
+                            not_adi, 
+                            st.session_state.islenmis_not
+                        )
+                        
+                        if sonuc:
+                            # 3. GELEN METNİ SAYFALARA BÖLME MANTIĞI
+                            paragraflar = sonuc.split('\n\n')
+                            sayfalar = []
+                            suanki_sayfa = ""
+                            
+                            for p in paragraflar:
+                                # Her sayfayı yaklaşık 1500 karakter civarında tutuyoruz
+                                if len(suanki_sayfa) + len(p) > 1500:
+                                    sayfalar.append(suanki_sayfa.strip())
+                                    suanki_sayfa = p + "\n\n"
+                                else:
+                                    suanki_sayfa += p + "\n\n"
+                            
+                            if suanki_sayfa.strip():
+                                sayfalar.append(suanki_sayfa.strip())
+                            
+                            # 4. SONUÇLARI KAYDET VE EKRANI YENİLE
+                            st.session_state.akademi_notlari = sayfalar
+                            st.session_state.akademi_aktif_sayfa = 0
+                            st.rerun()
                         else:
-                            suanki_sayfa += p + "\n\n"
-                    
-                    if suanki_sayfa.strip():
-                        sayfalar.append(suanki_sayfa.strip())
-                    
-                    # 4. SONUÇLARI KAYDET VE EKRANI YENİLE
-                    st.session_state.akademi_notlari = sayfalar
-                    st.session_state.akademi_aktif_sayfa = 0
-                    st.rerun()
-                else:
-                    st.error("Hoca notlarda anlatılacak bir içerik bulamadı.")
-                    
-            except Exception as e:
-                st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
-    else:
-        st.warning("Lütfen önce bir not yükleyin ustam.")
-        if st.session_state.hoca_sayfalar:
-            st.markdown("---")
+                            st.error("Hoca notlarda anlatılacak bir içerik bulamadı.")
+                            
+                    except Exception as e:
+                        st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
+            else:
+                st.warning("Lütfen önce bir not yükleyin ustam.")
+                if st.session_state.hoca_sayfalar:
+                    st.markdown("---")
             
             # Başlık ve İndirme Butonunu yan yana koyalım
             col_baslik, col_indir = st.columns([3, 1])
