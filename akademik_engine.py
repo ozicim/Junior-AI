@@ -143,41 +143,51 @@ class AkademikEngine:
         else:
             return str(yuklenen_dosya.read(), "utf-8")
 
-    @classmethod
     def notlarla_ai_hoca_anlat(cls, api_key, konu_adi, ders_notu_metni):
-        """Yüklenen ders notlarını baz alarak konu anlatımı yapar."""
+        """Yüklenen ders notlarını baz alarak bir Profesör gibi konu anlatımı yapar."""
         try:
             genai.configure(api_key=api_key)
+            # Senin sisteminde çalışan tam model ismi
             model = genai.GenerativeModel('models/gemini-2.5-flash')
             
-            
+            # Parametre isimlerini prompt içindekilerle eşitledik
             prompt = f"""
-            SEN KIDEMLI BİR HUKUK PROFESÖRÜSÜN. Kürsüdesin ve karşında hukuk öğrencileri var.
-            Ders: {ders_adi} | Konu: {konu_adi}
+            SEN KIDEMLİ BİR HUKUK PROFESÖRÜSÜN. Kürsüdesin ve karşında hukuk öğrencileri var.
+            Konu: {konu_adi}
+            
+            ELİNDEKİ DERS NOTU İÇERİĞİ:
+            {ders_notu_metni}
             
             GÖREVİN:
-            Bu konuyu bir 'İçtihat Arama Motoru' gibi değil, bir AKADEMİSYEN gibi anlat. 
+            Bu konuyu, yukarıdaki ders notlarını temel alarak bir AKADEMİSYEN gibi anlat. 
             Yargıtay kararlarından ziyade kanunun ruhuna, doktrindeki tartışmalara ve teorik temellere odaklan.
 
             ANLATIM TARZI:
             - "Hukuki niteliği şudur...", "Doktrinde baskın görüş...", "Kanun koyucunun amacı..." gibi akademik kalıplar kullan.
-            - Konuyu öğrencinin (Ozan Şahin Sicim) anlayacağı şekilde basitleştir ama ciddiyeti bozma.
+            - Konuyu öğrencinin (Ozan Şahin Sicim) anlayacağı şekilde, notlardaki bilgileri derinleştirerek anlat.
 
             FORMAT (Sadece bu başlıkları kullan):
-            ### 🏛️ {konu.upper()} - KÜRSÜ NOTLARI
+            ### 🏛️ {konu_adi.upper()} - KÜRSÜ NOTLARI (ARŞİV ANALİZİ)
             **1. Konunun Teorik Temeli:** Bu kurumun hukuk sistemindeki yeri ve mantığı nedir?
-            **2. Doktrindeki Tartışmalar:** Yazarlar ve hocalar bu konuda hangi noktalarda ayrılıyor? (Burası akademik modun kalbidir).
+            **2. Doktrindeki Tartışmalar:** Notlarda geçen veya bu konudaki akademik ayrışmalar nelerdir?
             **3. Kanunun Ruhu ve Analiz:** Maddenin lafzı ne der, ruhu neyi amaçlar?
-            **💡 Hocanın Notu (Sınav Tüyosu):** Öğrenci bu konunun en çok neresine dikkat etmeli? Sınavda nereden vururlar?
-            **📚 İleri Okuma Önerisi:** Hangi hocanın kitabına veya hangi kavramlara bakılmalı?
+            **💡 Hocanın Notu (Sınav Tüyosu):** Bu notlardan sınavda ne gelir? Nereye dikkat edilmeli?
+            **📚 İleri Okuma Önerisi:** Bu notu tamamlamak için hangi kavramlara bakılmalı?
             """
             
             response = model.generate_content(prompt)
             
-            if response and response.candidates:
-                return response.text
+            # Güvenli yanıt kontrolü
+            if response and hasattr(response, 'candidates') and len(response.candidates) > 0:
+                try:
+                    return response.text
+                except (ValueError, AttributeError):
+                    return "⚠️ Hoca notları incelerken bir sorunla karşılaştı, metin oluşturulamadı."
             else:
-                return "⚠️ Hoca bugün izinli, teknik bir sorun nedeniyle kürsüye çıkamadı."
+                return "⚠️ Model notlara ulaşamadı veya boş döndü."
+
+        except Exception as e:
+            return f"Hoca notları okuyamadı: {str(e)}"
 
         except Exception as e:
             return f"Hoca odasında bulunamadı: {str(e)}"
