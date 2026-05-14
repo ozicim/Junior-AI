@@ -355,46 +355,50 @@ elif menu == "🎓 Akademi (Ders Notları)":
             icerik = icerik.replace("**", "<b>").replace("**", "</b>")
             icerik = icerik.replace("\n", "<br>")
 
-            st.markdown(f"""
-            <style>
-                .prestige-box {{
-                    background-color: #fcfaf5;
-                    padding: 50px;
-                    border: 1px solid #e0dcd0;
-                    border-top: 8px solid #2e7d32; /* Sadece üstte ince bir prestij çizgisi */
-                    border-radius: 4px;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-                    color: #2c3e50;
-                    font-family: 'Georgia', serif;
-                }}
-                .kitap-baslik {{
-                    text-align: center;
-                    font-variant: small-caps;
-                    letter-spacing: 2px;
-                    color: #1b5e20;
-                    font-size: 24px;
-                    margin-bottom: 30px;
-                    border-bottom: 1px double #d7ccc8;
-                    padding-bottom: 10px;
-                }}
-            </style>
+            # --- PRESTİGE ŞERH TASARIMI (GÜVENLİ VE NİZAMLI) ---
+        if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
+            import re
             
-            <div class="prestige-box">
-                <div class="kitap-baslik">
+            sayfalar = st.session_state.akademi_notlari
+            aktif = st.session_state.get('akademi_aktif_sayfa', 0)
+            
+            # 1. Metin Temizleme (Hatalı etiketleri kapatıyoruz)
+            icerik = sayfalar[aktif]
+            
+            # Başlıkları düzelt (Hem aç hem kapat)
+            icerik = re.sub(r"### (.*)", r"<h3 style='color:#1b5e20; font-family:Georgia; border-bottom: 2px solid #2e7d32; padding-bottom:5px;'>\1</h3>", icerik)
+            icerik = re.sub(r"#### (.*)", r"<br><b style='color:#3e2723; font-size:1.1em; border-bottom: 1px solid #d7ccc8;'>\1</b><br>", icerik)
+            
+            # Kalın yazıları düzelt (**metin** -> <b>metin</b>)
+            icerik = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", icerik)
+            
+            # Özel vurguları şıklaştır
+            icerik = icerik.replace("🔍 GERÇEK EMSAL:", "<br><b style='color:#2e7d32;'>🔍 GERÇEK EMSAL:</b>")
+            icerik = icerik.replace("⚖️ HUKUKİ DAYANAK:", "<br><b style='color:#795548;'>⚖️ HUKUKİ DAYANAK:</b>")
+            icerik = icerik.replace("📢 SONUÇ:", "<br><b style='color:#1565c0;'>📢 SONUÇ:</b>")
+            
+            # Gereksiz yıldızları temizle ve satır sonlarını ekle
+            icerik = icerik.replace("* ", "• ").replace("\n", "<br>")
+
+            # 2. Ekrana Basma
+            st.markdown(f"""
+            <div style="background-color: #fcfaf5; padding: 45px; border: 1px solid #e0dcd0; border-top: 10px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); color: #2c3e50; font-family: 'Georgia', serif;">
+                
+                <div style="text-align: center; font-variant: small-caps; letter-spacing: 3px; color: #1b5e20; font-size: 26px; margin-bottom: 30px; border-bottom: 1px double #d7ccc8; padding-bottom: 15px; font-weight: bold;">
                     🏛️ Akademik İçtihat Şerhi
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9e9e9e; margin-bottom: 20px; font-weight: bold;">
-                    <span>ÇANKIRI KARATEKİN ÜNİVERSİTESİ</span>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9e9e9e; margin-bottom: 25px; font-weight: bold; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px;">
+                    <span>ÇANKIRI KARATEKİN ÜNİVERSİTESİ HUKUK FAKÜLTESİ</span>
                     <span>SAYFA {aktif + 1} / {len(sayfalar)}</span>
                 </div>
                 
-                <div style="font-size: 17px; line-height: 1.8; text-align: justify; color: #37474f;">
+                <div style="font-size: 18px; line-height: 1.9; text-align: justify; color: #37474f;">
                     {icerik}
                 </div>
                 
-                <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #bcaaa4; letter-spacing: 1px;">
-                    - JUNIOR AI HUKUK KÜTÜPHANESİ -
+                <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #bcaaa4; letter-spacing: 2px; border-top: 1px dashed #e0e0e0; padding-top: 15px;">
+                    - JUNIOR AI HUKUK KÜTÜPHANESİ ARŞİVİ -
                 </div>
             </div>
             """, unsafe_allow_html=True)
