@@ -14,25 +14,25 @@ try:
 except Exception as e:
     st.error(f"Veritabanı başlatılamadı: {e}")
     
-    def metni_sayfalara_bol(metin, sayfa_boyutu=1000):
-    """Metni belirtilen karakter sınırına göre sayfalara böler."""
-    if not metin:
-        return []
-    # Paragrafları koruyarak bölmek daha estetiktir
-    paragraflar = metin.split('\n')
-    sayfalar = []
-    suanki_sayfa = ""
+def metni_sayfalara_bol(metin, sayfa_boyutu=1000):
+"""Metni belirtilen karakter sınırına göre sayfalara böler."""
+if not metin:
+    return []
+# Paragrafları koruyarak bölmek daha estetiktir
+paragraflar = metin.split('\n')
+sayfalar = []
+suanki_sayfa = ""
     
-    for p in paragraflar:
-        if len(suanki_sayfa) + len(p) > sayfa_boyutu:
-            sayfalar.append(suanki_sayfa.strip())
-            suanki_sayfa = p + "\n"
-        else:
-            suanki_sayfa += p + "\n"
-            
-    if suanki_sayfa.strip():
+for p in paragraflar:
+    if len(suanki_sayfa) + len(p) > sayfa_boyutu:
         sayfalar.append(suanki_sayfa.strip())
-    return sayfalar
+        suanki_sayfa = p + "\n"
+    else:
+        suanki_sayfa += p + "\n"
+            
+if suanki_sayfa.strip():
+    sayfalar.append(suanki_sayfa.strip())
+return sayfalar
 
 
 # 1. SAYFA AYARLARI
