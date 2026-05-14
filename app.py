@@ -953,28 +953,28 @@ elif menu == "💬 JUNILEX Chat":
                 # Butonların (Devam Et vb.) görünmesi için şimdi yenileyebiliriz
                 st.rerun()
 
-            # 5. "Devam Et" Butonu (Sadece en son asistan konuşmuşsa çıkar)
-        if st.session_state.chat_messages[-1]["role"] == "assistant" and len(st.session_state.chat_messages) > 1:
-            if st.button("⏭️ Devam Et", use_container_width=False):
-                 # Devam etme mantığını buraya da ekleyebilirsin ustam
-                devam_komutu = "Lütfen kaldığın yerden, konuyu bozmadan devam et."
+        # 5. "Devam Et" Butonu (Sadece en son asistan konuşmuşsa çıkar)
+    if st.session_state.chat_messages[-1]["role"] == "assistant" and len(st.session_state.chat_messages) > 1:
+        if st.button("⏭️ Devam Et", use_container_width=False):
+            # Devam etme mantığını buraya da ekleyebilirsin ustam
+            devam_komutu = "Lütfen kaldığın yerden, konuyu bozmadan devam et."
                         
-                    with st.chat_message("user"):
-                        st.markdown("Devam et...")
+                with st.chat_message("user"):
+                    st.markdown("Devam et...")
                         
-                    with st.chat_message("assistant"):
-                        message_placeholder = st.empty()
-                        full_response = ""
+                with st.chat_message("assistant"):
+                    message_placeholder = st.empty()
+                    full_response = ""
                             
-                        from chat_engine import ChatEngine
-                        # Mevcut tüm geçmişi gönderiyoruz ki nerede kaldığını bilsin
-                        response = ChatEngine.yanit_uret(
-                            MY_API_KEY, 
-                            st.session_state.chat_messages, 
-                            devam_komutu,
-                            mod=st.session_state.chat_mode
-                        )
-                pass
+                    from chat_engine import ChatEngine
+                    # Mevcut tüm geçmişi gönderiyoruz ki nerede kaldığını bilsin
+                    response = ChatEngine.yanit_uret(
+                        MY_API_KEY, 
+                        st.session_state.chat_messages, 
+                        devam_komutu,
+                        mod=st.session_state.chat_mode
+                    )
+            pass
                     
                     if isinstance(response, str) and response.startswith("HATA"):
                         st.error(response)
