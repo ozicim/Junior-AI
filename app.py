@@ -459,7 +459,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
         st.markdown("---")
 
       # --- 3. KISIM: SORU SORMA ALANI (DİJİTAL KİTAP MODU) ---
-        st.subheader("❓ Notlara Soru Sor")
+        st.subheader("❓ Notlardan Soru Sor")
         
         aktif_not_ismi = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
         st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not_ismi}")
