@@ -13,6 +13,26 @@ try:
     AkademikEngine.veritabanini_baslat()
 except Exception as e:
     st.error(f"Veritabanı başlatılamadı: {e}")
+    
+    def metni_sayfalara_bol(metin, sayfa_boyutu=1000):
+    """Metni belirtilen karakter sınırına göre sayfalara böler."""
+    if not metin:
+        return []
+    # Paragrafları koruyarak bölmek daha estetiktir
+    paragraflar = metin.split('\n')
+    sayfalar = []
+    suanki_sayfa = ""
+    
+    for p in paragraflar:
+        if len(suanki_sayfa) + len(p) > sayfa_boyutu:
+            sayfalar.append(suanki_sayfa.strip())
+            suanki_sayfa = p + "\n"
+        else:
+            suanki_sayfa += p + "\n"
+            
+    if suanki_sayfa.strip():
+        sayfalar.append(suanki_sayfa.strip())
+    return sayfalar
 
 
 # 1. SAYFA AYARLARI
@@ -758,96 +778,113 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
 
-# --- MOD 4: İÇTİHAT SORGULAMA (Eksik Olan Kısım) ---
+# --- MOD 4: İÇTİHAT SORGULAMA (Tamamen Düzeltilmiş) ---
 elif menu == "⚖️ İçtihat Sorgulama":
     st.header("⚖️ İçtihat ve Emsal Merkezi")
     
-    # Mevzuattaki gibi ikili pencere yapısı
     tab1, tab2 = st.tabs(["🔍 Karar Analizi (Şerh)", "🔎 Emsal Karar Bulucu"])
     
     with tab1:
         st.subheader("⚖️ Karar Analiz Modülü")
-        karar_metni = st.text_area("Yargıtay Karar Metnini Buraya Yapıştırın", height=250)
-        soru_input = st.text_input("Bu kararla ilgili neyi merak ediyorsunuz?", placeholder="Örn: İspat yükü kime verilmiş?")
+        karar_metni = st.text_area("Yargıtay Karar Metnini Buraya Yapıştırın", height=250, key="karar_text_area")
+        soru_input = st.text_input("Bu kararla ilgili neyi merak ediyorsunuz?", placeholder="Örn: İspat yükü kime verilmiş?", key="karar_soru_input")
         
-        if st.button("⚖️ Analiz Et", use_container_width=True):
+        if st.button("⚖️ Analiz Et", use_container_width=True, key="btn_analiz_et"):
             if karar_metni and soru_input:
                 with st.spinner("Hakim Junilex dosyayı inceliyor..."):
                     from ictihat_engine import IctihatEngine
                     
-                    # Kararı analiz et (Stream=True ise listeye çevirip birleştiriyoruz)
+                    # Motoru çağır
                     response = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_metni, soru_input)
                     
-                    # Stream yanıtını tam metne dönüştür
+                    # Yanıtın türünü kontrol edip metni alıyoruz
                     tam_metn = ""
-                    # 784. satır civarındaki döngüyü bu hale getir ustam:
-                    for chunk in response:
-                        try:
-                            # 1. Paket içerisinde metin var mı kontrol et (En güvenli yöntem)
-                            if hasattr(chunk, "text") and chunk.text:
-                                tam_metn += chunk.text
-                                # Eğer st.write_stream kullanmıyorsan, anlık ekrana basmak için:
-                                # placeholder.markdown(tam_metn + " ▌") 
-                        except (ValueError, AttributeError):
-                            # 2. Eğer paket güvenlik filtresine takılırsa veya text özelliği yoksa hata verme, pas geç
-                            continue
+                    if isinstance(response, str):
+                        tam_metn = response
+                    else:
+                        # Eğer stream geliyorsa (generator)
+                        for chunk in response:
+                            try:
+                                if hasattr(chunk, "text") and chunk.text:
+                                    tam_metn += chunk.text
+                            except: continue
                     
-                    # İŞTE BURASI: Analiz sonucunu da sayfalara bölüyoruz
-                    st.session_state.analiz_sayfalari = metni_sayfalara_bol(tam_metn, 400)
-                    st.session_state.analiz_aktif_sayfa = 0
-                    st.rerun()
-    
+                    if tam_metn:
+                        # 400 karakter çok az ustam, sayfa çok kısa olur. 1200 idealdir.
+                        st.session_state.analiz_sayfalari = metni_sayfalara_bol(tam_metn, 1200)
+                        st.session_state.analiz_aktif_sayfa = 0
+                        st.rerun()
+                    else:
+                        st.error("Analiz sonucu boş döndü, lütfen tekrar deneyin.")
+
         # --- GÖRÜNTÜLEME VE BUTONLAR (KARAR ANALİZİ) ---
         if "analiz_sayfalari" in st.session_state and st.session_state.analiz_sayfalari:
             sayfalar = st.session_state.analiz_sayfalari
             aktif = st.session_state.analiz_aktif_sayfa
             
-            # Hatayı önlemek için replace işlemini dışarıda yapıyoruz
-            analiz_icerik = sayfalar[aktif].replace("\n", "<br>")
-            
-            # 733. satır civarındaki kodun düzeltilmiş hali:
             st.markdown(f"""
-            <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); color: #2c3e50; font-family: 'Georgia', serif;">
-                <div style="font-size: 12px; color: #8d6e63; font-weight: bold;">\U0001F3DB ANALİZ ŞERHİ - Sayfa {aktif + 1}</div>
-                <div style="font-size: 16px; line-height: 1.6; text-align: justify;">
+            <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50; font-family: 'Georgia', serif;">
+                <div style="font-size: 12px; color: #8d6e63; font-weight: bold; text-transform: uppercase;">🏛️ Analiz Şerhi - Sayfa {aktif + 1} / {len(sayfalar)}</div>
+                <div style="font-size: 16px; line-height: 1.7; text-align: justify; margin-top: 15px;">
                     {sayfalar[aktif].replace("\n", "<br>")}
                 </div>
-                <div style="text-align: right; font-size: 10px; color: #aaa; margin-top: 20px;">Toplam {len(sayfalar)} sayfa mevcuttur.</div>
             </div>
             """, unsafe_allow_html=True)
             
-            # Sayfa Navigasyonu
             c1, c2, c3 = st.columns([1, 2, 1])
             with c1:
                 if aktif > 0:
-                    if st.button("⬅️ Geri", key="analiz_geri"):
+                    if st.button("⬅️ Geri", key="analiz_geri_btn"):
                         st.session_state.analiz_aktif_sayfa -= 1
                         st.rerun()
             with c3:
                 if aktif < len(sayfalar) - 1:
-                    if st.button("İleri ➡️", key="analiz_ileri"):
+                    if st.button("İleri ➡️", key="analiz_ileri_btn"):
                         st.session_state.analiz_aktif_sayfa += 1
                         st.rerun()
-        
+
     with tab2:
         st.subheader("🔎 Emsal Karar ve Mevzuat Bulucu")
-        olay_input = st.text_area("Hukuki Olayı Detaylıca Anlatın", height=150, placeholder="Örn: Sıfır alınan aracın şanzıman arızası...")
+        olay_input = st.text_area("Hukuki Olayı Detaylıca Anlatın", height=150, placeholder="Örn: Sıfır alınan aracın şanzıman arızası...", key="emsal_text_area")
         
-        if st.button("🔎 İçtihatları Getir", use_container_width=True):
+        if st.button("🔎 İçtihatları Getir", use_container_width=True, key="btn_emsal_bul"):
             if olay_input:
-                with st.spinner("Junilex kütüphaneleri tarıyor ve analiz ediyor..."):
+                with st.spinner("Junilex kütüphaneleri tarıyor..."):
                     from ictihat_engine import IctihatEngine
-                    
-                    # Serper ve Gemini ile operasyonu başlat
                     sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
                     
                     if sonuc and not sonuc.startswith("HATA"):
-                        # Metni sayfalara böl ve session_state'e kaydet
-                        st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 400)
+                        st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 1200)
                         st.session_state.aktif_sayfa = 0
                         st.rerun()
                     else:
                         st.error(f"Bir sorun oluştu: {sonuc}")
+
+        # --- SAYFALAMA VE GÖRÜNTÜLEME BLOĞU (EMSAL) ---
+        if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
+            sayfalar_emsal = st.session_state.kitap_sayfalari
+            aktif_emsal = st.session_state.aktif_sayfa
+            
+            st.markdown(f"""
+            <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50; font-family: 'Georgia', serif;">
+                <div style="font-size: 12px; color: #8d6e63; font-weight: bold; text-transform: uppercase;">🏛️ Emsal Karar Şerhi - Sayfa {aktif_emsal + 1} / {len(sayfalar_emsal)}</div>
+                <div style="font-size: 16px; line-height: 1.7; text-align: justify; margin-top: 15px;">
+                    {sayfalar_emsal[aktif_emsal].replace("\n", "<br>")}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col1:
+                if aktif_emsal > 0:
+                    if st.button("⬅️ Geri", key="emsal_geri_btn", use_container_width=True):
+                        st.session_state.aktif_sayfa -= 1
+                        st.rerun()
+            with col3:
+                if aktif_emsal < len(sayfalar_emsal) - 1:
+                    if st.button("İleri ➡️", key="emsal_ileri_btn", use_container_width=True):
+                        st.session_state.aktif_sayfa += 1
+                        st.rerun()
     
         # --- SAYFALAMA VE GÖRÜNTÜLEME BLOĞU ---
         if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
