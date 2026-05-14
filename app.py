@@ -481,7 +481,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
                 st.markdown("### 🎓 JUNILEX Hoca Anlatıyor:")
                 sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
                     MY_API_KEY, 
-                    secili_konu, 
+                    konu_adi, 
                     st.session_state.islenmis_not # Eksik olan 3. parça burası ustam!
                 )
                 
