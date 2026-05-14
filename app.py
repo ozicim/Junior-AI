@@ -318,36 +318,66 @@ elif menu == "🎓 Akademi (Ders Notları)":
             except Exception as e:
                 st.error(f"Hoca derse giremedi ustam: {e}")
 
-        # --- DİJİTAL KİTAP GÖRÜNÜMÜ (GELİŞTİRİLMİŞ TASARIM) ---
+        # --- DİJİTAL KİTAP GÖRÜNÜMÜ (HUKUKİ ŞERH TASARIMI) ---
         if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
             sayfalar = st.session_state.akademi_notlari
-            aktif = st.session_state.akademi_aktif_sayfa
+            aktif = st.session_state.aktif_sayfa
             
-            # Metni güzelleştirme: Markdown işaretlerini temizle ve ikonlarla süsle
-            sayfa_icerigi = sayfalar[aktif]
-            sayfa_icerigi = sayfa_icerigi.replace("####", "<h4 style='color: #1b5e20; margin-top: 20px;'>")
-            sayfa_icerigi = sayfa_icerigi.replace("**🔍 Gerçek Emsal:**", "<div style='background: #e8f5e9; padding: 10px; border-radius: 5px; border-left: 5px solid #2e7d32; margin: 10px 0;'><b>🔍 Gerçek Emsal:</b>")
-            sayfa_icerigi = sayfa_icerigi.replace("**⚖️ Hukuki Dayanak:**", "<div style='background: #fff3e0; padding: 10px; border-radius: 5px; border-left: 5px solid #ef6c00; margin: 10px 0;'><b>⚖️ Hukuki Dayanak:</b>")
-            sayfa_icerigi = sayfa_icerigi.replace("**📢 Sonuç:**", "<div style='background: #e3f2fd; padding: 10px; border-radius: 5px; border-left: 5px solid #1565c0; margin: 10px 0;'><b>📢 Sonuç:</b>")
-            # Div'leri kapatma simülasyonu (basit bir yöntem)
-            sayfa_icerigi = sayfa_icerigi.replace("\n\n", "</div><br>") 
-        
+            # 1. Metin Temizleme ve HTML Dönüştürme
+            ham_metin = sayfalar[aktif]
+            
+            # Markdown sembollerini şık HTML etiketlerine çeviriyoruz
+            duzgun_metin = ham_metin.replace("####", "<h4 style='color: #1b5e20; margin-top: 20px; font-weight: bold;'>")
+            duzgun_metin = duzgun_metin.replace("###", "<h3 style='color: #2e7d32; border-bottom: 1px solid #c8e6c9;'>")
+            duzgun_metin = duzgun_metin.replace("**🔍 Gerçek Emsal:**", "<div style='background: #e8f5e9; padding: 15px; border-left: 5px solid #2e7d32; border-radius: 4px; margin: 15px 0;'><b>🔍 Gerçek Emsal:</b>")
+            duzgun_metin = duzgun_metin.replace("**⚖️ Hukuki Dayanak:**", "<div style='background: #fff3e0; padding: 15px; border-left: 5px solid #ef6c00; border-radius: 4px; margin: 15px 0;'><b>⚖️ Hukuki Dayanak:</b>")
+            duzgun_metin = duzgun_metin.replace("**📢 Sonuç:**", "<div style='background: #e3f2fd; padding: 15px; border-left: 5px solid #1565c0; border-radius: 4px; margin: 15px 0;'><b>📢 Sonuç:</b>")
+            
+            # Kapanmamış divleri veya boşlukları düzelt
+            duzgun_metin = duzgun_metin.replace("\n", "<br>")
+
+            # 2. Ekrana Basma (Tasarım Giydirme)
             st.markdown(f"""
-            <div style="background-color: #fdfaf1; padding: 45px; border: 1px solid #d7ccc8; border-left: 15px solid #2e7d32; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); color: #2c3e50; font-family: 'Georgia', serif;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; margin-bottom: 25px;">
-                    <span style="font-size: 14px; font-weight: bold; color: #2e7d32;">🏛️ JUNİLEX AKADEMİK ARŞİV</span>
-                    <span style="font-size: 12px; color: #8d6e63;">SAYFA {aktif + 1} / {len(sayfalar)}</span>
+            <style>
+                .kitap-sayfasi {{
+                    background-color: #fdfaf1;
+                    padding: 40px;
+                    border-left: 12px solid #2e7d32;
+                    border-radius: 8px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                    color: #2c3e50;
+                    font-family: 'Georgia', serif;
+                    min-height: 500px;
+                }}
+                .sayfa-ust {{
+                    display: flex;
+                    justify-content: space-between;
+                    border-bottom: 1px solid #d7ccc8;
+                    padding-bottom: 10px;
+                    margin-bottom: 20px;
+                    font-size: 13px;
+                    color: #8d6e63;
+                    font-weight: bold;
+                }}
+            </style>
+            
+            <div class="kitap-sayfasi">
+                <div class="sayfa-ust">
+                    <span>🏛️ JUNİLEX AKADEMİK ŞERH</span>
+                    <span>SAYFA {aktif + 1} / {len(sayfalar)}</span>
                 </div>
                 
-                <div style="font-size: 18px; line-height: 1.8; text-align: justify; color: #37474f;">
-                    {sayfa_icerigi}
+                <div style="font-size: 17px; line-height: 1.8; text-align: justify;">
+                    {duzgun_metin}
                 </div>
                 
-                <div style="margin-top: 30px; padding-top: 15px; border-top: 1px dashed #bcaaa4; text-align: center; font-style: italic; font-size: 13px; color: #8d6e63;">
-                    Çankırı Karatekin Üniversitesi Hukuk Fakültesi - Akademik Analiz Modülü
+                <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #bcaaa4; border-top: 1px dashed #d7ccc8; padding-top: 10px;">
+                    Çankırı Karatekin Üniversitesi Hukuk Fakültesi Arşiv Kaydı
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+            # Navigasyon Butonları (Kodun devamı...)
 # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
     # ==========================================
