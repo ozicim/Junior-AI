@@ -328,38 +328,38 @@ elif menu == "🎓 Akademi (Ders Notları)":
             sayfalar = st.session_state.akademi_notlari
             aktif = st.session_state.get('akademi_aktif_sayfa', 0)
             
-            # 1. METİN TEMİZLİĞİ
+            # 1. METİN TEMİZLİĞİ (Dev Yazı Hatasını Kesin Önler)
             icerik = sayfalar[aktif]
             
-            # Başlıkları yakala ve ZORLA KAPAT (</h3> ve </b> ile)
-            icerik = re.sub(r"### (.*?)(?=\n|$)", r"<h3 style='color:#1b5e20; font-family:Georgia; border-bottom: 2px solid #2e7d32; padding-bottom:5px; margin-top:20px;'>\1</h3>", icerik)
-            icerik = re.sub(r"#### (.*?)(?=\n|$)", r"<br><b style='color:#3e2723; font-size:1.1em; border-bottom: 1px solid #d7ccc8;'>\1</b><br>", icerik)
+            # SÜZGEÇ: AI'ın koyduğu #, ##, ###, #### gibi TÜM başlık işaretlerini yakalayıp eziyoruz!
+            # Streamlit'in devasa H1/H2 yapmasını engelleyip, kendi zarif 18px başlığımıza hapsediyoruz.
+            icerik = re.sub(r"#{1,5}\s+(.*?)(?=\n|$)", r"<h3 style='color:#1b5e20; font-family:Georgia; border-bottom: 2px solid #2e7d32; padding-bottom:5px; margin-top:20px; font-size:18px;'>\1</h3>", icerik)
             
-            # Kalın yazıları yakala ve kapat
+            # Kalın yazıları düzelt
             icerik = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", icerik)
             
+            # Özel vurgular
             icerik = icerik.replace("🔍 GERÇEK EMSAL:", "<br><b style='color:#2e7d32;'>🔍 GERÇEK EMSAL:</b>")
             icerik = icerik.replace("⚖️ HUKUKİ DAYANAK:", "<br><b style='color:#795548;'>⚖️ HUKUKİ DAYANAK:</b>")
             icerik = icerik.replace("📢 SONUÇ:", "<br><b style='color:#1565c0;'>📢 SONUÇ:</b>")
             
-            # Markdown listelerini ve satır atlamalarını temizle
+            # Markdown listeleri ve satır atlamaları
             icerik = icerik.replace("* ", "• ").replace("\n", "<br>")
 
-            # 2. HTML GİYDİRME (Siyah Ekran Hatasını Önler)
-            # DİKKAT: st.markdown altındaki HTML kodları SOLA YASLI olmak ZORUNDADIR!
+            # 2. HTML GİYDİRME (Gövde metni 18px'den 15px'e düşürüldü, daha zarif!)
             st.markdown(f"""
-<div style="background-color: #fcfaf5; padding: 45px; border: 1px solid #e0dcd0; border-top: 10px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); color: #2c3e50; font-family: 'Georgia', serif;">
-    <div style="text-align: center; font-variant: small-caps; letter-spacing: 3px; color: #1b5e20; font-size: 26px; margin-bottom: 30px; border-bottom: 1px double #d7ccc8; padding-bottom: 15px; font-weight: bold;">
+<div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #2c3e50; font-family: 'Georgia', serif;">
+    <div style="text-align: center; font-variant: small-caps; letter-spacing: 2px; color: #1b5e20; font-size: 22px; margin-bottom: 25px; border-bottom: 1px double #d7ccc8; padding-bottom: 10px; font-weight: bold;">
         🏛️ Akademik Not Özeti
     </div>
-    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9e9e9e; margin-bottom: 25px; font-weight: bold; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px;">
+    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #9e9e9e; margin-bottom: 20px; font-weight: bold; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px;">
         <span>ÇANKIRI KARATEKİN ÜNİVERSİTESİ HUKUK FAKÜLTESİ</span>
         <span>SAYFA {aktif + 1} / {len(sayfalar)}</span>
     </div>
-    <div style="font-size: 18px; line-height: 1.9; text-align: justify; color: #37474f;">
+    <div style="font-size: 15px; line-height: 1.8; text-align: justify; color: #37474f;">
         {icerik}
     </div>
-    <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #bcaaa4; letter-spacing: 2px; border-top: 1px dashed #e0e0e0; padding-top: 15px;">
+    <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #bcaaa4; letter-spacing: 2px; border-top: 1px dashed #e0e0e0; padding-top: 10px;">
         - JUNIOR AI HUKUK KÜTÜPHANESİ ARŞİVİ -
     </div>
 </div>
