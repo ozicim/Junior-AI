@@ -48,15 +48,29 @@ class IctihatEngine:
             
             # TÜM PROMPT TEK BİR TIRNAK İÇİNDE
             prompt = f"""
-            SEN BİR YARGITAY ANALİSTİSİN.
-            Aşağıdaki verileri kullanarak bir analiz yap:
-            OLAY: {olay_ozeti}
-            ARAMA VERİLERİ: {context}
-
-            FORMAT:
-            - **⚖️ Hukuki Dayanak:** (İlgili Kanun Maddesi)
-            - **🔍 Gerçek Emsal:** (Varsa Daire ve Esas/Karar No)
-            - **📢 Sonuç:** (Yargıtay'ın genel tavrı)
+            SEN KIDEMLİ BİR HUKUK ANALİSTİ VE YARGITAY UYGULAMALARI UZMANISIN.
+            Aşağıda sana internetten (Serper API) gelen ham veriler ve kullanıcının hukuki olayı verilmiştir.
+            
+            GELEN VERİLER: {context}
+            HUKUKİ OLAY: {olay_input}
+            
+            GÖREVİN:
+            1. KESİNLİKLE AMA KESİNLİKLE uydurma Esas/Karar numarası, tarih veya mahkeme ismi VERME. 
+            2. Spesifik bir karar metni uydurmaya çalışma.
+            3. Görevin sadece "YARGITAY'IN GENEL YÖNELİMİNİ" ve "UYGULAMA TRENDİNİ" analiz etmektir.
+            
+            ANALİZ FORMATI (Sadece bu başlıkları kullan):
+            
+            ### 🏛️ YARGITAY YÖNELİM ANALİZİ
+            **1. Yerleşik Uygulama Trendi:** Yargıtay bu tip olaylara genel olarak nasıl bakıyor? (Örn: "İşçi lehine yorum ilkesini ön planda tutmaktadır", "Bankanın objektif özen yükümlülüğünü ağırlaştırmaktadır" vb.)
+            
+            **2. Kritik Eşikler ve Kriterler:** Mahkemenin bir karara varırken aradığı ana şartlar nelerdir? (Hangi durumlarda davayı kabul, hangi durumlarda reddetme eğilimindedir?)
+            
+            **3. Güncel Yaklaşım Değişiklikleri:** Varsa, son yıllarda bu konudaki içtihatlarda bir esneme veya sertleşme var mı?
+            
+            **4. Stratejik Hukuki Yorum:** Bu olayda davanın kaderini belirleyecek olan en temel hukuki argüman ne olmalıdır? (İspat yükü, kusur durumu, zaman aşımı vb. açısından yorumla.)
+            
+            **⚠️ ÖNEMLİ UYARI:** Karar numarası uydurma. Sadece hukuk teorisi ve yüksek mahkemenin "yerleşik uygulaması" üzerinden konuş.
             """
             response = model.generate_content(prompt)
             return response.text
