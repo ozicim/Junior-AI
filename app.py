@@ -478,38 +478,26 @@ elif menu == "🎓 Akademi (Ders Notları)":
 
         # ... önceki kodlar ...
         if st.button("Hocadan Dinle"):
-            with st.spinner("Hoca notları inceliyor..."):
-                # Bu satır tam olarak 'with' ifadesinin 4 boşluk içerisinde olmalı
+    # 1. Notun varlığını kontrol et
+    if "islenmis_not" in st.session_state and st.session_state.islenmis_not:
+        with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
+            try:
+                # 2. Hoca motorunu çağır (Not: Streaming kapalı, tam metin alıyoruz)
+                # Buradaki 'not_adi' değişkeninin yukarıda tanımlandığından emin ol
                 sonuc = AkademikEngine.notlarla_ai_hoca_anlat(
                     MY_API_KEY,
-                    not_adi,
+                    not_adi, 
                     st.session_state.islenmis_not
                 )
                 
                 if sonuc:
-                    st.session_state.akademi_notlari = sonuc.split("\n\n")
-                    st.session_state.akademi_aktif_sayfa = 0
-                    st.rerun()
-                
-                try:
-                    # 1. Akışı (Streaming) başlatıyoruz - 3. parametre olarak notu ekledik
-                    stream = AkademikEngine.notlarla_ai_hoca_anlat(MY_API_KEY, soru_input, not_icerigi)
-            
-                    # 2. SÜZGEÇ: Gelen ham paketlerden sadece metni çekiyoruz
-                    def hoca_suzucu():
-                        for parca in stream:
-                            if hasattr(parca, 'text') and parca.text:
-                                yield parca.text
-            
-                    # 3. Ekrana daktilo hızıyla basıyoruz ve TAM METNİ yakalıyoruz
-                    tam_cevap = st.write_stream(hoca_suzucu)
-                    
-                    # 4. Yakaladığımız tam cevabı sayfalara bölüyoruz (Kitap Modu İçin)
-                    paragraflar = tam_cevap.split('\n\n')
+                    # 3. GELEN METNİ SAYFALARA BÖLME MANTIĞI
+                    paragraflar = sonuc.split('\n\n')
                     sayfalar = []
                     suanki_sayfa = ""
                     
                     for p in paragraflar:
+                        # Her sayfayı yaklaşık 1500 karakter civarında tutuyoruz
                         if len(suanki_sayfa) + len(p) > 1500:
                             sayfalar.append(suanki_sayfa.strip())
                             suanki_sayfa = p + "\n\n"
@@ -519,15 +507,17 @@ elif menu == "🎓 Akademi (Ders Notları)":
                     if suanki_sayfa.strip():
                         sayfalar.append(suanki_sayfa.strip())
                     
-                    # Sayfaları kaydedelim
-                    st.session_state.hoca_sayfalar = sayfalar
-                    st.session_state.hoca_aktif_sayfa = 0
+                    # 4. SONUÇLARI KAYDET VE EKRANI YENİLE
+                    st.session_state.akademi_notlari = sayfalar
+                    st.session_state.akademi_aktif_sayfa = 0
+                    st.rerun()
+                else:
+                    st.error("Hoca notlarda anlatılacak bir içerik bulamadı.")
                     
-                except Exception as e:
-                    st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
-            else:
-                st.warning("Lütfen bir soru girin ustam.")
-
+            except Exception as e:
+                st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
+    else:
+        st.warning("Lütfen önce bir not yükleyin ustam.")
         if st.session_state.hoca_sayfalar:
             st.markdown("---")
             
