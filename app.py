@@ -154,6 +154,15 @@ with st.sidebar:
         ["🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)","⚖️ İçtihat Sorgulama"])
     st.divider()
     st.info("Ozan Şahin Sicim | JUNILEX AI v2.0")
+    import streamlit as st
+import google.generativeai as genai
+
+# Bunu geçici olarak sidebar'a veya sayfanın üstüne ekle
+with st.expander("Sistem Bilgisi: Aktif Modeller"):
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            st.code(m.name)
 
 # 6. LOGO VE ÜST BAŞLIK
 st.markdown("""
