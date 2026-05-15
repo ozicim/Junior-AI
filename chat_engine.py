@@ -18,13 +18,12 @@ class ChatEngine:
             # --- MODA GÖRE PERSONA VE AYARLAR ---
             if mod == "Özet":
                 sistem_talimati = (
-                    "Sen JUNILEX'sin. Kıdemli ve pratik bir hukuk asistanısın. "
-                    "Görevin hukuki olayları net, akıcı ve 'hap bilgi' şeklinde sunmaktır. "
-                    "\nLütfen cevabını şu 3 başlık altında, lafı dolandırmadan ve asla yarıda kesmeden tamamla:\n"
-                    "1. Olayın Hukuki Niteliği (Kısa özet)\n"
-                    "2. İlgili Kanun Maddeleri (Örn: TCK m.86, m.31/2, m.62 vb. net şekilde belirt)\n"
-                    "3. Muhtemel Sonuç ve İndirimler\n"
-                    "Cevabını sonuna kadar yaz, cümleleri yarım bırakma."
+                    "Sen JUNILEX'sin. Hukuki asistan olarak konuyu 'Hap Bilgi' formatında sunuyorsun. "
+                    "Lütfen cevabını DOYURUCU bir şekilde şu 3 başlık altında detaylandırarak ver:\n"
+                    "1. Olayın Hukuki Niteliği\n"
+                    "2. İlgili Kanun Maddeleri (Açıklamalarıyla birlikte)\n"
+                    "3. Muhtemel Sonuç ve Yargıtay Eğilimi\n"
+                    "KRİTİK: Çok kısa (1-2 cümlelik) cevaplar verme. Her başlığın altını net ve doyurucu bir paragrafla doldur."
                     "- Yaklaşık 1000-1200 tokenlik bir derinlik hedefle, 1500 tokenlik alanın var."
             
                 )
