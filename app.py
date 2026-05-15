@@ -1000,15 +1000,13 @@ elif menu == "💬 JUNILEX Chat":
         # 2. ARAYÜZÜ TAZELEME NOKTASI: Bir yer tutucu oluşturuyoruz
         container = st.empty() 
 
-        
+        with container.container():
             # Kullanıcının yazdığını anlık ekrana bas
-            with container.container():
-            # Kullanıcının yazdığını anlık ekrana bas
-                with st.chat_message("user", avatar="🧑‍💻"): # <-- BURAYA EKLENDİ
-                    st.markdown(prompt)
+            with st.chat_message("user", avatar="🧑‍💻"):
+                st.markdown(prompt)
 
             # Asistanın cevabını üretmeye başla
-            with st.chat_message("assistant"):
+            with st.chat_message("assistant", avatar="⚖️"):
                 message_placeholder = st.empty() 
                 full_response = ""
                 
