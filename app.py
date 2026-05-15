@@ -14,15 +14,36 @@ import os
 import urllib.request
 import google.generativeai as genai
 import streamlit as st
+import json  
 # Diğer importların (genai, ChatEngine vs.) burada kalmaya devam etsin...
+
+# ==========================================
+# 💾 KALICI VERİTABANI MOTORU (JSON)
+# ==========================================
+DB_DOSYASI = "kullanicilar.json"
+
+def veritabani_yukle():
+    # Eğer daha önce dosya açılmamışsa, yeni dosya yarat ve seni yönetici yap
+    if not os.path.exists(DB_DOSYASI):
+        baslangic_verisi = {"ozan@junilex.com": {"sifre": "123456", "isim": "Ozan Şahin Sicim"}}
+        with open(DB_DOSYASI, "w", encoding="utf-8") as f:
+            json.dump(baslangic_verisi, f, ensure_ascii=False, indent=4)
+        return baslangic_verisi
+    # Dosya varsa içindekileri oku
+    with open(DB_DOSYASI, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def veritabani_kaydet(veri):
+    # Yeni biri kayıt olduğunda dosyayı fiziksel olarak güncelle
+    with open(DB_DOSYASI, "w", encoding="utf-8") as f:
+        json.dump(veri, f, ensure_ascii=False, indent=4)
 
 # ==========================================
 # 📧 E-POSTA GÖNDERME MOTORU
 # ==========================================
 def onay_kodu_gonder(alici_mail, kod):
-    # ⚠️ DİKKAT: BURAYA KENDİ MAİLİNİ VE GOOGLE UYGULAMA ŞİFRENİ YAZMALISIN
-    gonderici_mail = "ozan.scm@gmail.com" 
-    uygulama_sifresi = "cyvh lwju well banq" # Google'dan alınacak 16 haneli şifre
+    gonderici_mail = "senin_mailin@gmail.com" # BURAYI KENDİ MAİLİNLE DEĞİŞTİR
+    uygulama_sifresi = "xxxx xxxx xxxx xxxx" # BURAYI 16 HANELİ ŞİFREYLE DEĞİŞTİR
 
     msg = MIMEText(f"JUNILEX'e hoş geldin!\n\nKayıt işlemini tamamlamak için doğrulama kodun: {kod}\n\nBu kodu kimseyle paylaşmayın.", "plain", "utf-8")
     msg['Subject'] = "JUNILEX Doğrulama Kodu"
@@ -46,10 +67,11 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "aktif_kullanici" not in st.session_state:
     st.session_state.aktif_kullanici = ""
-if "kullanici_veritabani" not in st.session_state:
-    st.session_state.kullanici_veritabani = {"ozan@junilex.com": {"sifre": "123456", "isim": "Ozan Şahin Sicim"}} 
     
-# 🔴 YENİ: Kayıt onay bekliyor mu hafızası
+# 🔴 YENİ: Veritabanını artık JSON dosyasından çekiyoruz
+if "kullanici_veritabani" not in st.session_state:
+    st.session_state.kullanici_veritabani = veritabani_yukle() 
+    
 if "onay_bekleyen" not in st.session_state:
     st.session_state.onay_bekleyen = None 
 
@@ -76,6 +98,9 @@ if not st.session_state.logged_in:
             giris_sifre = st.text_input("Şifre", type="password", key="giris_sifre")
             
             if st.button("🚀 Sisteme Giriş Yap", use_container_width=True):
+                # Anlık olarak JSON'daki en güncel veriyi çekelim ki başka cihazdan kayıt olanları da görsün
+                st.session_state.kullanici_veritabani = veritabani_yukle()
+                
                 if giris_email in st.session_state.kullanici_veritabani and st.session_state.kullanici_veritabani[giris_email]["sifre"] == giris_sifre:
                     st.session_state.logged_in = True
                     st.session_state.aktif_kullanici = st.session_state.kullanici_veritabani[giris_email]["isim"]
@@ -85,7 +110,6 @@ if not st.session_state.logged_in:
                     
         # --- 2. YENİ KAYIT SEKMESİ ---
         with tab_kayit:
-            # EĞER ONAY KODU GÖNDERİLMEDİYSE (Form Ekranı)
             if st.session_state.onay_bekleyen is None:
                 kayit_isim = st.text_input("İsim Soyisim", key="kayit_isim") 
                 kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
@@ -93,6 +117,9 @@ if not st.session_state.logged_in:
                 kayit_sifre_tekrar = st.text_input("Şifre Tekrar", type="password", key="kayit_sifre_tekrar")
                 
                 if st.button("Kayıt Ol", use_container_width=True):
+                    # Kayıt öncesi JSON'ı güncelle
+                    st.session_state.kullanici_veritabani = veritabani_yukle()
+                    
                     if len(kayit_isim.strip()) < 3:
                         st.warning("⚠️ Lütfen geçerli bir İsim Soyisim giriniz!")
                     elif "@" not in kayit_email or "." not in kayit_email:
@@ -104,27 +131,23 @@ if not st.session_state.logged_in:
                     elif len(kayit_sifre) < 6:
                         st.warning("Şifre en az 6 karakter olmalıdır.")
                     else:
-                        # 6 Haneli Rastgele Kod Üret
                         uretilen_kod = str(random.randint(100000, 999999))
                         
                         with st.spinner("Onay kodu e-postanıza gönderiliyor..."):
                             basarili_mi, hata_mesaji = onay_kodu_gonder(kayit_email, uretilen_kod)
                         
                         if basarili_mi:
-                            # Bilgileri geçici hafızaya al
                             st.session_state.onay_bekleyen = {
                                 "isim": kayit_isim.title(),
                                 "email": kayit_email,
                                 "sifre": kayit_sifre,
                                 "kod": uretilen_kod
                             }
-                            st.success("✅ Kod gönderildi! Lütfen e-postanızı (Spam klasörü dahil) kontrol edin.")
+                            st.success("✅ Kod gönderildi! Lütfen e-postanızı kontrol edin.")
                             st.rerun()
                         else:
                             st.error(f"E-posta gönderilemedi! Teknik detay: {hata_mesaji}")
-                            st.info("İpucu: gonderici_mail ve uygulama_sifresi ayarlarınızı kontrol edin.")
             
-            # EĞER ONAY KODU GÖNDERİLDİYSE (Kod Girme Ekranı)
             else:
                 st.info(f"📧 **{st.session_state.onay_bekleyen['email']}** adresine 6 haneli bir kod gönderdik.")
                 girilen_kod = st.text_input("Doğrulama Kodu", key="dogrulama_kodu", max_chars=6)
@@ -133,13 +156,15 @@ if not st.session_state.logged_in:
                 with col_onay1:
                     if st.button("✅ Kodu Doğrula", use_container_width=True):
                         if girilen_kod == st.session_state.onay_bekleyen["kod"]:
-                            # KOD DOĞRU: Kullanıcıyı asıl veritabanına kaydet
                             yeni_mail = st.session_state.onay_bekleyen["email"]
+                            # 1. Hafızaya ekle
                             st.session_state.kullanici_veritabani[yeni_mail] = {
                                 "sifre": st.session_state.onay_bekleyen["sifre"], 
                                 "isim": st.session_state.onay_bekleyen["isim"]
                             }
-                            # Bekleme durumunu temizle
+                            # 2. 🔴 KALICI DOSYAYA KAYDET (JSON FİZİKSEL YAZMA)
+                            veritabani_kaydet(st.session_state.kullanici_veritabani)
+                            
                             st.session_state.onay_bekleyen = None
                             st.success("🎉 Harika! E-postanız doğrulandı. Artık 'Giriş Yap' sekmesinden hesabınıza erişebilirsiniz.")
                             st.rerun()
