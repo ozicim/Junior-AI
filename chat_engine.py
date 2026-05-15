@@ -27,7 +27,7 @@ class ChatEngine:
                     "'haksız fiil', 'TCK ihlali' gibi tamamen soyut ve hukuki terimler kullan.\n"
                     "GÖREV: Her başlığın altını doyurucu paragraflarla doldur, kesinlikle 1-2 cümlelik kısa cevaplar verme."
                 )
-                yapilandirma = {"max_output_tokens": 1500, "temperature": 0.8}
+                yapilandirma = {"max_output_tokens": 1500, "temperature": 0.5}
             else: # Detay Modu (KESİNLİKLE DOKUNULMADI)
                 sistem_talimati = (
                     "Sen JUNILEX CHAT Detaylı Analiz Modu'sun. Ozan Şahin Sicim tarafından geliştirilmiş, "
