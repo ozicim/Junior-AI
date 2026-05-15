@@ -899,27 +899,22 @@ elif menu == "💬 JUNILEX Chat":
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi aydınlatalım?"}]
 
-    # 2. Mesaj Geçmişini Göster (Sayfa akıp gidecek)
+    # 2. Mesaj Geçmişini Göster (Yeni Nesil Avatarlarla)
     for message in st.session_state.chat_messages:
-        # 🎨 YENİ NESİL AVATARLAR
         if message["role"] == "user":
-            # Ustam için 'Micah' stili çok şık, minimalist bir karakter
             simge = "https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent"
         else:
-            # JUNILEX için 'Bottts-Neutral' stili, koyu tema, asil bir AI robotu
             simge = "https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"
             
         with st.chat_message(message["role"], avatar=simge):
             st.markdown(message["content"])
 
-    # --- ALT KUMANDA PANELİ (Mesaj girişinin hemen üstünde kalacak) ---
-    st.markdown("---") # İnce bir ayırıcı çizgi
+    # --- ALT KUMANDA PANELİ ---
+    st.markdown("---")
     
-    # İki sütun yapalım: Solda Devam Et, Sağda Mod Seçimi
     col_devam, col_mod = st.columns([1, 1])
 
     with col_mod:
-        # Dinamik Popover
         with st.popover(f"🧠 Mod: {st.session_state.chat_mode}", use_container_width=True):
             secilen_mod = st.radio(
                 "Zeka Yapılandırması:",
@@ -932,29 +927,27 @@ elif menu == "💬 JUNILEX Chat":
                 st.rerun()
 
     with col_devam:
-        # 4. "Devam Et" Butonu Mantığı
+        # 4. "Devam Et" Butonu
         if len(st.session_state.chat_messages) > 1 and st.session_state.chat_messages[-1]["role"] == "assistant":
             if st.button("⏭️ Devam Et", help="Cevap yarıda kaldıysa tıklayın."):
                 
-                # 1. Nerede kaldığını bul
                 yarim_kalan_mesaj = st.session_state.chat_messages[-1]["content"]
                 son_kelimeler = yarim_kalan_mesaj[-60:].strip() if len(yarim_kalan_mesaj) > 60 else yarim_kalan_mesaj
                 
-                # 2. Gemini'ye giden GİZLİ ve SERT komut
                 devam_komutu = (
                     f"Önceki cevabın tam olarak şu kelimelerle yarım kaldı: '...{son_kelimeler}'.\n"
                     "KRİTİK GÖREV: Lütfen asla giriş cümlesi kurma, konuyu baştan anlatma ve yazdıklarını tekrar etme. "
                     "SADECE yarım kalan kelimeyi/cümleyi tamamla ve doğrudan konunun devamını yaz."
                 )
 
-                # Kullanıcı mesajını ekle ve motoru çalıştır!
                 st.session_state.chat_messages.append({"role": "user", "content": "Devam et..."})
                 
-               # Asistanın cevabını üretmeye başla (Devam Et butonu içindeki)
-                # Devam Et butonu içindeki Asistan
                 with st.chat_message("assistant", avatar="https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"):
                     message_placeholder = st.empty()
-                    full_response = ""
+                    
+                    # 🔴 KRİTİK DÜZELTME: NameError hatasını çözen değişken tanımlaması BURADA
+                    full_response = "" 
+                    
                     from chat_engine import ChatEngine
                     
                     response = ChatEngine.yanit_uret(
@@ -969,30 +962,25 @@ elif menu == "💬 JUNILEX Chat":
                     else:
                         for chunk in response:
                             try:
-                                # 🚨 DEDEKTİF 1: Finish Reason Kontrolü
                                 if chunk.candidates:
                                     sebep = chunk.candidates[0].finish_reason.name
                                     if sebep not in ['STOP', 'FINISH_REASON_UNSPECIFIED']:
                                         full_response += f"\n\n🚨 **[GOOGLE FİŞİ ÇEKTİ! SEBEP: {sebep}]**"
                                 
-                                # Metni yazdır
                                 if chunk.text:
                                     full_response += chunk.text
                                     message_placeholder.markdown(full_response + " ▌")
                                     
-                            # 🚨 DEDEKTİF 2: ValueError (Filtre veya boş chunk)
                             except ValueError as ve:
                                 full_response += f"\n\n🛑 **[DEĞER HATASI (Filtre/Boşluk): {str(ve)}]**"
                                 message_placeholder.markdown(full_response)
                                 break 
                                 
-                            # 🚨 DEDEKTİF 3: Diğer Hatalar
                             except Exception as e:
                                 full_response += f"\n\n❌ **[TEKNİK HATA: {str(e)}]**"
                                 message_placeholder.markdown(full_response)
                                 break
                                 
-                        # Eğer filtre her şeyi silerse boş kalmasın
                         if not full_response.strip():
                             full_response = "⚠️ Ustam, sistem tamamen sessiz kaldı. Çıktı engellendi."
                         
@@ -1002,27 +990,22 @@ elif menu == "💬 JUNILEX Chat":
 
     # 5. Ana Soru Girişi
     if prompt := st.chat_input("Mesajınızı yazın..."):
-        # 1. Kullanıcı mesajını hemen hafızaya ekle
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
         
-        # 2. ARAYÜZÜ TAZELEME NOKTASI: Bir yer tutucu oluşturuyoruz
         container = st.empty() 
 
         with container.container():
-            # Kullanıcının yazdığını anlık ekrana bas
-            
-            # Kullanıcı (Ozan)
             with st.chat_message("user", avatar="https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent"):
                 st.markdown(prompt)
 
-            # Asistan (JUNILEX)
             with st.chat_message("assistant", avatar="https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"):
-                message_placeholder = st.empty()
-            
+                message_placeholder = st.empty() 
+                
+                # 🔴 KRİTİK DÜZELTME: NameError hatasını çözen değişken tanımlaması BURADA
+                full_response = ""
                 
                 from chat_engine import ChatEngine
                 
-                # Motoru çağır
                 response = ChatEngine.yanit_uret(
                     MY_API_KEY, 
                     st.session_state.chat_messages[:-1], 
@@ -1035,24 +1018,20 @@ elif menu == "💬 JUNILEX Chat":
                 else:
                     for chunk in response:
                         try:
-                            # 🚨 DEDEKTİF 1: Finish Reason Kontrolü
                             if chunk.candidates:
                                 sebep = chunk.candidates[0].finish_reason.name
                                 if sebep not in ['STOP', 'FINISH_REASON_UNSPECIFIED']:
                                     full_response += f"\n\n🚨 **[GOOGLE FİŞİ ÇEKTİ! SEBEP: {sebep}]**"
                             
-                            # Metni yazdır
                             if chunk.text:
                                 full_response += chunk.text
                                 message_placeholder.markdown(full_response + " ▌")
                                 
-                        # 🚨 DEDEKTİF 2: ValueError (Filtre veya boş chunk)
                         except ValueError as ve:
                             full_response += f"\n\n🛑 **[DEĞER HATASI (Filtre/Boşluk): {str(ve)}]**"
                             message_placeholder.markdown(full_response)
                             break
                             
-                        # 🚨 DEDEKTİF 3: Diğer Hatalar
                         except Exception as e:
                             full_response += f"\n\n❌ **[TEKNİK HATA: {str(e)}]**"
                             message_placeholder.markdown(full_response)
@@ -1061,13 +1040,8 @@ elif menu == "💬 JUNILEX Chat":
                     if not full_response.strip():
                         full_response = "⚠️ Ustam, sistem tamamen sessiz kaldı. Çıktı engellendi."
                     
-                    # Son halini temizce yazdır
                     message_placeholder.markdown(full_response)
-                    
-                    # 3. VERİYİ KAYDET
                     st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-                    
-                    # 4. GÜVENLİ YENİLEME
                     st.rerun()
             
     # 6. Sidebar Temizleme Butonu
