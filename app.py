@@ -110,6 +110,7 @@ if not st.session_state.logged_in:
                     
         # --- 2. YENİ KAYIT SEKMESİ ---
         with tab_kayit:
+            # EĞER KOD GÖNDERİLMEDİYSE (İlk Form Ekranı)
             if st.session_state.onay_bekleyen is None:
                 kayit_isim = st.text_input("İsim Soyisim", key="kayit_isim") 
                 kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
@@ -117,7 +118,6 @@ if not st.session_state.logged_in:
                 kayit_sifre_tekrar = st.text_input("Şifre Tekrar", type="password", key="kayit_sifre_tekrar")
                 
                 if st.button("Kayıt Ol", use_container_width=True):
-                    # Kayıt öncesi JSON'ı güncelle
                     st.session_state.kullanici_veritabani = veritabani_yukle()
                     
                     if len(kayit_isim.strip()) < 3:
@@ -148,31 +148,48 @@ if not st.session_state.logged_in:
                         else:
                             st.error(f"E-posta gönderilemedi! Teknik detay: {hata_mesaji}")
             
+            # --- ONAY KODU EKRANI (Kod gönderildikten sonraki aşama) ---
             else:
-                st.info(f"📧 **{st.session_state.onay_bekleyen['email']}** adresine 6 haneli bir kod gönderdik.")
+                st.info(f"📧 **{st.session_state.onay_bekleyen['email']}** adresine 6 haneli bir doğrulama kodu gönderdik.")
                 girilen_kod = st.text_input("Doğrulama Kodu", key="dogrulama_kodu", max_chars=6)
                 
-                col_onay1, col_onay2 = st.columns(2)
+                # 3 Sütunlu modern buton dizilimi
+                col_onay1, col_onay2, col_onay3 = st.columns(3)
+                
                 with col_onay1:
                     if st.button("✅ Kodu Doğrula", use_container_width=True):
                         if girilen_kod == st.session_state.onay_bekleyen["kod"]:
+                            # 1. Veritabanına Kalıcı Kayıt
                             yeni_mail = st.session_state.onay_bekleyen["email"]
-                            # 1. Hafızaya ekle
                             st.session_state.kullanici_veritabani[yeni_mail] = {
                                 "sifre": st.session_state.onay_bekleyen["sifre"], 
                                 "isim": st.session_state.onay_bekleyen["isim"]
                             }
-                            # 2. 🔴 KALICI DOSYAYA KAYDET (JSON FİZİKSEL YAZMA)
                             veritabani_kaydet(st.session_state.kullanici_veritabani)
                             
+                            # 2. Bekleme durumunu temizle ve başarıyı kutla
                             st.session_state.onay_bekleyen = None
-                            st.success("🎉 Harika! E-postanız doğrulandı. Artık 'Giriş Yap' sekmesinden hesabınıza erişebilirsiniz.")
-                            st.rerun()
+                            st.balloons() 
+                            st.success("🎉 Kayıt başarılı! Şimdi 'Giriş Yap' sekmesine geçerek JUNILEX'i kullanmaya başlayabilirsiniz.")
                         else:
-                            st.error("❌ Hatalı kod girdiniz! Lütfen tekrar deneyin.")
+                            # 🔴 HATALI KOD UYARISI
+                            st.error("❌ Doğrulama kodu hatalı! Lütfen tekrar kontrol edin.")
                 
                 with col_onay2:
-                    if st.button("⬅️ İptal Et / Geri Dön", use_container_width=True):
+                    # 🔄 TEKRAR KOD GÖNDERME BUTONU
+                    if st.button("🔄 Tekrar Kod Gönder", use_container_width=True):
+                        yeni_kod = str(random.randint(100000, 999999))
+                        with st.spinner("Yeni kod hazırlanıyor..."):
+                            basarili, mesaj = onay_kodu_gonder(st.session_state.onay_bekleyen["email"], yeni_kod)
+                        
+                        if basarili:
+                            st.session_state.onay_bekleyen["kod"] = yeni_kod
+                            st.toast("✅ Yeni kod başarıyla gönderildi!", icon="📧")
+                        else:
+                            st.error(f"Kod gönderimi başarısız: {mesaj}")
+                
+                with col_onay3:
+                    if st.button("⬅️ Bilgileri Düzenle", use_container_width=True):
                         st.session_state.onay_bekleyen = None
                         st.rerun()
     st.stop()
