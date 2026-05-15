@@ -11,9 +11,6 @@ import os
 import urllib.request
 import google.generativeai as genai
 import streamlit as st
-# Diğer importların (genai, ChatEngine vs.) burada kalsın...
-
-import streamlit as st
 # Diğer importların (genai, ChatEngine vs.) burada kalmaya devam etsin...
 
 # ==========================================
@@ -21,16 +18,17 @@ import streamlit as st
 # ==========================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
-if "kullanici_adi" not in st.session_state:
-    st.session_state.kullanici_adi = ""
+if "aktif_kullanici" not in st.session_state:
+    st.session_state.aktif_kullanici = ""
 if "users_db" not in st.session_state:
-    st.session_state.users_db = {"ozan": "123456"} # İlk yönetici hesabı
+    # Varsayılan yönetici hesabı artık bir mail adresi
+    st.session_state.users_db = {"ozan@junilex.com": "123456"} 
 
 # ==========================================
 # 🛑 GİRİŞ YAPILMADIYSA GÖSTERİLECEK BAĞIMSIZ EKRAN
 # ==========================================
 if not st.session_state.logged_in:
-    # 🎨 SİHİRLİ DOKUNUŞ: Giriş ekranındayken sol menüyü (sidebar) tamamen gizle!
+    # 🎨 Giriş ekranındayken sol menüyü (sidebar) tamamen gizle!
     st.markdown(
         """
         <style>
@@ -42,46 +40,53 @@ if not st.session_state.logged_in:
     )
 
     # Sayfayı ortalamak için boşluklar bırakıyoruz
-    st.write("<br><br><br>", unsafe_allow_html=True)
+    st.write("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
+        # Kurumsal ve Şık Header (Geliştirici İmzasıyla Birlikte)
         st.markdown("<h1 style='text-align: center; font-size: 3rem;'>⚖️ JUNILEX</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray; font-size: 1.2rem;'>Kıdemli Yapay Zeka Hukuk Asistanı</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; font-size: 1.2rem; margin-bottom: 0px;'>Kıdemli Yapay Zeka Hukuk Asistanı</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.9rem;'><em>Geliştirici: Ozan Şahin Sicim<br>Çankırı Karatekin Üniversitesi Hukuk Fakültesi Öğrencisi</em></p>", unsafe_allow_html=True)
         st.markdown("---")
         
         tab_giris, tab_kayit = st.tabs(["🔐 Giriş Yap", "📝 Yeni Kayıt"])
         
         with tab_giris:
-            giris_kullanici = st.text_input("Kullanıcı Adı", key="giris_ad")
+            giris_email = st.text_input("E-Posta Adresi", key="giris_email")
             giris_sifre = st.text_input("Şifre", type="password", key="giris_sifre")
             
             if st.button("🚀 Sisteme Giriş Yap", use_container_width=True):
-                if giris_kullanici in st.session_state.users_db and st.session_state.users_db[giris_kullanici] == giris_sifre:
+                if giris_email in st.session_state.users_db and st.session_state.users_db[giris_email] == giris_sifre:
                     st.session_state.logged_in = True
-                    st.session_state.kullanici_adi = giris_kullanici
+                    # E-postanın '@' işaretinden önceki kısmını isim olarak alalım (örn: ozan@mail.com -> ozan)
+                    isim = giris_email.split('@')[0].capitalize()
+                    st.session_state.aktif_kullanici = isim
                     st.rerun() # Sayfayı yenile ve duvarı kaldır!
                 else:
-                    st.error("Kullanıcı adı veya şifre hatalı!")
+                    st.error("E-posta adresi veya şifre hatalı!")
                     
         with tab_kayit:
-            kayit_kullanici = st.text_input("Yeni Kullanıcı Adı", key="kayit_ad")
+            kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
             kayit_sifre = st.text_input("Yeni Şifre", type="password", key="kayit_sifre")
             kayit_sifre_tekrar = st.text_input("Şifre Tekrar", type="password", key="kayit_sifre_tekrar")
             
             if st.button("Kayıt Ol", use_container_width=True):
-                if kayit_kullanici in st.session_state.users_db:
-                    st.warning("Bu kullanıcı adı zaten alınmış!")
+                # E-posta doğrulama (İçinde @ ve . var mı?)
+                if "@" not in kayit_email or "." not in kayit_email:
+                    st.warning("⚠️ Lütfen geçerli bir e-posta adresi giriniz!")
+                elif kayit_email in st.session_state.users_db:
+                    st.warning("Bu e-posta adresi zaten sisteme kayıtlı!")
                 elif kayit_sifre != kayit_sifre_tekrar:
                     st.error("Şifreler uyuşmuyor!")
-                elif len(kayit_kullanici) < 3 or len(kayit_sifre) < 4:
-                    st.warning("Kullanıcı adı en az 3, şifre en az 4 karakter olmalıdır.")
+                elif len(kayit_sifre) < 6:
+                    st.warning("Şifre en az 6 karakter olmalıdır.")
                 else:
-                    st.session_state.users_db[kayit_kullanici] = kayit_sifre
-                    st.success("Kayıt başarılı! 'Giriş Yap' sekmesinden girebilirsiniz.")
+                    # Başarılı kayıt
+                    st.session_state.users_db[kayit_email] = kayit_sifre
+                    st.success("✅ Kayıt başarılı! 'Giriş Yap' sekmesinden girebilirsiniz.")
     
-    # 🛑 EN KRİTİK KOD: Eğer giriş yapılmadıysa kodu burada durdur. 
-    # Alt taraftaki Junilex kodlarını asla okumaz ve göstermez.
+    # 🛑 Giriş yapılmadıysa kodu burada durdur.
     st.stop()
 
 
@@ -90,12 +95,17 @@ if not st.session_state.logged_in:
 # ==========================================
 
 # 1. Sol menüye (Sidebar) kullanıcı ismini ve çıkış butonunu ekleyelim
-st.sidebar.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.kullanici_adi.capitalize()}")
+st.sidebar.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.aktif_kullanici}")
 if st.sidebar.button("🚪 Çıkış Yap", use_container_width=True):
     st.session_state.logged_in = False
-    st.session_state.kullanici_adi = ""
+    st.session_state.aktif_kullanici = ""
     st.rerun()
 st.sidebar.markdown("---")
+
+# ---------------------------------------------------------
+# BUNDAN SONRAKİ KISIM SENİN MEVCUT JUNILEX KODLARIN OLACAK!
+# (st.sidebar.title("Menü") ile başlayan kodların aynen burada kalsın)
+# ---------------------------------------------------------
 
 # ---------------------------------------------------------
 # BUNDAN SONRAKİ KISIM SENİN MEVCUT JUNILEX KODLARIN OLACAK!
