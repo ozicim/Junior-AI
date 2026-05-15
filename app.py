@@ -911,7 +911,7 @@ elif menu == "💬 JUNILEX Chat":
     col_devam, col_mod = st.columns([1, 1])
 
     with col_mod:
-        # Dinamik Popover (Artık aşağıda!)
+        # Dinamik Popover
         with st.popover(f"🧠 Mod: {st.session_state.chat_mode}", use_container_width=True):
             secilen_mod = st.radio(
                 "Zeka Yapılandırması:",
@@ -924,12 +924,11 @@ elif menu == "💬 JUNILEX Chat":
                 st.rerun()
 
     with col_devam:
-        # Devam Et butonu (Eğer son mesaj asistandansa çıkar)
         # 4. "Devam Et" Butonu Mantığı
         if len(st.session_state.chat_messages) > 1 and st.session_state.chat_messages[-1]["role"] == "assistant":
             if st.button("⏭️ Devam Et", help="Cevap yarıda kaldıysa tıklayın."):
                 
-                # 1. Nerede kaldığını bul (Son mesajın son 60 karakterini alıyoruz)
+                # 1. Nerede kaldığını bul
                 yarim_kalan_mesaj = st.session_state.chat_messages[-1]["content"]
                 son_kelimeler = yarim_kalan_mesaj[-60:].strip() if len(yarim_kalan_mesaj) > 60 else yarim_kalan_mesaj
                 
@@ -940,14 +939,44 @@ elif menu == "💬 JUNILEX Chat":
                     "SADECE yarım kalan kelimeyi/cümleyi tamamla ve doğrudan konunun devamını yaz."
                 )
 
-    # 3. Ana Soru Girişi (En altta sabit)
+                # EKLEME BURADA: Kullanıcı mesajını ekle ve motoru çalıştır!
+                st.session_state.chat_messages.append({"role": "user", "content": "Devam et..."})
+                
+                with st.chat_message("assistant"):
+                    message_placeholder = st.empty()
+                    full_response = ""
+                    from chat_engine import ChatEngine
+                    
+                    response = ChatEngine.yanit_uret(
+                        MY_API_KEY, 
+                        st.session_state.chat_messages[:-1], 
+                        devam_komutu,
+                        mod=st.session_state.chat_mode
+                    )
+                    
+                    if isinstance(response, str) and response.startswith("HATA"):
+                        st.error(response)
+                    else:
+                        for chunk in response:
+                            try:
+                                if chunk.text:
+                                    full_response += chunk.text
+                                    message_placeholder.markdown(full_response + " ▌")
+                            except ValueError:
+                                continue
+                            except Exception as e:
+                                continue
+                        
+                        message_placeholder.markdown(full_response)
+                        st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
+                        st.rerun()
+
     # 5. Ana Soru Girişi
     if prompt := st.chat_input("Mesajınızı yazın..."):
         # 1. Kullanıcı mesajını hemen hafızaya ekle
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
         
         # 2. ARAYÜZÜ TAZELEME NOKTASI: Bir yer tutucu oluşturuyoruz
-        # Bu, asistan cevabı üretilirken ekranın kaymasını veya verinin uçmasını engeller
         container = st.empty() 
 
         with container.container():
@@ -957,7 +986,7 @@ elif menu == "💬 JUNILEX Chat":
 
             # Asistanın cevabını üretmeye başla
             with st.chat_message("assistant"):
-                message_placeholder = st.empty() # Cevap akarken dolacak kutu
+                message_placeholder = st.empty() 
                 full_response = ""
                 
                 from chat_engine import ChatEngine
@@ -975,12 +1004,10 @@ elif menu == "💬 JUNILEX Chat":
                 else:
                     for chunk in response:
                         try:
-                            # chunk.text'e erişmeyi dene. Eğer bloklanmışsa burada ValueError atar.
                             if chunk.text:
                                 full_response += chunk.text
                                 message_placeholder.markdown(full_response + " ▌")
                         except ValueError:
-                            # Eğer bu chunk bloklanmışsa veya text içermiyorsa, sessizce sonraki parçaya geç
                             continue
                         except Exception as e:
                             st.warning(f"Küçük bir teknik pürüz: {str(e)}")
@@ -989,10 +1016,10 @@ elif menu == "💬 JUNILEX Chat":
                     # Son halini temizce yazdır
                     message_placeholder.markdown(full_response)
                     
-                    # 3. VERİYİ KAYDET: Cevap bitince hafızaya at
+                    # 3. VERİYİ KAYDET
                     st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
                     
-                    # 4. GÜVENLİ YENİLEME: Her şey bittikten sonra rerun yapıyoruz
+                    # 4. GÜVENLİ YENİLEME
                     st.rerun()
             
     # 6. Sidebar Temizleme Butonu
