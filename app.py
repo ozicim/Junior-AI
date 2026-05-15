@@ -21,14 +21,16 @@ if "logged_in" not in st.session_state:
 if "aktif_kullanici" not in st.session_state:
     st.session_state.aktif_kullanici = ""
 if "users_db" not in st.session_state:
-    # Varsayılan yönetici hesabı artık bir mail adresi
-    st.session_state.users_db = {"ozan@junilex.com": "123456"} 
+    # VERİTABANI GÜNCELLEMESİ: Artık e-posta adresine karşılık hem şifre hem de İsim tutuyoruz
+    st.session_state.users_db = {
+        "ozan@junilex.com": {"sifre": "123456", "isim": "Ozan Şahin Sicim"}
+    } 
 
 # ==========================================
 # 🛑 GİRİŞ YAPILMADIYSA GÖSTERİLECEK BAĞIMSIZ EKRAN
 # ==========================================
 if not st.session_state.logged_in:
-    # 🎨 Giriş ekranındayken sol menüyü (sidebar) tamamen gizle!
+    # Giriş ekranındayken sol menüyü (sidebar) tamamen gizle!
     st.markdown(
         """
         <style>
@@ -44,7 +46,6 @@ if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        # Kurumsal ve Şık Header (Geliştirici İmzasıyla Birlikte)
         st.markdown("<h1 style='text-align: center; font-size: 3rem;'>⚖️ JUNILEX</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: gray; font-size: 1.2rem; margin-bottom: 0px;'>Kıdemli Yapay Zeka Hukuk Asistanı</p>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.9rem;'><em>Geliştirici: Ozan Şahin Sicim<br>Çankırı Karatekin Üniversitesi Hukuk Fakültesi Öğrencisi</em></p>", unsafe_allow_html=True)
@@ -57,23 +58,26 @@ if not st.session_state.logged_in:
             giris_sifre = st.text_input("Şifre", type="password", key="giris_sifre")
             
             if st.button("🚀 Sisteme Giriş Yap", use_container_width=True):
-                if giris_email in st.session_state.users_db and st.session_state.users_db[giris_email] == giris_sifre:
+                # Veritabanı sorgusu güncellendi
+                if giris_email in st.session_state.users_db and st.session_state.users_db[giris_email]["sifre"] == giris_sifre:
                     st.session_state.logged_in = True
-                    # E-postanın '@' işaretinden önceki kısmını isim olarak alalım (örn: ozan@mail.com -> ozan)
-                    isim = giris_email.split('@')[0].capitalize()
-                    st.session_state.aktif_kullanici = isim
-                    st.rerun() # Sayfayı yenile ve duvarı kaldır!
+                    # Doğrudan kullanıcının kayıtlı İsim Soyisim bilgisini çekiyoruz
+                    st.session_state.aktif_kullanici = st.session_state.users_db[giris_email]["isim"]
+                    st.rerun() 
                 else:
                     st.error("E-posta adresi veya şifre hatalı!")
                     
         with tab_kayit:
+            # YENİ EKLENEN ALAN: İsim Soyisim
+            kayit_isim = st.text_input("İsim Soyisim", key="kayit_isim") 
             kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
             kayit_sifre = st.text_input("Yeni Şifre", type="password", key="kayit_sifre")
             kayit_sifre_tekrar = st.text_input("Şifre Tekrar", type="password", key="kayit_sifre_tekrar")
             
             if st.button("Kayıt Ol", use_container_width=True):
-                # E-posta doğrulama (İçinde @ ve . var mı?)
-                if "@" not in kayit_email or "." not in kayit_email:
+                if len(kayit_isim.strip()) < 3:
+                    st.warning("⚠️ Lütfen geçerli bir İsim Soyisim giriniz!")
+                elif "@" not in kayit_email or "." not in kayit_email:
                     st.warning("⚠️ Lütfen geçerli bir e-posta adresi giriniz!")
                 elif kayit_email in st.session_state.users_db:
                     st.warning("Bu e-posta adresi zaten sisteme kayıtlı!")
@@ -82,8 +86,11 @@ if not st.session_state.logged_in:
                 elif len(kayit_sifre) < 6:
                     st.warning("Şifre en az 6 karakter olmalıdır.")
                 else:
-                    # Başarılı kayıt
-                    st.session_state.users_db[kayit_email] = kayit_sifre
+                    # Yeni kullanıcıyı şifresi ve İsim Soyismiyle birlikte alt sözlük olarak kaydet
+                    st.session_state.users_db[kayit_email] = {
+                        "sifre": kayit_sifre, 
+                        "isim": kayit_isim.title() # .title() ile isimlerin baş harfini otomatik büyütüyoruz (örn: ali can -> Ali Can)
+                    }
                     st.success("✅ Kayıt başarılı! 'Giriş Yap' sekmesinden girebilirsiniz.")
     
     # 🛑 Giriş yapılmadıysa kodu burada durdur.
@@ -94,7 +101,6 @@ if not st.session_state.logged_in:
 # ✅ ANA UYGULAMA (SADECE GİRİŞ YAPANLAR GÖREBİLİR)
 # ==========================================
 
-# 1. Sol menüye (Sidebar) kullanıcı ismini ve çıkış butonunu ekleyelim
 st.sidebar.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.aktif_kullanici}")
 if st.sidebar.button("🚪 Çıkış Yap", use_container_width=True):
     st.session_state.logged_in = False
