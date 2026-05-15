@@ -925,24 +925,20 @@ elif menu == "💬 JUNILEX Chat":
 
     with col_devam:
         # Devam Et butonu (Eğer son mesaj asistandansa çıkar)
+        # 4. "Devam Et" Butonu Mantığı
         if len(st.session_state.chat_messages) > 1 and st.session_state.chat_messages[-1]["role"] == "assistant":
-            if st.button("⏭️ Devam Et", use_container_width=True):
-                # ... (Devam etme mantığı aynı kalacak) ...
-                devam_komutu = "Lütfen kaldığın yerden, konuyu bozmadan devam et."
-                st.session_state.chat_messages.append({"role": "user", "content": "Devam et..."})
+            if st.button("⏭️ Devam Et", help="Cevap yarıda kaldıysa tıklayın."):
                 
-                with st.chat_message("assistant"):
-                    message_placeholder = st.empty()
-                    full_response = ""
-                    from chat_engine import ChatEngine
-                    response = ChatEngine.yanit_uret(MY_API_KEY, st.session_state.chat_messages[:-1], devam_komutu, mod=st.session_state.chat_mode)
-                    for chunk in response:
-                        if hasattr(chunk, "text") and chunk.text:
-                            full_response += chunk.text
-                            message_placeholder.markdown(full_response + " ▌")
-                    message_placeholder.markdown(full_response)
-                    st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-                    st.rerun()
+                # 1. Nerede kaldığını bul (Son mesajın son 60 karakterini alıyoruz)
+                yarim_kalan_mesaj = st.session_state.chat_messages[-1]["content"]
+                son_kelimeler = yarim_kalan_mesaj[-60:].strip() if len(yarim_kalan_mesaj) > 60 else yarim_kalan_mesaj
+                
+                # 2. Gemini'ye giden GİZLİ ve SERT komut
+                devam_komutu = (
+                    f"Önceki cevabın tam olarak şu kelimelerle yarım kaldı: '...{son_kelimeler}'.\n"
+                    "KRİTİK GÖREV: Lütfen asla giriş cümlesi kurma, konuyu baştan anlatma ve yazdıklarını tekrar etme. "
+                    "SADECE yarım kalan kelimeyi/cümleyi tamamla ve doğrudan konunun devamını yaz."
+                )
 
     # 3. Ana Soru Girişi (En altta sabit)
     # 5. Ana Soru Girişi
