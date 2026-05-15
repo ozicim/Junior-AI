@@ -28,7 +28,7 @@ class ChatEngine:
                     "GÖREV: Her başlığın altını doyurucu paragraflarla doldur, kesinlikle 1-2 cümlelik kısa cevaplar verme."
                 )
                 yapilandirma = genai.types.GenerationConfig(
-                    max_output_tokens=1500,
+                    max_output_tokens=8192,
                     temperature=0.5
                 )
             else: # Detay Modu (KESİNLİKLE DOKUNULMADI)
