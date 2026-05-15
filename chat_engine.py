@@ -27,7 +27,9 @@ class ChatEngine:
                     "'haksız fiil', 'TCK ihlali' gibi tamamen soyut ve hukuki terimler kullan.\n"
                     "GÖREV: Her başlığın altını doyurucu paragraflarla doldur, kesinlikle 1-2 cümlelik kısa cevaplar verme."
                 )
-                yapilandirma = {"max_output_tokens": 1500, "temperature": 0.5}
+                yapilandirma = genai.types.GenerationConfig(
+                    max_output_tokens=1500,
+                    temperature=0.5
             else: # Detay Modu (KESİNLİKLE DOKUNULMADI)
                 sistem_talimati = (
                     "Sen JUNILEX CHAT Detaylı Analiz Modu'sun. Ozan Şahin Sicim tarafından geliştirilmiş, "
@@ -41,7 +43,9 @@ class ChatEngine:
                     "4. KESİN YASAK: Asla uydurma Esas/Karar numarası verme. Bilginin kaynağını genel olarak belirt (Örn: 'Yargıtay'ın yerleşik içtihatları bu yöndedir').\n"
                     "5. KAPSAM: Bu modda cevaplar daha kapsamlı, detaylı ve öğretici olmalıdır. Detaylı analiz yap ancak açıklamaları çok uzun tutma."
                 )
-                yapilandirma = {"max_output_tokens": 3000, "temperature": 0.8}
+                yapilandirma = genai.types.GenerationConfig(
+                    max_output_tokens=3000,
+                    temperature=0.8
 
             model = genai.GenerativeModel(
                 model_name='gemini-2.5-flash', # Hız için flash, derinlik için gerekirse pro
