@@ -14,15 +14,16 @@ import streamlit as st
 # Diğer importların (genai, ChatEngine vs.) burada kalmaya devam etsin...
 
 # ==========================================
-# 🔐 GÜVENLİK VE VERİTABANI BAŞLATMA
+# 🔐 GÜVENLİK VE YENİ VERİTABANI BAŞLATMA
 # ==========================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "aktif_kullanici" not in st.session_state:
     st.session_state.aktif_kullanici = ""
-if "users_db" not in st.session_state:
-    # VERİTABANI GÜNCELLEMESİ: Artık e-posta adresine karşılık hem şifre hem de İsim tutuyoruz
-    st.session_state.users_db = {
+    
+# 🔴 YENİ HAFIZA BLOĞU: Eski 'users_db' ismini değiştirdik ki eski hatalı veriler silinsin
+if "kullanici_veritabani" not in st.session_state:
+    st.session_state.kullanici_veritabani = {
         "ozan@junilex.com": {"sifre": "123456", "isim": "Ozan Şahin Sicim"}
     } 
 
@@ -30,7 +31,6 @@ if "users_db" not in st.session_state:
 # 🛑 GİRİŞ YAPILMADIYSA GÖSTERİLECEK BAĞIMSIZ EKRAN
 # ==========================================
 if not st.session_state.logged_in:
-    # Giriş ekranındayken sol menüyü (sidebar) tamamen gizle!
     st.markdown(
         """
         <style>
@@ -41,7 +41,6 @@ if not st.session_state.logged_in:
         unsafe_allow_html=True,
     )
 
-    # Sayfayı ortalamak için boşluklar bırakıyoruz
     st.write("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     
@@ -58,17 +57,15 @@ if not st.session_state.logged_in:
             giris_sifre = st.text_input("Şifre", type="password", key="giris_sifre")
             
             if st.button("🚀 Sisteme Giriş Yap", use_container_width=True):
-                # Veritabanı sorgusu güncellendi
-                if giris_email in st.session_state.users_db and st.session_state.users_db[giris_email]["sifre"] == giris_sifre:
+                # Veritabanı adı güncellendi
+                if giris_email in st.session_state.kullanici_veritabani and st.session_state.kullanici_veritabani[giris_email]["sifre"] == giris_sifre:
                     st.session_state.logged_in = True
-                    # Doğrudan kullanıcının kayıtlı İsim Soyisim bilgisini çekiyoruz
-                    st.session_state.aktif_kullanici = st.session_state.users_db[giris_email]["isim"]
+                    st.session_state.aktif_kullanici = st.session_state.kullanici_veritabani[giris_email]["isim"]
                     st.rerun() 
                 else:
                     st.error("E-posta adresi veya şifre hatalı!")
                     
         with tab_kayit:
-            # YENİ EKLENEN ALAN: İsim Soyisim
             kayit_isim = st.text_input("İsim Soyisim", key="kayit_isim") 
             kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
             kayit_sifre = st.text_input("Yeni Şifre", type="password", key="kayit_sifre")
@@ -79,21 +76,19 @@ if not st.session_state.logged_in:
                     st.warning("⚠️ Lütfen geçerli bir İsim Soyisim giriniz!")
                 elif "@" not in kayit_email or "." not in kayit_email:
                     st.warning("⚠️ Lütfen geçerli bir e-posta adresi giriniz!")
-                elif kayit_email in st.session_state.users_db:
+                elif kayit_email in st.session_state.kullanici_veritabani:
                     st.warning("Bu e-posta adresi zaten sisteme kayıtlı!")
                 elif kayit_sifre != kayit_sifre_tekrar:
                     st.error("Şifreler uyuşmuyor!")
                 elif len(kayit_sifre) < 6:
                     st.warning("Şifre en az 6 karakter olmalıdır.")
                 else:
-                    # Yeni kullanıcıyı şifresi ve İsim Soyismiyle birlikte alt sözlük olarak kaydet
-                    st.session_state.users_db[kayit_email] = {
+                    st.session_state.kullanici_veritabani[kayit_email] = {
                         "sifre": kayit_sifre, 
-                        "isim": kayit_isim.title() # .title() ile isimlerin baş harfini otomatik büyütüyoruz (örn: ali can -> Ali Can)
+                        "isim": kayit_isim.title()
                     }
                     st.success("✅ Kayıt başarılı! 'Giriş Yap' sekmesinden girebilirsiniz.")
     
-    # 🛑 Giriş yapılmadıysa kodu burada durdur.
     st.stop()
 
 
@@ -107,7 +102,6 @@ if st.sidebar.button("🚪 Çıkış Yap", use_container_width=True):
     st.session_state.aktif_kullanici = ""
     st.rerun()
 st.sidebar.markdown("---")
-
 # ---------------------------------------------------------
 # BUNDAN SONRAKİ KISIM SENİN MEVCUT JUNILEX KODLARIN OLACAK!
 # (st.sidebar.title("Menü") ile başlayan kodların aynen burada kalsın)
