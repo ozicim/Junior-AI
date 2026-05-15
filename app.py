@@ -901,11 +901,13 @@ elif menu == "💬 JUNILEX Chat":
 
     # 2. Mesaj Geçmişini Göster (Sayfa akıp gidecek)
     for message in st.session_state.chat_messages:
-        # 🎨 PNG AVATARLARI: Ozan ve Junilex için özel modern tasarımlar
+        # 🎨 YENİ NESİL AVATARLAR
         if message["role"] == "user":
-            simge = "https://ui-avatars.com/api/?name=Ozan&background=0f172a&color=38bdf8&rounded=true&bold=true"
+            # Ustam için 'Micah' stili çok şık, minimalist bir karakter
+            simge = "https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent"
         else:
-            simge = "https://ui-avatars.com/api/?name=JUNILEX&background=18181b&color=fbbf24&rounded=true&bold=true"
+            # JUNILEX için 'Bottts-Neutral' stili, koyu tema, asil bir AI robotu
+            simge = "https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"
             
         with st.chat_message(message["role"], avatar=simge):
             st.markdown(message["content"])
@@ -949,7 +951,8 @@ elif menu == "💬 JUNILEX Chat":
                 st.session_state.chat_messages.append({"role": "user", "content": "Devam et..."})
                 
                # Asistanın cevabını üretmeye başla (Devam Et butonu içindeki)
-                with st.chat_message("assistant", avatar="https://ui-avatars.com/api/?name=JUNILEX&background=18181b&color=fbbf24&rounded=true&bold=true"):
+                # Devam Et butonu içindeki Asistan
+                with st.chat_message("assistant", avatar="https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"):
                     message_placeholder = st.empty()
                     full_response = ""
                     from chat_engine import ChatEngine
@@ -1007,13 +1010,14 @@ elif menu == "💬 JUNILEX Chat":
 
         with container.container():
             # Kullanıcının yazdığını anlık ekrana bas
-            with st.chat_message("user", avatar="https://ui-avatars.com/api/?name=Ozan&background=0f172a&color=38bdf8&rounded=true&bold=true"):
+            
+            # Kullanıcı (Ozan)
+            with st.chat_message("user", avatar="https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent"):
                 st.markdown(prompt)
 
-            # Asistanın cevabını üretmeye başla
-            with st.chat_message("assistant", avatar="https://ui-avatars.com/api/?name=JUNILEX&background=18181b&color=fbbf24&rounded=true&bold=true"):
+            # Asistan (JUNILEX)
+            with st.chat_message("assistant", avatar="https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"):
                 message_placeholder = st.empty()
-
             
                 
                 from chat_engine import ChatEngine
