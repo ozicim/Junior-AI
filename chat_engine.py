@@ -1,10 +1,19 @@
 import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
 class ChatEngine:
     @classmethod
     def yanit_uret(cls, api_key, mesaj_gecmisi, yeni_mesaj, mod="Özet"):
         try:
             genai.configure(api_key=api_key)
+            
+            # GÜVENLİK AYARLARI: Şiddet ve suç içeriklerini bloklama (Hukuki analiz için şart)
+            guvenlik_ayarlari = {
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            }
             
             # --- MODA GÖRE PERSONA VE AYARLAR ---
             if mod == "Özet":
