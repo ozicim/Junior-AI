@@ -939,7 +939,7 @@ elif menu == "💬 JUNILEX Chat":
                     "SADECE yarım kalan kelimeyi/cümleyi tamamla ve doğrudan konunun devamını yaz."
                 )
 
-                # EKLEME BURADA: Kullanıcı mesajını ekle ve motoru çalıştır!
+                # Kullanıcı mesajını ekle ve motoru çalıştır!
                 st.session_state.chat_messages.append({"role": "user", "content": "Devam et..."})
                 
                 with st.chat_message("assistant"):
@@ -959,16 +959,33 @@ elif menu == "💬 JUNILEX Chat":
                     else:
                         for chunk in response:
                             try:
+                                # 🚨 DEDEKTİF 1: Finish Reason Kontrolü
+                                if chunk.candidates:
+                                    sebep = chunk.candidates[0].finish_reason.name
+                                    if sebep not in ['STOP', 'FINISH_REASON_UNSPECIFIED']:
+                                        full_response += f"\n\n🚨 **[GOOGLE FİŞİ ÇEKTİ! SEBEP: {sebep}]**"
+                                
+                                # Metni yazdır
                                 if chunk.text:
                                     full_response += chunk.text
                                     message_placeholder.markdown(full_response + " ▌")
-                            except ValueError:
-                                continue
+                                    
+                            # 🚨 DEDEKTİF 2: ValueError (Filtre veya boş chunk)
+                            except ValueError as ve:
+                                full_response += f"\n\n🛑 **[DEĞER HATASI (Filtre/Boşluk): {str(ve)}]**"
+                                message_placeholder.markdown(full_response)
+                                break 
+                                
+                            # 🚨 DEDEKTİF 3: Diğer Hatalar
                             except Exception as e:
-                                continue
-                        # 🔴 YENİ EKLENEN KISIM: Eğer filtre her şeyi silerse boş kalmasın
+                                full_response += f"\n\n❌ **[TEKNİK HATA: {str(e)}]**"
+                                message_placeholder.markdown(full_response)
+                                break
+                                
+                        # Eğer filtre her şeyi silerse boş kalmasın
                         if not full_response.strip():
-                            full_response = "⚠️ Ustam, sorudaki eylemler katı güvenlik filtrelerine takıldı. Lütfen 'bıçaklama' yerine 'kasten yaralama (TCK 86)' yazarak tekrar sorar mısın?"
+                            full_response = "⚠️ Ustam, sistem tamamen sessiz kaldı. Çıktı engellendi."
+                        
                         message_placeholder.markdown(full_response)
                         st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
                         st.rerun()
@@ -1006,14 +1023,31 @@ elif menu == "💬 JUNILEX Chat":
                 else:
                     for chunk in response:
                         try:
+                            # 🚨 DEDEKTİF 1: Finish Reason Kontrolü
+                            if chunk.candidates:
+                                sebep = chunk.candidates[0].finish_reason.name
+                                if sebep not in ['STOP', 'FINISH_REASON_UNSPECIFIED']:
+                                    full_response += f"\n\n🚨 **[GOOGLE FİŞİ ÇEKTİ! SEBEP: {sebep}]**"
+                            
+                            # Metni yazdır
                             if chunk.text:
                                 full_response += chunk.text
                                 message_placeholder.markdown(full_response + " ▌")
-                        except ValueError:
-                            continue
+                                
+                        # 🚨 DEDEKTİF 2: ValueError (Filtre veya boş chunk)
+                        except ValueError as ve:
+                            full_response += f"\n\n🛑 **[DEĞER HATASI (Filtre/Boşluk): {str(ve)}]**"
+                            message_placeholder.markdown(full_response)
+                            break
+                            
+                        # 🚨 DEDEKTİF 3: Diğer Hatalar
                         except Exception as e:
-                            st.warning(f"Küçük bir teknik pürüz: {str(e)}")
-                            continue
+                            full_response += f"\n\n❌ **[TEKNİK HATA: {str(e)}]**"
+                            message_placeholder.markdown(full_response)
+                            break
+                    
+                    if not full_response.strip():
+                        full_response = "⚠️ Ustam, sistem tamamen sessiz kaldı. Çıktı engellendi."
                     
                     # Son halini temizce yazdır
                     message_placeholder.markdown(full_response)
