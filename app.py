@@ -1014,10 +1014,7 @@ elif menu == "💬 JUNILEX Chat":
             with st.chat_message("assistant", avatar="https://ui-avatars.com/api/?name=JUNILEX&background=18181b&color=fbbf24&rounded=true&bold=true"):
                 message_placeholder = st.empty()
 
-            # Asistanın cevabını üretmeye başla
-            with st.chat_message("assistant", avatar="⚖️"):
-                message_placeholder = st.empty() 
-                full_response = ""
+            
                 
                 from chat_engine import ChatEngine
                 
