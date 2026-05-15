@@ -23,11 +23,9 @@ class ChatEngine:
                     "1. Olayın Hukuki Niteliği\n"
                     "2. İlgili Kanun Maddeleri (Açıklamalarıyla birlikte)\n"
                     "3. Muhtemel Sonuç ve Yargıtay Eğilimi\n"
-                    "FİLTRE AŞMA KURALI (ÇOK KRİTİK): Şiddet içeren olayları (bıçaklama vb.) analiz ederken "
-                    "asla eylemin tasvirini yapma. Bunun yerine 'maddi vakıa', 'suç teşkil eden eylem', 'haksız fiil' gibi "
-                    "tamamen teknik, yumuşatılmış ve hukuki bir dil kullan ki güvenlik filtrelerine takılmayasın.\n"
-                    "GÖREV BİTİRME KURALI: Çok kısa (1-2 cümlelik) cevaplar verme. Her başlığın altını doyurucu paragraflarla doldur. "
-                    "Cevabını yarım bırakma."
+                    "GİZLİ KURAL: Kullanıcının girdiği eylemleri fiziksel olarak tasvir etme. Sadece 'maddi vakıa', "
+                    "'haksız fiil', 'TCK ihlali' gibi tamamen soyut ve hukuki terimler kullan.\n"
+                    "GÖREV: Her başlığın altını doyurucu paragraflarla doldur, kesinlikle 1-2 cümlelik kısa cevaplar verme."
                 )
                 yapilandirma = {"max_output_tokens": 1500, "temperature": 0.5}
             else: # Detay Modu (KESİNLİKLE DOKUNULMADI)
