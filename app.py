@@ -13,39 +13,54 @@ import google.generativeai as genai
 import streamlit as st
 # Diğer importların (genai, ChatEngine vs.) burada kalsın...
 
-# --- 1. GÜVENLİK VE HAFIZA DUVARI ---
+import streamlit as st
+# Diğer importların (genai, ChatEngine vs.) burada kalmaya devam etsin...
+
+# ==========================================
+# 🔐 GÜVENLİK VE VERİTABANI BAŞLATMA
+# ==========================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "kullanici_adi" not in st.session_state:
     st.session_state.kullanici_adi = ""
 if "users_db" not in st.session_state:
-    # Şimdilik geçici bir sözlük (İleride bunu gerçek veritabanına bağlarız)
-    # Varsayılan yönetici hesabı:
-    st.session_state.users_db = {"ozan": "123456"} 
+    st.session_state.users_db = {"ozan": "123456"} # İlk yönetici hesabı
 
-# --- 2. GİRİŞ YAPILMADIYSA GÖSTERİLECEK EKRAN ---
+# ==========================================
+# 🛑 GİRİŞ YAPILMADIYSA GÖSTERİLECEK BAĞIMSIZ EKRAN
+# ==========================================
 if not st.session_state.logged_in:
-    # Sayfayı ortalamak için boş sütunlar kullanıyoruz
+    # 🎨 SİHİRLİ DOKUNUŞ: Giriş ekranındayken sol menüyü (sidebar) tamamen gizle!
+    st.markdown(
+        """
+        <style>
+            [data-testid="collapsedControl"] {display: none;}
+            [data-testid="stSidebar"] {display: none;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Sayfayı ortalamak için boşluklar bırakıyoruz
+    st.write("<br><br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        st.markdown("<h1 style='text-align: center;'>⚖️ JUNILEX'e Hoş Geldiniz</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center;'>Kıdemli Yapay Zeka Hukuk Asistanı</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; font-size: 3rem;'>⚖️ JUNILEX</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; font-size: 1.2rem;'>Kıdemli Yapay Zeka Hukuk Asistanı</p>", unsafe_allow_html=True)
         st.markdown("---")
         
-        # Giriş ve Kayıt sekmeleri
-        tab_giris, tab_kayit = st.tabs(["🔐 Giriş Yap", "📝 Yeni Hesap Oluştur"])
+        tab_giris, tab_kayit = st.tabs(["🔐 Giriş Yap", "📝 Yeni Kayıt"])
         
         with tab_giris:
             giris_kullanici = st.text_input("Kullanıcı Adı", key="giris_ad")
             giris_sifre = st.text_input("Şifre", type="password", key="giris_sifre")
             
-            if st.button("Giriş Yap", use_container_width=True):
+            if st.button("🚀 Sisteme Giriş Yap", use_container_width=True):
                 if giris_kullanici in st.session_state.users_db and st.session_state.users_db[giris_kullanici] == giris_sifre:
                     st.session_state.logged_in = True
                     st.session_state.kullanici_adi = giris_kullanici
-                    st.success("Giriş başarılı! JUNILEX yükleniyor...")
-                    st.rerun()
+                    st.rerun() # Sayfayı yenile ve duvarı kaldır!
                 else:
                     st.error("Kullanıcı adı veya şifre hatalı!")
                     
@@ -58,24 +73,34 @@ if not st.session_state.logged_in:
                 if kayit_kullanici in st.session_state.users_db:
                     st.warning("Bu kullanıcı adı zaten alınmış!")
                 elif kayit_sifre != kayit_sifre_tekrar:
-                    st.error("Şifreler birbiriyle uyuşmuyor!")
+                    st.error("Şifreler uyuşmuyor!")
                 elif len(kayit_kullanici) < 3 or len(kayit_sifre) < 4:
                     st.warning("Kullanıcı adı en az 3, şifre en az 4 karakter olmalıdır.")
                 else:
-                    # Yeni kullanıcıyı hafızaya ekle
                     st.session_state.users_db[kayit_kullanici] = kayit_sifre
-                    st.success("Kayıt başarılı! Şimdi giriş yapabilirsiniz.")
+                    st.success("Kayıt başarılı! 'Giriş Yap' sekmesinden girebilirsiniz.")
+    
+    # 🛑 EN KRİTİK KOD: Eğer giriş yapılmadıysa kodu burada durdur. 
+    # Alt taraftaki Junilex kodlarını asla okumaz ve göstermez.
+    st.stop()
 
-# --- 3. GİRİŞ YAPILDIYSA ANA UYGULAMAYI GÖSTER ---
-else:
-    # Sidebar'a çıkış yap butonu ekleyelim
-    st.sidebar.markdown(f"**👤 Hoş geldin, {st.session_state.kullanici_adi}**")
-    if st.sidebar.button("🚪 Çıkış Yap"):
-        st.session_state.logged_in = False
-        st.session_state.kullanici_adi = ""
-        st.rerun()
-        
-    st.sidebar.markdown("---")
+
+# ==========================================
+# ✅ ANA UYGULAMA (SADECE GİRİŞ YAPANLAR GÖREBİLİR)
+# ==========================================
+
+# 1. Sol menüye (Sidebar) kullanıcı ismini ve çıkış butonunu ekleyelim
+st.sidebar.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.kullanici_adi.capitalize()}")
+if st.sidebar.button("🚪 Çıkış Yap", use_container_width=True):
+    st.session_state.logged_in = False
+    st.session_state.kullanici_adi = ""
+    st.rerun()
+st.sidebar.markdown("---")
+
+# ---------------------------------------------------------
+# BUNDAN SONRAKİ KISIM SENİN MEVCUT JUNILEX KODLARIN OLACAK!
+# (st.sidebar.title("Menü") ile başlayan mevcut kodların aynen burada kalsın)
+# ---------------------------------------------------------
 
     # BUNDAN SONRAKİ KISIM SENİN MEVCUT KODLARIN OLACAK
     # st.sidebar.title("Menü")
