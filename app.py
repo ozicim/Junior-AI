@@ -945,25 +945,52 @@ elif menu == "💬 JUNILEX Chat":
                     st.rerun()
 
     # 3. Ana Soru Girişi (En altta sabit)
+    # 5. Ana Soru Girişi
     if prompt := st.chat_input("Mesajınızı yazın..."):
+        # 1. Kullanıcı mesajını hemen hafızaya ekle
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        
+        # 2. ARAYÜZÜ TAZELEME NOKTASI: Bir yer tutucu oluşturuyoruz
+        # Bu, asistan cevabı üretilirken ekranın kaymasını veya verinin uçmasını engeller
+        container = st.empty() 
 
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-            from chat_engine import ChatEngine
-            response = ChatEngine.yanit_uret(MY_API_KEY, st.session_state.chat_messages[:-1], prompt, mod=st.session_state.chat_mode)
-            
-            for chunk in response:
-                if hasattr(chunk, "text") and chunk.text:
-                    full_response += chunk.text
-                    message_placeholder.markdown(full_response + " ▌")
-            
-            message_placeholder.markdown(full_response)
-            st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-            st.rerun()
+        with container.container():
+            # Kullanıcının yazdığını anlık ekrana bas
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            # Asistanın cevabını üretmeye başla
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty() # Cevap akarken dolacak kutu
+                full_response = ""
+                
+                from chat_engine import ChatEngine
+                
+                # Motoru çağır
+                response = ChatEngine.yanit_uret(
+                    MY_API_KEY, 
+                    st.session_state.chat_messages[:-1], 
+                    prompt,
+                    mod=st.session_state.chat_mode
+                )
+                
+                if isinstance(response, str) and response.startswith("HATA"):
+                    st.error(response)
+                else:
+                    for chunk in response:
+                        if hasattr(chunk, "text") and chunk.text:
+                            full_response += chunk.text
+                            # Daktilo efektiyle yazdırıyoruz
+                            message_placeholder.markdown(full_response + " ▌")
+                    
+                    # Son halini temizce yazdır
+                    message_placeholder.markdown(full_response)
+                    
+                    # 3. VERİYİ KAYDET: Cevap bitince hafızaya at
+                    st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
+                    
+                    # 4. GÜVENLİ YENİLEME: Her şey bittikten sonra rerun yapıyoruz
+                    st.rerun()
             
     # 6. Sidebar Temizleme Butonu
     if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
