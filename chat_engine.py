@@ -30,6 +30,7 @@ class ChatEngine:
                 yapilandirma = genai.types.GenerationConfig(
                     max_output_tokens=1500,
                     temperature=0.5
+                )
             else: # Detay Modu (KESİNLİKLE DOKUNULMADI)
                 sistem_talimati = (
                     "Sen JUNILEX CHAT Detaylı Analiz Modu'sun. Ozan Şahin Sicim tarafından geliştirilmiş, "
@@ -46,6 +47,7 @@ class ChatEngine:
                 yapilandirma = genai.types.GenerationConfig(
                     max_output_tokens=3000,
                     temperature=0.8
+                )
 
             model = genai.GenerativeModel(
                 model_name='gemini-2.5-flash', # Hız için flash, derinlik için gerekirse pro
