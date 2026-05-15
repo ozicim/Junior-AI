@@ -59,6 +59,52 @@ def onay_kodu_gonder(alici_mail, kod):
         return True, "Başarılı"
     except Exception as e:
         return False, str(e)
+        # --- ONAY KODU EKRANI (Kod gönderildikten sonraki aşama) ---
+            else:
+                st.info(f"📧 **{st.session_state.onay_bekleyen['email']}** adresine 6 haneli bir doğrulama kodu gönderdik.")
+                girilen_kod = st.text_input("Doğrulama Kodu", key="dogrulama_kodu", max_chars=6)
+                
+                # 3 Sütunlu modern buton dizilimi
+                col_onay1, col_onay2, col_onay3 = st.columns(3)
+                
+                with col_onay1:
+                    if st.button("✅ Kodu Doğrula", use_container_width=True):
+                        if girilen_kod == st.session_state.onay_bekleyen["kod"]:
+                            # 1. Veritabanına Kalıcı Kayıt
+                            yeni_mail = st.session_state.onay_bekleyen["email"]
+                            st.session_state.kullanici_veritabani[yeni_mail] = {
+                                "sifre": st.session_state.onay_bekleyen["sifre"], 
+                                "isim": st.session_state.onay_bekleyen["isim"]
+                            }
+                            veritabani_kaydet(st.session_state.kullanici_veritabani)
+                            
+                            # 2. Bekleme durumunu temizle ve başarıyı kutla
+                            st.session_state.onay_bekleyen = None
+                            st.balloons() # Görsel bir şölen yapalım
+                            st.success("🎉 Kayıt başarılı! Şimdi 'Giriş Yap' sekmesine geçerek JUNILEX'i kullanmaya başlayabilirsiniz.")
+                        else:
+                            # 🔴 HATALI KOD UYARISI
+                            st.error("❌ Doğrulama kodu hatalı! Lütfen tekrar kontrol edin.")
+                
+                with col_onay2:
+                    # 🔄 TEKRAR KOD GÖNDERME BUTONU
+                    if st.button("🔄 Tekrar Kod Gönder", use_container_width=True):
+                        yeni_kod = str(random.randint(100000, 999999))
+                        with st.spinner("Yeni kod hazırlanıyor..."):
+                            basarili, mesaj = onay_kodu_gonder(st.session_state.onay_bekleyen["email"], yeni_kod)
+                        
+                        if basarili:
+                            # Yeni kodu hafızaya al
+                            st.session_state.onay_bekleyen["kod"] = yeni_kod
+                            st.toast("✅ Yeni kod başarıyla gönderildi!", icon="📧")
+                        else:
+                            st.error(f"Kod gönderimi başarısız: {mesaj}")
+                
+                with col_onay3:
+                    if st.button("⬅️ Bilgileri Düzenle", use_container_width=True):
+                        # Kaydı iptal edip ilk forma geri döndürür
+                        st.session_state.onay_bekleyen = None
+                        st.rerun()
 
 # ==========================================
 # 🔐 GÜVENLİK VE VERİTABANI BAŞLATMA
