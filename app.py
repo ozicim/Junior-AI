@@ -42,8 +42,8 @@ def veritabani_kaydet(veri):
 # 📧 E-POSTA GÖNDERME MOTORU
 # ==========================================
 def onay_kodu_gonder(alici_mail, kod):
-    gonderici_mail = "senin_mailin@gmail.com" # BURAYI KENDİ MAİLİNLE DEĞİŞTİR
-    uygulama_sifresi = "xxxx xxxx xxxx xxxx" # BURAYI 16 HANELİ ŞİFREYLE DEĞİŞTİR
+    gonderici_mail = "ozan.scm@gmail.com" # BURAYI KENDİ MAİLİNLE DEĞİŞTİR
+    uygulama_sifresi = "eidf uhkc zqxl gyhs" # BURAYI 16 HANELİ ŞİFREYLE DEĞİŞTİR
 
     msg = MIMEText(f"JUNILEX'e hoş geldin!\n\nKayıt işlemini tamamlamak için doğrulama kodun: {kod}\n\nBu kodu kimseyle paylaşmayın.", "plain", "utf-8")
     msg['Subject'] = "JUNILEX Doğrulama Kodu"
