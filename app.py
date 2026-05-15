@@ -964,32 +964,7 @@ elif menu == "💬 JUNILEX Chat":
             message_placeholder.markdown(full_response)
             st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
             st.rerun()
-
-        # Asistan yanıtını üret
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-            from chat_engine import ChatEngine
             
-            response = ChatEngine.yanit_uret(
-                MY_API_KEY, 
-                st.session_state.chat_messages[:-1], 
-                prompt,
-                mod=st.session_state.chat_mode
-            )
-            
-            if isinstance(response, str) and response.startswith("HATA"):
-                st.error(response)
-            else:
-                for chunk in response:
-                    if hasattr(chunk, "text") and chunk.text:
-                        full_response += chunk.text
-                        message_placeholder.markdown(full_response + " ▌")
-                
-                message_placeholder.markdown(full_response)
-                st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-                st.rerun()
-
     # 6. Sidebar Temizleme Butonu
     if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
         st.session_state.chat_messages = [
