@@ -966,7 +966,9 @@ elif menu == "💬 JUNILEX Chat":
                                 continue
                             except Exception as e:
                                 continue
-                        
+                        # 🔴 YENİ EKLENEN KISIM: Eğer filtre her şeyi silerse boş kalmasın
+                        if not full_response.strip():
+                            full_response = "⚠️ Ustam, sorudaki eylemler katı güvenlik filtrelerine takıldı. Lütfen 'bıçaklama' yerine 'kasten yaralama (TCK 86)' yazarak tekrar sorar mısın?"
                         message_placeholder.markdown(full_response)
                         st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
                         st.rerun()
