@@ -1,5 +1,8 @@
 import streamlit as st
 import firebase_admin
+import random
+import smtplib
+from email.mime.text import MIMEText
 from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine
 from dilekce_engine import DilekceEngine
