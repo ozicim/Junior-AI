@@ -901,8 +901,12 @@ elif menu == "💬 JUNILEX Chat":
 
     # 2. Mesaj Geçmişini Göster (Sayfa akıp gidecek)
     for message in st.session_state.chat_messages:
-        # Rolüne göre simge seçimi
-        simge = "🧑‍💻" if message["role"] == "user" else "⚖️" 
+        # 🎨 PNG AVATARLARI: Ozan ve Junilex için özel modern tasarımlar
+        if message["role"] == "user":
+            simge = "https://ui-avatars.com/api/?name=Ozan&background=0f172a&color=38bdf8&rounded=true&bold=true"
+        else:
+            simge = "https://ui-avatars.com/api/?name=JUNILEX&background=18181b&color=fbbf24&rounded=true&bold=true"
+            
         with st.chat_message(message["role"], avatar=simge):
             st.markdown(message["content"])
 
@@ -944,7 +948,8 @@ elif menu == "💬 JUNILEX Chat":
                 # Kullanıcı mesajını ekle ve motoru çalıştır!
                 st.session_state.chat_messages.append({"role": "user", "content": "Devam et..."})
                 
-                with st.chat_message("assistant", avatar="⚖️"): # <-- BURAYA EKLENDİ
+               # Asistanın cevabını üretmeye başla (Devam Et butonu içindeki)
+                with st.chat_message("assistant", avatar="https://ui-avatars.com/api/?name=JUNILEX&background=18181b&color=fbbf24&rounded=true&bold=true"):
                     message_placeholder = st.empty()
                     full_response = ""
                     from chat_engine import ChatEngine
@@ -1002,8 +1007,12 @@ elif menu == "💬 JUNILEX Chat":
 
         with container.container():
             # Kullanıcının yazdığını anlık ekrana bas
-            with st.chat_message("user", avatar="🧑‍💻"):
+            with st.chat_message("user", avatar="https://ui-avatars.com/api/?name=Ozan&background=0f172a&color=38bdf8&rounded=true&bold=true"):
                 st.markdown(prompt)
+
+            # Asistanın cevabını üretmeye başla
+            with st.chat_message("assistant", avatar="https://ui-avatars.com/api/?name=JUNILEX&background=18181b&color=fbbf24&rounded=true&bold=true"):
+                message_placeholder = st.empty()
 
             # Asistanın cevabını üretmeye başla
             with st.chat_message("assistant", avatar="⚖️"):
