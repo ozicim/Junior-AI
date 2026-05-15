@@ -978,10 +978,17 @@ elif menu == "💬 JUNILEX Chat":
                     st.error(response)
                 else:
                     for chunk in response:
-                        if hasattr(chunk, "text") and chunk.text:
-                            full_response += chunk.text
-                            # Daktilo efektiyle yazdırıyoruz
-                            message_placeholder.markdown(full_response + " ▌")
+                        try:
+                            # chunk.text'e erişmeyi dene. Eğer bloklanmışsa burada ValueError atar.
+                            if chunk.text:
+                                full_response += chunk.text
+                                message_placeholder.markdown(full_response + " ▌")
+                        except ValueError:
+                            # Eğer bu chunk bloklanmışsa veya text içermiyorsa, sessizce sonraki parçaya geç
+                            continue
+                        except Exception as e:
+                            st.warning(f"Küçük bir teknik pürüz: {str(e)}")
+                            continue
                     
                     # Son halini temizce yazdır
                     message_placeholder.markdown(full_response)
