@@ -901,7 +901,9 @@ elif menu == "💬 JUNILEX Chat":
 
     # 2. Mesaj Geçmişini Göster (Sayfa akıp gidecek)
     for message in st.session_state.chat_messages:
-        with st.chat_message(message["role"]):
+        # Rolüne göre simge seçimi
+        simge = "🧑‍💻" if message["role"] == "user" else "⚖️" 
+        with st.chat_message(message["role"], avatar=simge):
             st.markdown(message["content"])
 
     # --- ALT KUMANDA PANELİ (Mesaj girişinin hemen üstünde kalacak) ---
@@ -942,7 +944,7 @@ elif menu == "💬 JUNILEX Chat":
                 # Kullanıcı mesajını ekle ve motoru çalıştır!
                 st.session_state.chat_messages.append({"role": "user", "content": "Devam et..."})
                 
-                with st.chat_message("assistant"):
+                with st.chat_message("assistant", avatar="⚖️"): # <-- BURAYA EKLENDİ
                     message_placeholder = st.empty()
                     full_response = ""
                     from chat_engine import ChatEngine
@@ -998,10 +1000,12 @@ elif menu == "💬 JUNILEX Chat":
         # 2. ARAYÜZÜ TAZELEME NOKTASI: Bir yer tutucu oluşturuyoruz
         container = st.empty() 
 
-        with container.container():
+        
             # Kullanıcının yazdığını anlık ekrana bas
-            with st.chat_message("user"):
-                st.markdown(prompt)
+            with container.container():
+            # Kullanıcının yazdığını anlık ekrana bas
+                with st.chat_message("user", avatar="🧑‍💻"): # <-- BURAYA EKLENDİ
+                    st.markdown(prompt)
 
             # Asistanın cevabını üretmeye başla
             with st.chat_message("assistant"):
