@@ -14,32 +14,47 @@ import streamlit as st
 # Diğer importların (genai, ChatEngine vs.) burada kalmaya devam etsin...
 
 # ==========================================
-# 🔐 GÜVENLİK VE YENİ VERİTABANI BAŞLATMA
+# 📧 E-POSTA GÖNDERME MOTORU
+# ==========================================
+def onay_kodu_gonder(alici_mail, kod):
+    # ⚠️ DİKKAT: BURAYA KENDİ MAİLİNİ VE GOOGLE UYGULAMA ŞİFRENİ YAZMALISIN
+    gonderici_mail = "senin_mailin@gmail.com" 
+    uygulama_sifresi = "xxxx xxxx xxxx xxxx" # Google'dan alınacak 16 haneli şifre
+
+    msg = MIMEText(f"JUNILEX'e hoş geldin!\n\nKayıt işlemini tamamlamak için doğrulama kodun: {kod}\n\nBu kodu kimseyle paylaşmayın.", "plain", "utf-8")
+    msg['Subject'] = "JUNILEX Doğrulama Kodu"
+    msg['From'] = "JUNILEX Asistan"
+    msg['To'] = alici_mail
+
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(gonderici_mail, uygulama_sifresi)
+        server.send_message(msg)
+        server.quit()
+        return True, "Başarılı"
+    except Exception as e:
+        return False, str(e)
+
+# ==========================================
+# 🔐 GÜVENLİK VE VERİTABANI BAŞLATMA
 # ==========================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "aktif_kullanici" not in st.session_state:
     st.session_state.aktif_kullanici = ""
-    
-# 🔴 YENİ HAFIZA BLOĞU: Eski 'users_db' ismini değiştirdik ki eski hatalı veriler silinsin
 if "kullanici_veritabani" not in st.session_state:
-    st.session_state.kullanici_veritabani = {
-        "ozan@junilex.com": {"sifre": "123456", "isim": "Ozan Şahin Sicim"}
-    } 
+    st.session_state.kullanici_veritabani = {"ozan@junilex.com": {"sifre": "123456", "isim": "Ozan Şahin Sicim"}} 
+    
+# 🔴 YENİ: Kayıt onay bekliyor mu hafızası
+if "onay_bekleyen" not in st.session_state:
+    st.session_state.onay_bekleyen = None 
 
 # ==========================================
-# 🛑 GİRİŞ YAPILMADIYSA GÖSTERİLECEK BAĞIMSIZ EKRAN
+# 🛑 GİRİŞ VE KAYIT EKRANI
 # ==========================================
 if not st.session_state.logged_in:
-    st.markdown(
-        """
-        <style>
-            [data-testid="collapsedControl"] {display: none;}
-            [data-testid="stSidebar"] {display: none;}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("""<style>[data-testid="collapsedControl"] {display: none;} [data-testid="stSidebar"] {display: none;}</style>""", unsafe_allow_html=True)
 
     st.write("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -52,12 +67,12 @@ if not st.session_state.logged_in:
         
         tab_giris, tab_kayit = st.tabs(["🔐 Giriş Yap", "📝 Yeni Kayıt"])
         
+        # --- 1. GİRİŞ YAP SEKMESİ ---
         with tab_giris:
             giris_email = st.text_input("E-Posta Adresi", key="giris_email")
             giris_sifre = st.text_input("Şifre", type="password", key="giris_sifre")
             
             if st.button("🚀 Sisteme Giriş Yap", use_container_width=True):
-                # Veritabanı adı güncellendi
                 if giris_email in st.session_state.kullanici_veritabani and st.session_state.kullanici_veritabani[giris_email]["sifre"] == giris_sifre:
                     st.session_state.logged_in = True
                     st.session_state.aktif_kullanici = st.session_state.kullanici_veritabani[giris_email]["isim"]
@@ -65,58 +80,84 @@ if not st.session_state.logged_in:
                 else:
                     st.error("E-posta adresi veya şifre hatalı!")
                     
+        # --- 2. YENİ KAYIT SEKMESİ ---
         with tab_kayit:
-            kayit_isim = st.text_input("İsim Soyisim", key="kayit_isim") 
-            kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
-            kayit_sifre = st.text_input("Yeni Şifre", type="password", key="kayit_sifre")
-            kayit_sifre_tekrar = st.text_input("Şifre Tekrar", type="password", key="kayit_sifre_tekrar")
+            # EĞER ONAY KODU GÖNDERİLMEDİYSE (Form Ekranı)
+            if st.session_state.onay_bekleyen is None:
+                kayit_isim = st.text_input("İsim Soyisim", key="kayit_isim") 
+                kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
+                kayit_sifre = st.text_input("Yeni Şifre", type="password", key="kayit_sifre")
+                kayit_sifre_tekrar = st.text_input("Şifre Tekrar", type="password", key="kayit_sifre_tekrar")
+                
+                if st.button("Kayıt Ol", use_container_width=True):
+                    if len(kayit_isim.strip()) < 3:
+                        st.warning("⚠️ Lütfen geçerli bir İsim Soyisim giriniz!")
+                    elif "@" not in kayit_email or "." not in kayit_email:
+                        st.warning("⚠️ Lütfen geçerli bir e-posta adresi giriniz!")
+                    elif kayit_email in st.session_state.kullanici_veritabani:
+                        st.warning("Bu e-posta adresi zaten sisteme kayıtlı!")
+                    elif kayit_sifre != kayit_sifre_tekrar:
+                        st.error("Şifreler uyuşmuyor!")
+                    elif len(kayit_sifre) < 6:
+                        st.warning("Şifre en az 6 karakter olmalıdır.")
+                    else:
+                        # 6 Haneli Rastgele Kod Üret
+                        uretilen_kod = str(random.randint(100000, 999999))
+                        
+                        with st.spinner("Onay kodu e-postanıza gönderiliyor..."):
+                            basarili_mi, hata_mesaji = onay_kodu_gonder(kayit_email, uretilen_kod)
+                        
+                        if basarili_mi:
+                            # Bilgileri geçici hafızaya al
+                            st.session_state.onay_bekleyen = {
+                                "isim": kayit_isim.title(),
+                                "email": kayit_email,
+                                "sifre": kayit_sifre,
+                                "kod": uretilen_kod
+                            }
+                            st.success("✅ Kod gönderildi! Lütfen e-postanızı (Spam klasörü dahil) kontrol edin.")
+                            st.rerun()
+                        else:
+                            st.error(f"E-posta gönderilemedi! Teknik detay: {hata_mesaji}")
+                            st.info("İpucu: gonderici_mail ve uygulama_sifresi ayarlarınızı kontrol edin.")
             
-            if st.button("Kayıt Ol", use_container_width=True):
-                if len(kayit_isim.strip()) < 3:
-                    st.warning("⚠️ Lütfen geçerli bir İsim Soyisim giriniz!")
-                elif "@" not in kayit_email or "." not in kayit_email:
-                    st.warning("⚠️ Lütfen geçerli bir e-posta adresi giriniz!")
-                elif kayit_email in st.session_state.kullanici_veritabani:
-                    st.warning("Bu e-posta adresi zaten sisteme kayıtlı!")
-                elif kayit_sifre != kayit_sifre_tekrar:
-                    st.error("Şifreler uyuşmuyor!")
-                elif len(kayit_sifre) < 6:
-                    st.warning("Şifre en az 6 karakter olmalıdır.")
-                else:
-                    st.session_state.kullanici_veritabani[kayit_email] = {
-                        "sifre": kayit_sifre, 
-                        "isim": kayit_isim.title()
-                    }
-                    st.success("✅ Kayıt başarılı! 'Giriş Yap' sekmesinden girebilirsiniz.")
-    
+            # EĞER ONAY KODU GÖNDERİLDİYSE (Kod Girme Ekranı)
+            else:
+                st.info(f"📧 **{st.session_state.onay_bekleyen['email']}** adresine 6 haneli bir kod gönderdik.")
+                girilen_kod = st.text_input("Doğrulama Kodu", key="dogrulama_kodu", max_chars=6)
+                
+                col_onay1, col_onay2 = st.columns(2)
+                with col_onay1:
+                    if st.button("✅ Kodu Doğrula", use_container_width=True):
+                        if girilen_kod == st.session_state.onay_bekleyen["kod"]:
+                            # KOD DOĞRU: Kullanıcıyı asıl veritabanına kaydet
+                            yeni_mail = st.session_state.onay_bekleyen["email"]
+                            st.session_state.kullanici_veritabani[yeni_mail] = {
+                                "sifre": st.session_state.onay_bekleyen["sifre"], 
+                                "isim": st.session_state.onay_bekleyen["isim"]
+                            }
+                            # Bekleme durumunu temizle
+                            st.session_state.onay_bekleyen = None
+                            st.success("🎉 Harika! E-postanız doğrulandı. Artık 'Giriş Yap' sekmesinden hesabınıza erişebilirsiniz.")
+                            st.rerun()
+                        else:
+                            st.error("❌ Hatalı kod girdiniz! Lütfen tekrar deneyin.")
+                
+                with col_onay2:
+                    if st.button("⬅️ İptal Et / Geri Dön", use_container_width=True):
+                        st.session_state.onay_bekleyen = None
+                        st.rerun()
     st.stop()
-
 
 # ==========================================
 # ✅ ANA UYGULAMA (SADECE GİRİŞ YAPANLAR GÖREBİLİR)
 # ==========================================
-
 st.sidebar.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.aktif_kullanici}")
 if st.sidebar.button("🚪 Çıkış Yap", use_container_width=True):
     st.session_state.logged_in = False
     st.session_state.aktif_kullanici = ""
     st.rerun()
 st.sidebar.markdown("---")
-# ---------------------------------------------------------
-# BUNDAN SONRAKİ KISIM SENİN MEVCUT JUNILEX KODLARIN OLACAK!
-# (st.sidebar.title("Menü") ile başlayan kodların aynen burada kalsın)
-# ---------------------------------------------------------
-
-# ---------------------------------------------------------
-# BUNDAN SONRAKİ KISIM SENİN MEVCUT JUNILEX KODLARIN OLACAK!
-# (st.sidebar.title("Menü") ile başlayan mevcut kodların aynen burada kalsın)
-# ---------------------------------------------------------
-
-    # BUNDAN SONRAKİ KISIM SENİN MEVCUT KODLARIN OLACAK
-    # st.sidebar.title("Menü")
-    # menu = st.sidebar.radio(...)
-    # elif menu == "💬 JUNILEX Chat":
-    # ... (Geri kalan tüm kodların buranın altında, normal şekilde çalışacak)
 try:
     AkademikEngine.veritabanini_baslat()
 except Exception as e:
