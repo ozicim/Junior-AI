@@ -18,7 +18,7 @@ import streamlit as st
 # ==========================================
 def onay_kodu_gonder(alici_mail, kod):
     # ⚠️ DİKKAT: BURAYA KENDİ MAİLİNİ VE GOOGLE UYGULAMA ŞİFRENİ YAZMALISIN
-    gonderici_mail = "senin_mailin@gmail.com" 
+    gonderici_mail = "ozan.scm@gmail.com" 
     uygulama_sifresi = "cyvh lwju well banq" # Google'dan alınacak 16 haneli şifre
 
     msg = MIMEText(f"JUNILEX'e hoş geldin!\n\nKayıt işlemini tamamlamak için doğrulama kodun: {kod}\n\nBu kodu kimseyle paylaşmayın.", "plain", "utf-8")
