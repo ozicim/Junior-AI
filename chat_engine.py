@@ -23,12 +23,11 @@ class ChatEngine:
                     "1. Olayın Hukuki Niteliği\n"
                     "2. İlgili Kanun Maddeleri (Açıklamalarıyla birlikte)\n"
                     "3. Muhtemel Sonuç ve Yargıtay Eğilimi\n"
-                    "KRİTİK: Çok kısa (1-2 cümlelik) cevaplar verme. Her başlığın altını net ve doyurucu bir paragrafla doldur."
-                    "- Yaklaşık 1000-1200 tokenlik bir derinlik hedefle, 1500 tokenlik alanın var."
-            
+                    "KRİTİK: Çok kısa (1-2 cümlelik) cevaplar verme. Her başlığın altını net ve doyurucu bir paragrafla doldur. "
+                    "Cevabını sonuna kadar yaz, cümleleri yarım bırakma. Yaklaşık 1000-1200 tokenlik bir derinlik hedefle."
                 )
                 yapilandirma = {"max_output_tokens": 1500, "temperature": 0.5}
-            else: # Detay Modu
+            else: # Detay Modu (KESİNLİKLE DOKUNULMADI)
                 sistem_talimati = (
                     "Sen JUNILEX CHAT Detaylı Analiz Modu'sun. Ozan Şahin Sicim tarafından geliştirilmiş, "
                     "hukuki derinliği en üst seviyede olan kıdemli bir hukuk asistanısın. "
@@ -46,7 +45,8 @@ class ChatEngine:
             model = genai.GenerativeModel(
                 model_name='gemini-2.5-flash', # Hız için flash, derinlik için gerekirse pro
                 system_instruction=sistem_talimati,
-                generation_config=yapilandirma
+                generation_config=yapilandirma,
+                safety_settings=guvenlik_ayarlari # USTA BURASI EKSİKTİ, EKLENDİ!
             )
             
             # Geçmişi hazırla
