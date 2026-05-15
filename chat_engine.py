@@ -45,7 +45,7 @@ class ChatEngine:
                     "5. KAPSAM: Bu modda cevaplar daha kapsamlı, detaylı ve öğretici olmalıdır. Detaylı analiz yap ancak açıklamaları çok uzun tutma."
                 )
                 yapilandirma = genai.types.GenerationConfig(
-                    max_output_tokens=3000,
+                    max_output_tokens=8192,
                     temperature=0.8
                 )
 
