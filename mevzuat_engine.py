@@ -1,5 +1,6 @@
 import re
 import time
+import shutil
 import streamlit as st
 from bs4 import BeautifulSoup
 import firebase_admin
@@ -7,10 +8,8 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import google.generativeai as genai
-import shutil
 
 class MevzuatBulutEngine:
     BASE_URL = "https://www.mevzuat.gov.tr/mevzuat?MevzuatNo={}&MevzuatTur=1&MevzuatTertip=5"
@@ -92,64 +91,48 @@ class MevzuatBulutEngine:
         except Exception as e:
             return f"Analiz başarısız oldu: {str(e)}"
 
-    # --- KAZIMA FONKSİYONU (YAPAY ZEKA DESTEKLİ BULMA) ---
     @classmethod
-    def kanunu_buluta_yukle(cls, kanun_id, kanun_kisa_adi):
-        cls.veritabanini_baslat()
+    def kanunu_canli_getir_ve_yazdir(cls, kanun_id, kanun_kisa_adi):
         url = cls.BASE_URL.format(kanun_id)
         
-        # 🔴 EKRANA MESAJ BASALIM (Print yerine Streamlit arayüzünü kullanıyoruz)
-        st.info(f"🌍 [{kanun_kisa_adi}] mevzuat sitesine bağlanılıyor. Bulut tarayıcı hazırlanıyor...")
+        st.info(f"🌍 [{kanun_kisa_adi}] mevzuat sitesine canlı bağlantı kuruluyor...")
         
         try:
             options = webdriver.ChromeOptions()
-            options.add_argument('--headless') 
+            options.add_argument('--headless=new') 
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--disable-gpu')
-            
-            # 🚀 RAM KURTARICI VE ZAMAN AŞIMI (TIMEOUT) ÖNLEYİCİ YENİ AYARLAR
-            options.page_load_strategy = 'eager'  # Sitenin ağır script'lerini beklemeden sadece iskeleti çeker
-            options.add_argument('--blink-settings=imagesEnabled=false') # Sitedeki resimleri/logoları indirmeyi kapatır
-            options.add_argument('--disable-software-rasterizer')
+            options.add_argument('--window-size=1920,1080')
             options.add_argument('--disable-extensions')
+            options.page_load_strategy = 'none' 
             
             options.binary_location = shutil.which("chromium") or "/usr/bin/chromium"
             sistem_driver_yolu = shutil.which("chromedriver") or "/usr/bin/chromedriver"
             
             if not sistem_driver_yolu:
-                raise Exception("Chromedriver bulunamadı! Lütfen 'packages.txt' dosyasının varlığından emin olun.")
+                raise Exception("Chromedriver bulunamadı! 'packages.txt' dosyasını kontrol et.")
                 
             service = Service(sistem_driver_yolu)
             driver = webdriver.Chrome(service=service, options=options)
             
-            # 🔴 SÜRE SINIRI: Chrome 30 saniye içinde siteyi açamazsa kilitlenmek yerine işlemi zorla keser
-            driver.set_page_load_timeout(30)
-            
             driver.get(url)
-            time.sleep(5) # Eager modunda olduğumuz için 10 saniye beklemeye gerek kalmadı, 5'e düşürdük
+            time.sleep(8) 
             
             html = driver.page_source
             
-            # AKILLI IFRAME DEDEKTİFİ
             if "Madde 1" not in html and "MADDE 1" not in html:
-                st.warning("🕵️ Ana sayfada metin yok, Iframe'ler (Gizli Çerçeveler) taranıyor...")
+                st.warning("🕵️ Ana sayfada metin yok, Iframe'ler taranıyor...")
                 iframes = driver.find_elements(By.TAG_NAME, "iframe")
                 for i, frame in enumerate(iframes):
                     driver.switch_to.frame(frame)
                     if "Madde" in driver.page_source or "MADDE" in driver.page_source:
                         html = driver.page_source
-                        st.success(f"🎯 Doğru metin {i}. iframe'de bulundu!")
+                        st.success("🎯 Doğru metin iframe'de bulundu!")
                         break
                     driver.switch_to.default_content() 
             
             driver.quit()
-            
-            # Hayalet Belge Önleyici
-            cls.db.collection('kanunlar').document(kanun_kisa_adi).set({
-                "isim": kanun_kisa_adi,
-                "durum": "Aktif"
-            }, merge=True)
             
             soup = BeautifulSoup(html, 'html.parser')
             for tag in soup(["script", "style", "nav", "header", "footer", "button"]):
@@ -170,9 +153,8 @@ class MevzuatBulutEngine:
             aktif_madde_no = None
             aktif_madde_metni = []
             aktif_madde_baslik = ""
-            kanun_ref = cls.db.collection('kanunlar').document(kanun_kisa_adi).collection('maddeler')
-
-            eklenen_madde_sayisi = 0
+            
+            cekilen_maddeler = []
 
             for satir in satirlar:
                 satir = satir.strip()
@@ -182,18 +164,16 @@ class MevzuatBulutEngine:
                 
                 if match:
                     if aktif_madde_no:
-                        kanun_ref.document(str(aktif_madde_no)).set({
+                        cekilen_maddeler.append({
                             "no": aktif_madde_no, 
                             "baslik": aktif_madde_baslik, 
                             "metin": "\n\n".join(aktif_madde_metni)
                         })
-                        eklenen_madde_sayisi += 1
                     
                     on_ek = match.group(1).strip().capitalize() + " " if match.group(1) else ""
                     asil_no = match.group(2).upper()
                     
                     aktif_madde_no = f"{on_ek}{asil_no}".strip() 
-                    
                     parcalar = re.split(r'[-\u2013\u2014]', satir, maxsplit=1) 
                     aktif_madde_baslik = parcalar[1].strip() if len(parcalar) > 1 else f"{on_ek}Madde {asil_no}".strip()
                     aktif_madde_metni = []
@@ -202,21 +182,24 @@ class MevzuatBulutEngine:
                     aktif_madde_metni.append(satir)
 
             if aktif_madde_no:
-                kanun_ref.document(str(aktif_madde_no)).set({
+                cekilen_maddeler.append({
                     "no": aktif_madde_no, 
                     "baslik": aktif_madde_baslik, 
                     "metin": "\n\n".join(aktif_madde_metni)
                 })
-                eklenen_madde_sayisi += 1
                 
-            # SONUÇLARI EKRANDA GÖSTER
-            if eklenen_madde_sayisi > 0:
-                st.success(f"✅ BAŞARILI! {kanun_kisa_adi} için toplam {eklenen_madde_sayisi} madde veritabanına yazıldı.")
-                st.balloons()
+            if len(cekilen_maddeler) > 0:
+                st.success(f"✅ BAŞARILI! Toplam {len(cekilen_maddeler)} madde canlı olarak çekildi.")
+                
+                st.markdown(f"### 📜 {kanun_kisa_adi} Maddeleri")
+                for madde in cekilen_maddeler:
+                    with st.expander(f"Madde {madde['no']} - {madde['baslik']}", expanded=False):
+                        st.write(madde['metin'])
             else:
-                st.error(f"⚠️ DİKKAT: {kanun_kisa_adi} için 0 madde bulundu! Siteden metin çekilemedi.")
+                st.error(f"⚠️ DİKKAT: {kanun_kisa_adi} için 0 madde bulundu! Metin çekilemedi.")
                 
         except Exception as e:
             st.error(f"❌ TEKNİK HATA OLUŞTU ({kanun_kisa_adi}): {str(e)}")
+
 if __name__ == "__main__":
     pass
