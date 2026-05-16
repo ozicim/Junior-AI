@@ -96,7 +96,7 @@ class MevzuatBulutEngine:
         except Exception as e:
             return f"Analiz başarısız oldu: {str(e)}"
 
-    # --- KAZIMA FONKSİYONU (SİHİRLİ REGEX VE DOĞRUDAN HEDEFLEME EKLENDİ) ---
+    # --- KAZIMA FONKSİYONU (YAPIŞIK MADDELERİ AYIRAN DÜZELTME) ---
     @classmethod
     def kanunu_buluta_yukle(cls, kanun_id, kanun_kisa_adi):
         cls.veritabanini_baslat()
@@ -105,9 +105,8 @@ class MevzuatBulutEngine:
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service)
         driver.get(url)
-        time.sleep(10) # Sayfanın render olması için yeterli süre
+        time.sleep(10) 
         
-        # DİKKAT: Kör iframe geçişi tamamen kaldırıldı. 
         html = driver.page_source
         driver.quit()
         
@@ -116,13 +115,24 @@ class MevzuatBulutEngine:
             for tag in soup(["script", "style", "nav", "header", "footer", "button"]):
                 tag.extract()
             
-            # 1. AKILLI HEDEFLEME: Sadece kanun metninin olduğu div'i bul
             metin_alani = soup.find(id="MevzuatMetin") or soup.find(id="MevzuatMetinBul")
             if not metin_alani:
-                metin_alani = soup # Div bulunamazsa tüm sayfayı kullan
+                metin_alani = soup
+                
+            # 🔴 SİLAH 1: HTML etiketlerini zorla alt satıra indir (Satırların yapışmasını engeller)
+            for br in metin_alani.find_all("br"):
+                br.replace_with("\n")
+            for tag in metin_alani.find_all(["p", "div", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6"]):
+                tag.insert_before("\n")
+                tag.insert_after("\n")
                 
             saf_metin = metin_alani.get_text(separator="\n", strip=True)
             saf_metin = saf_metin.replace('\xa0', ' ').replace('\r', '')
+            
+            # 🔴 SİLAH 2: Jilet Regex! Hala yapışık kalan "Madde" başlıklarını yakala ve zorla alt satıra at
+            # Kanun içinde geçen "Madde 16'ya göre" cümlelerini bozmamak için sadece sonunda tire (-) olan başlıkları hedef alırız.
+            saf_metin = re.sub(r'(?i)(?<!\n)((?:ek\s+|geçici\s+)?madde\s+[0-9]+[a-zçğıöşüA-Z/]*\s*[-\u2013\u2014])', r'\n\1', saf_metin)
+
             satirlar = saf_metin.split('\n')
             
             aktif_madde_no = None
@@ -134,11 +144,10 @@ class MevzuatBulutEngine:
                 satir = satir.strip()
                 if not satir: continue
                 
-                # 2. SİHİRLİ REGEX: "Madde 12/A", "Ek Madde 1", "Geçici Madde 5" hepsini yakalar
-                match = re.search(r'^(?:ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
+                # 🔴 SİLAH 3: Satır başında boşluk veya sembol olsa bile maddeyi tanıyan toleranslı arama
+                match = re.search(r'^\W*(?:ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
                 
                 if match:
-                    # Bir önceki maddeyi veritabanına kaydet
                     if aktif_madde_no:
                         kanun_ref.document(str(aktif_madde_no)).set({
                             "no": aktif_madde_no, 
@@ -146,17 +155,14 @@ class MevzuatBulutEngine:
                             "metin": "\n\n".join(aktif_madde_metni)
                         })
                     
-                    # Yeni maddeye geçiş yap
-                    aktif_madde_no = match.group(1).upper() # 12/a gibi yapıları 12/A'ya çevir
+                    aktif_madde_no = match.group(1).upper() 
                     parcalar = re.split(r'[-\u2013\u2014]', satir, maxsplit=1) 
                     aktif_madde_baslik = parcalar[1].strip() if len(parcalar) > 1 else f"Madde {aktif_madde_no}"
                     aktif_madde_metni = []
                     
                 elif aktif_madde_no:
-                    # Madde başlığı değilse, aktif maddenin içeriğine ekle
                     aktif_madde_metni.append(satir)
 
-            # Döngü bittiğinde elde kalan son maddeyi de kaydet
             if aktif_madde_no:
                 kanun_ref.document(str(aktif_madde_no)).set({
                     "no": aktif_madde_no, 
