@@ -353,14 +353,28 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+if not full_response.strip():
+                        full_response = "⚠️ Ustam, sistem tamamen sessiz kaldı. Çıktı engellendi."
+                    
+                    message_placeholder.markdown(full_response)
+                    st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
+                    st.rerun()
+            
+    # 6. Sidebar Temizleme Butonu
+    if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
+        st.session_state.chat_messages = [
+            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
+        ]
+        st.rerun()
+
+# ==========================================
+# 🏛️ ADLİYE SEKRESİ (MEVZUAT ARAŞTIRMA VE GİZLİ YEREL ENJEKSİYON)
+# ==========================================
 elif secim == "Adliye":
-    # ==========================================
-    # 🏛️ ADLİYE SEKRESİ (MEVZUAT ARAŞTIRMA VE GİZLI YEREL ENJEKSİYON)
-    # ==========================================
     st.header("⚖️ JUNILEX Adliye - Mevzuat Araştırma Merkezi")
-        
+    
     kanun_listesi = MevzuatBulutEngine.get_kanunlar()
-        
+    
     st.markdown("### 🔍 Nokta Atışı Madde Sorgulama")
     col_m1, col_m2 = st.columns([3, 1])
     with col_m1:
@@ -368,7 +382,7 @@ elif secim == "Adliye":
         secilen_kanun = next(k for k in kanun_listesi if k["isim"] == secilen_kanun_adi)
     with col_m2:
         girilen_madde = st.text_input("Madde No (Örn: 3, Geçici 2)", placeholder="No...")
-            
+        
     st.write("<br>", unsafe_allow_html=True)
     if st.button("🚀 Maddeyi Getir", use_container_width=True):
         if girilen_madde.strip() == "":
@@ -376,7 +390,7 @@ elif secim == "Adliye":
         else:
             if "aktif_madde" in st.session_state:
                 del st.session_state["aktif_madde"]
-                
+            
             with st.spinner(f"Firestore'dan {secilen_kanun['kisaAd']} Madde {girilen_madde} çekiliyor..."):
                 try:
                     madde_verisi = MevzuatBulutEngine.madde_getir_buluttan(secilen_kanun["kisaAd"], girilen_madde)
@@ -396,7 +410,7 @@ elif secim == "Adliye":
         st.subheader(f"📜 {madde['kanun_adi']} - Madde {madde['madde_no']}")
         st.markdown(f"**Mevzuat Başlığı:** {madde['baslik']}")
         st.info(madde['metin'])
-            
+        
         ozel_soru = st.text_input("Bu maddeye ilişkin özel bir sorunuz var mı? (İsteğe bağlı)", placeholder="Yapay zekaya sorun...")
         if st.button("🤖 Maddeyi JUNILEX AI ile Analiz Et", use_container_width=True, type="primary"):
             API_KEY = st.secrets["gemini"]["api_key"] 
@@ -412,11 +426,11 @@ elif secim == "Adliye":
         st.write("<br><br><br>", unsafe_allow_html=True)
         with st.expander("🔑 JUNILEX Geliştirici Özel Veri Yükleme Paneli", expanded=False):
             st.markdown("<small>Devlet sitesinin IP engellerini aşmak için tarayıcınız üzerinden doğrudan Firestore enjeksiyonu yapar.</small>", unsafe_allow_html=True)
-                
+            
             yuklenen_json = st.file_uploader("Firebase Anahtar Dosyasını Seç (kilit.json)", type=["json"])
             hedef_kanun_adi = st.selectbox("Yüklenecek Kanun", options=[k["isim"] for k in kanun_listesi], key="admin_yerel_secim")
             hedef_kanun = next(k for k in kanun_listesi if k["isim"] == hedef_kanun_adi)
-                
+            
             if st.button("⚡ Kanunu Tarayıcıdan Firestore'a Fırlat", use_container_width=True):
                 if yuklenen_json is None:
                     st.error("Lütfen önce bilgisayarınızdaki kilit.json dosyasını yukarıya yükleyin!")
@@ -429,7 +443,7 @@ elif secim == "Adliye":
                                 cred = credentials.Certificate(credentials_dict)
                                 firebase_admin.initialize_app(cred)
                             local_db = firestore.client()
-                                
+                            
                             MevzuatBulutEngine.kanunu_buluta_yukle(hedef_kanun["id"], hedef_kanun["kisaAd"], ozel_db=local_db)
                         except Exception as e:
                             st.error(f"Yerel Enjeksiyon Hatası: {str(e)}")
