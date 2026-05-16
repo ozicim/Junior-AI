@@ -354,75 +354,61 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 🏛️ ADLİYE SEKRESİ (CANLI MEVZUAT VE Aİ ANALİZ)
+# 🏛️ ADLİYE SEKRESİ (MEVZUAT ARAŞTIRMA VE VERİTABANI YÖNETİMİ)
 # ==========================================
-st.header("⚖️ JUNILEX Adliye - Canlı Mevzuat Araştırması")
+st.header("⚖️ JUNILEX Adliye - Mevzuat Araştırma ve Yönetim Merkezi")
 
-# Kanun ve Madde Seçimi Yan Yana
-col1, col2 = st.columns([2, 1])
-with col1:
-    kanun_listesi = MevzuatBulutEngine.get_kanunlar()
-    secilen_kanun_adi = st.selectbox("İncelenecek Kanun", options=[k["isim"] for k in kanun_listesi])
-with col2:
-    girilen_madde = st.text_input("Madde No (Örn: 3, Geçici 2, Ek 1)")
+# Kanun Listesini Motordan Çekiyoruz
+kanun_listesi = MevzuatBulutEngine.get_kanunlar()
 
-# Getir Butonu
-if st.button("🚀 Maddeyi Getir", use_container_width=True):
+st.markdown("### 📋 1. Kanun Seçimi ve Veritabanı Senkronizasyonu")
+col_k1, col_k2 = st.columns([2, 1])
+
+with col_k1:
+    secilen_kanun_adi = st.selectbox(
+        "İncelenecek Kanun", 
+        options=[k["isim"] for k in kanun_listesi], 
+        key="adliye_kanun_secim"
+    )
+    secilen_kanun = next(k for k in kanun_listesi if k["isim"] == secilen_kanun_adi)
+
+with col_k2:
+    # Butonun düzgün hizalanması için üstten ufak bir boşluk bırakıyoruz
+    st.write("<div style='padding-top:28px;'></div>", unsafe_allow_html=True)
+    
+    # 📥 İşte Adliye sekmesinin içine yerleştirdiğimiz o sihirli yükleme butonu!
+    if st.button(f"📥 {secilen_kanun['kisaAd']}'u Güncelle / Yükle", use_container_width=True):
+        with st.spinner(f"{secilen_kanun['kisaAd']} maddeleri ışık hızıyla Firestore'a aktarılıyor..."):
+            MevzuatBulutEngine.kanunu_buluta_yukle(secilen_kanun["id"], secilen_kanun["kisaAd"])
+
+st.markdown("### 🔍 2. Nokta Atışı Madde Sorgulama")
+
+# Madde Numarası Girişi ve Sorgulama Butonu
+col_m1, col_m2 = st.columns([3, 1])
+with col_m1:
+    girilen_madde = st.text_input(
+        "Sorgulanacak Madde No (Örn: 3, Geçici 2, Ek 1)", 
+        placeholder="Madde numarasını veya türünü yazın..."
+    )
+with col_m2:
+    st.write("<div style='padding-top:28px;'></div>", unsafe_allow_html=True)
+    getir_butonu = st.button("🚀 Maddeyi Getir", use_container_width=True)
+
+# "Maddeyi Getir" Tetiklendiğinde Çalışacak Bölüm
+if getir_butonu:
     if girilen_madde.strip() == "":
         st.warning("Lütfen bir madde numarası girin!")
     else:
-        # Hafızadaki eski maddeyi temizle ki yeni tıklandığında ekran temizlensin
+        # Ekranın temiz ve güncel kalması için eski maddeyi session_state'den siliyoruz
         if "aktif_madde" in st.session_state:
             del st.session_state["aktif_madde"]
         
-        secilen_kanun = next(k for k in kanun_listesi if k["isim"] == secilen_kanun_adi)
-        
-        with st.spinner(f"Siteden {secilen_kanun['kisaAd']} Madde {girilen_madde} çekiliyor..."):
-            basarili_mi, baslik, metin_veya_hata = MevzuatBulutEngine.tek_madde_getir(secilen_kanun["id"], girilen_madde)
-            
-        if basarili_mi:
-            # Bulunan maddeyi session_state (geçici hafızaya) kaydediyoruz ki butonlara basınca kaybolmasın
-            st.session_state.aktif_madde = {
-                "kanun_adi": secilen_kanun_adi,
-                "madde_no": girilen_madde.upper(),
-                "baslik": baslik,
-                "metin": metin_veya_hata
-            }
-        else:
-            st.error(metin_veya_hata)
-
-# ---------------------------------------------------------
-# EĞER BİR MADDE ÇEKİLDİYSE EKRANDA GÖSTER VE ANALİZ BUTONU ÇIKART
-# ---------------------------------------------------------
-if "aktif_madde" in st.session_state:
-    madde = st.session_state.aktif_madde
-    
-    # 1. Madde Metnini Göster
-    st.markdown("---")
-    st.subheader(f"📜 {madde['kanun_adi']} - Madde {madde['madde_no']}")
-    st.markdown(f"**Başlık:** {madde['baslik']}")
-    st.info(madde['metin'])
-    
-    # 2. Opsiyonel Özel Soru Alanı
-    ozel_soru = st.text_input("Bu maddeyle ilgili özel bir sorunuz var mı? (İsteğe bağlı)", 
-                              placeholder="Örn: Bu madde memurlar için uygulanır mı?")
-    
-    # 3. Analiz Butonu
-    if st.button("🤖 Maddeyi JUNILEX AI ile Analiz Et", use_container_width=True, type="primary"):
-        # Not: Kendi Gemini API anahtarını buraya vermelisin (st.secrets["gemini"]["api_key"] vb.)
-        API_KEY = st.secrets["gemini"]["api_key"] 
-        
-        with st.spinner("JUNILEX yapay zekası maddeyi yorumluyor..."):
-            analiz_sonucu = MevzuatBulutEngine.madde_analiz_et(
-                api_key=API_KEY, 
-                madde_metni=madde['metin'], 
-                kanun_adi=madde['kanun_adi'], 
-                madde_no=madde['madde_no'], 
-                soru=ozel_soru
-            )
-        
-        st.markdown("### 🧠 JUNILEX Analiz Raporu")
-        st.success(analiz_sonucu)
+        with st.spinner(f"Firestore'dan {secilen_kanun['kisaAd']} Madde {girilen_madde} çekiliyor..."):
+            try:
+                # Hafifletilmiş yeni motorumuzla veriyi buluttan anında çekiyoruz
+                madde_verisi = MevzuatBulutEngine.madde_getir_buluttan(secilen_kanun["kisaAd"], girilen_madde)
+                
+                # Çekilen veriyi hafızaya alıyoruz
 
 # --- MOD 2: AKADEMİ ---
 # app.py içinde İçtihat veya Akademi butonunun tam içine:
