@@ -1,147 +1,68 @@
 import re
-import time
-import shutil
+import urllib.request
 import streamlit as st
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 import google.generativeai as genai
 
 class MevzuatBulutEngine:
     BASE_URL = "https://www.mevzuat.gov.tr/mevzuat?MevzuatNo={}&MevzuatTur=1&MevzuatTertip=5"
+    db = None
 
     KANUNLAR = [
-        {"id": "5237", "isim": "Türk Ceza Kanunu", "kisaAd": "TCK", "kategori": "Ceza Hukuku"},
-        {"id": "5271", "isim": "Ceza Muhakemesi Kanunu", "kisaAd": "CMK", "kategori": "Ceza Hukuku"},
-        {"id": "4721", "isim": "Türk Medeni Kanunu", "kisaAd": "TMK", "kategori": "Özel Hukuk"},
-        {"id": "6098", "isim": "Türk Borçlar Kanunu", "kisaAd": "TBK", "kategori": "Özel Hukuk"},
-        {"id": "6102", "isim": "Türk Ticaret Kanunu", "kisaAd": "TTK", "kategori": "Ticaret Hukuku"},
-        {"id": "4857", "isim": "İş Kanunu", "kisaAd": "İK", "kategori": "İş Hukuku"}
+        {"id": "5237", "isim": "Türk Ceza Kanunu", "kisaAd": "TCK", "kategori": "Ceza Hukuku", "aciklama": "Suç ve ceza kavramlarını düzenleyen temel kanun."},
+        {"id": "5271", "isim": "Ceza Muhakemesi Kanunu", "kisaAd": "CMK", "kategori": "Ceza Hukuku", "aciklama": "Ceza yargılaması usullerini düzenler."},
+        {"id": "4721", "isim": "Türk Medeni Kanunu", "kisaAd": "TMK", "kategori": "Özel Hukuk", "aciklama": "Kişiler, aile, miras ve eşya hukukunu kapsar."},
+        {"id": "6098", "isim": "Türk Borçlar Kanunu", "kisaAd": "TBK", "kategori": "Özel Hukuk", "aciklama": "Borç ilişkilerini ve sözleşmeleri kapsar."},
+        {"id": "6102", "isim": "Türk Ticaret Kanunu", "kisaAd": "TTK", "kategori": "Ticaret Hukuku", "aciklama": "Ticari işletme, şirketler ve kıymetli evrak hukuku."},
+        {"id": "4857", "isim": "İş Kanunu", "kisaAd": "İK", "kategori": "İş Hukuku", "aciklama": "İşçi ve işveren ilişkilerini düzenler."}
     ]
 
     @classmethod
     def get_kanunlar(cls):
         return cls.KANUNLAR
 
-    # 🔴 YENİ: NOKTA ATIŞI CANLI MADDE ÇEKİCİ (VERİTABANI YOK)
     @classmethod
-    def tek_madde_getir(cls, kanun_id, istenen_madde_no):
-        url = cls.BASE_URL.format(kanun_id)
+    def veritabanini_baslat(cls):
+        if not firebase_admin._apps:
+            firebase_dict = dict(st.secrets["firebase"])
+            cred = credentials.Certificate(firebase_dict)
+            firebase_admin.initialize_app(cred)
+        if not cls.db:
+            cls.db = firestore.client()
+
+    @classmethod
+    def madde_getir_buluttan(cls, kanun_kisa_adi, madde_no):
+        cls.veritabanini_baslat()
+        # Kullanıcı "geçici 3" yazarsa "Geçici 3" yapıp öyle arasın
+        madde_id = str(madde_no).strip().title() if "geçici" in str(madde_no).lower() or "ek" in str(madde_no).lower() else str(madde_no).strip().upper()
         
-        try:
-            options = webdriver.ChromeOptions()
-            options.add_argument('--headless=new') 
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--disable-gpu')
-            options.add_argument('--window-size=1920,1080')
-            options.add_argument('--disable-extensions')
-            options.add_argument('--blink-settings=imagesEnabled=false')
-            
-            options.page_load_strategy = 'none' 
-            
-            options.binary_location = shutil.which("chromium") or "/usr/bin/chromium"
-            sistem_driver_yolu = shutil.which("chromedriver") or "/usr/bin/chromedriver"
-            
-            if not sistem_driver_yolu:
-                return False, None, "❌ Chromedriver bulunamadı! 'packages.txt' dosyasını kontrol et."
-                
-            service = Service(sistem_driver_yolu)
-            driver = webdriver.Chrome(service=service, options=options)
-            driver.set_page_load_timeout(15)
-            
-            try:
-                driver.get(url)
-            except:
-                pass 
-                
-            # 🔴 AKILLI RADAR (SMART WAIT) SİSTEMİ
-            # Körü körüne beklemek yerine her saniye ekranı kontrol eder.
-            html = ""
-            metin_geldi = False
-            
-            # Ana sayfayı 15 saniye boyunca saniye saniye tara
-            for _ in range(15):
-                html = driver.page_source
-                if "MevzuatMetin" in html or "Madde 1" in html or "MADDE 1" in html:
-                    metin_geldi = True
-                    break
-                time.sleep(1)
-                
-            # Eğer ana sayfada hala metin yoksa (Devlet iframe içine saklamışsa)
-            if not metin_geldi:
-                iframes = driver.find_elements(By.TAG_NAME, "iframe")
-                for frame in iframes:
-                    driver.switch_to.frame(frame)
-                    # Iframe'in içinin dolmasını maks 10 saniye bekle
-                    for _ in range(10):
-                        html = driver.page_source
-                        if "Madde 1" in html or "MADDE 1" in html:
-                            metin_geldi = True
-                            break
-                        time.sleep(1)
-                    if metin_geldi:
-                        break
-                    driver.switch_to.default_content() 
-            
-            driver.quit()
-            
-            if not metin_geldi:
-                return False, None, "⚠️ Mevzuat sitesi şu an çok yavaş veya yanıt vermiyor. Lütfen tekrar 'Getir' butonuna bas."
+        doc_ref = cls.db.collection('kanunlar').document(kanun_kisa_adi).collection('maddeler').document(madde_id)
+        doc = doc_ref.get()
+        if doc.exists:
+            return doc.to_dict()
+        else:
+            raise ValueError(f"'{kanun_kisa_adi}' içerisinde Madde {madde_id} bulunamadı.")
 
-            soup = BeautifulSoup(html, 'html.parser')
-            for tag in soup(["script", "style", "nav", "header", "footer", "button"]):
-                tag.extract()
-            for br in soup.find_all("br"):
-                br.replace_with("\n")
-            for tag in soup.find_all(["p", "div", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6"]):
-                tag.insert_before("\n")
-                tag.insert_after("\n")
-                
-            saf_metin = soup.get_text(separator="\n", strip=True)
-            saf_metin = saf_metin.replace('\xa0', ' ').replace('\r', '')
-            saf_metin = re.sub(r'(?i)(?<!\n)((?:ek\s+|geçici\s+)?madde\s+[0-9]+[a-zçğıöşüA-Z/]*\s*[-\u2013\u2014])', r'\n\1', saf_metin)
+    @classmethod
+    def kelime_ile_ara(cls, kanun_kisa_adi, arama_terimi):
+        cls.veritabanini_baslat()
+        arama_terimi = arama_terimi.lower()
+        maddeler_ref = cls.db.collection('kanunlar').document(kanun_kisa_adi).collection('maddeler')
+        docs = maddeler_ref.stream()
+        
+        sonuclar = []
+        for doc in docs:
+            veri = doc.to_dict()
+            metin = veri.get('metin', '').lower()
+            baslik = veri.get('baslik', '').lower()
+            if arama_terimi in metin or arama_terimi in baslik:
+                sonuclar.append(veri)
+        
+        return sorted(sonuclar, key=lambda x: int(x['no']) if str(x['no']).isdigit() else str(x['no']))
 
-            satirlar = saf_metin.split('\n')
-            
-            madde_bulundu = False
-            kaydedilen_metin = []
-            bulunan_baslik = ""
-            
-            hedef_no = str(istenen_madde_no).strip().upper()
-
-            for satir in satirlar:
-                satir = satir.strip()
-                if not satir: continue
-                
-                match = re.search(r'^\W*(ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
-                
-                if match:
-                    on_ek = match.group(1).strip().capitalize() + " " if match.group(1) else ""
-                    asil_no = match.group(2).upper()
-                    okunan_no = f"{on_ek}{asil_no}".strip()
-                    
-                    if madde_bulundu:
-                        break # Aranan maddeyi aldık, sonraki maddeyi gördüğümüz an kaçıyoruz!
-                        
-                    if okunan_no == hedef_no:
-                        madde_bulundu = True
-                        parcalar = re.split(r'[-\u2013\u2014]', satir, maxsplit=1) 
-                        bulunan_baslik = parcalar[1].strip() if len(parcalar) > 1 else f"{on_ek}Madde {asil_no}".strip()
-                        
-                elif madde_bulundu:
-                    kaydedilen_metin.append(satir)
-
-            if not kaydedilen_metin and not bulunan_baslik:
-                return False, None, f"⚠️ Bu kanunda '{hedef_no}' numaralı madde bulunamadı. (Siteden {len(saf_metin)} karakter okundu)"
-                
-            return True, bulunan_baslik, "\n\n".join(kaydedilen_metin)
-
-        except Exception as e:
-            try: driver.quit() 
-            except: pass
-            return False, None, f"❌ Çekim sırasında hata oluştu: {str(e)}"
     @classmethod
     def madde_analiz_et(cls, api_key, madde_metni, kanun_adi, madde_no, soru=""): 
         try:
@@ -150,8 +71,9 @@ class MevzuatBulutEngine:
             
             prompt = f"""
             Sen profesyonel bir hukuk asistanısın. Aşağıda metni verilen kanun maddesini bir hukukçu titizliğiyle analiz et.
+            Kullanıcının özel sorusu varsa, analizini bu soruya odaklanarak yap.
             
-            Kullanıcının Sorusu: {soru}
+            Kullanıcının Sorusu/Talebi: {soru}
             
             Analiz şunları içermelidir:
             1. Maddenin Özeti (Anlaşılır bir dil)
@@ -162,7 +84,102 @@ class MevzuatBulutEngine:
             Madde No: {madde_no}
             Madde Metni: {madde_metni}
             """
+            
             response = model.generate_content(prompt)
             return response.text
         except Exception as e:
             return f"Analiz başarısız oldu: {str(e)}"
+
+    # --- KAZIMA FONKSİYONU (SELENIUM YOK, IŞIK HIZINDA VERİTABANINA YAZAR) ---
+    @classmethod
+    def kanunu_buluta_yukle(cls, kanun_id, kanun_kisa_adi):
+        cls.veritabanini_baslat()
+        url = cls.BASE_URL.format(kanun_id)
+        
+        st.info(f"🌍 [{kanun_kisa_adi}] Işık hızıyla mevzuat sitesine bağlanılıyor. RAM tüketimi sıfır...")
+        
+        try:
+            # Doğrudan Python üzerinden saf bağlantı atıyoruz (Chrome yok)
+            req = urllib.request.Request(
+                url, 
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            )
+            with urllib.request.urlopen(req, timeout=15) as response:
+                html = response.read().decode('utf-8')
+            
+            # Hayalet Belge Önleyici
+            cls.db.collection('kanunlar').document(kanun_kisa_adi).set({
+                "isim": kanun_kisa_adi,
+                "durum": "Aktif"
+            }, merge=True)
+            
+            soup = BeautifulSoup(html, 'html.parser')
+            metin_alani = soup.find(id="MevzuatMetin") or soup.find(id="MevzuatMetinBul")
+            if not metin_alani:
+                metin_alani = soup
+                
+            for tag in metin_alani(["script", "style", "nav", "header", "footer", "button"]):
+                tag.extract()
+            for br in metin_alani.find_all("br"):
+                br.replace_with("\n")
+            for tag in metin_alani.find_all(["p", "div", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6"]):
+                tag.insert_before("\n")
+                tag.insert_after("\n")
+                
+            saf_metin = metin_alani.get_text(separator="\n", strip=True)
+            saf_metin = saf_metin.replace('\xa0', ' ').replace('\r', '')
+            saf_metin = re.sub(r'(?i)(?<!\n)((?:ek\s+|geçici\s+)?madde\s+[0-9]+[a-zçğıöşüA-Z/]*\s*[-\u2013\u2014])', r'\n\1', saf_metin)
+
+            satirlar = saf_metin.split('\n')
+            
+            aktif_madde_no = None
+            aktif_madde_metni = []
+            aktif_madde_baslik = ""
+            kanun_ref = cls.db.collection('kanunlar').document(kanun_kisa_adi).collection('maddeler')
+
+            eklenen_madde_sayisi = 0
+
+            for satir in satirlar:
+                satir = satir.strip()
+                if not satir: continue
+                
+                # Geçici ve Ek maddeleri tanıyan, ezmeyi önleyen güçlü Regex
+                match = re.search(r'^\W*(ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
+                
+                if match:
+                    if aktif_madde_no:
+                        kanun_ref.document(str(aktif_madde_no)).set({
+                            "no": aktif_madde_no, 
+                            "baslik": aktif_madde_baslik, 
+                            "metin": "\n\n".join(aktif_madde_metni)
+                        })
+                        eklenen_madde_sayisi += 1
+                    
+                    on_ek = match.group(1).strip().capitalize() + " " if match.group(1) else ""
+                    asil_no = match.group(2).upper()
+                    
+                    aktif_madde_no = f"{on_ek}{asil_no}".strip() 
+                    
+                    parcalar = re.split(r'[-\u2013\u2014]', satir, maxsplit=1) 
+                    aktif_madde_baslik = parcalar[1].strip() if len(parcalar) > 1 else f"{on_ek}Madde {asil_no}".strip()
+                    aktif_madde_metni = []
+                    
+                elif aktif_madde_no:
+                    aktif_madde_metni.append(satir)
+
+            if aktif_madde_no:
+                kanun_ref.document(str(aktif_madde_no)).set({
+                    "no": aktif_madde_no, 
+                    "baslik": aktif_madde_baslik, 
+                    "metin": "\n\n".join(aktif_madde_metni)
+                })
+                eklenen_madde_sayisi += 1
+                
+            if eklenen_madde_sayisi > 0:
+                st.success(f"✅ BAŞARILI! {kanun_kisa_adi} YÜKLENDİ! Toplam {eklenen_madde_sayisi} madde veritabanına yazıldı.")
+                st.balloons()
+            else:
+                st.error(f"⚠️ DİKKAT: {kanun_kisa_adi} için 0 madde bulundu!")
+                
+        except Exception as e:
+            st.error(f"❌ Hata oluştu ({kanun_kisa_adi}): {str(e)}")
