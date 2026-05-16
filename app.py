@@ -353,7 +353,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-if not full_response.strip():
+                    if not full_response.strip():
                         full_response = "⚠️ Ustam, sistem tamamen sessiz kaldı. Çıktı engellendi."
                     
                     message_placeholder.markdown(full_response)
