@@ -5,26 +5,18 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
-# ========================================================
-# 🔑 FIREBASE AYARLARI (KENDİ BİLGİSAYARIN İÇİN)
-# ========================================================
-# İNDİRDİĞİN JSON DOSYASININ YOLUNU BURAYA YAZ:
 FIREBASE_JSON_YOLU = "kilit.json" 
 
-# Firebase'i Başlat
-cred = credentials.Certificate(FIREBASE_JSON_YOLU)
-firebase_admin.initialize_app(cred)
+if not firebase_admin._apps:
+    cred = credentials.Certificate(FIREBASE_JSON_YOLU)
+    firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# ========================================================
-# 🚀 IŞIK HIZINDA KAZIMA MOTORU (YEREL İNTERNETİNLE)
-# ========================================================
 def kanunu_firebase_yukle(kanun_id, kanun_kisa_adi):
     url = f"https://www.mevzuat.gov.tr/mevzuat?MevzuatNo={kanun_id}&MevzuatTur=1&MevzuatTertip=5"
-    print(f"🌍 {kanun_kisa_adi} çekiliyor... Lütfen bekle.")
+    print(f"🌍 {kanun_kisa_adi} yerel ağ üzerinden çekiliyor...")
     
     try:
-        # Senin bilgisayarından istek gittiği için engellenmeyecek!
         req = urllib.request.Request(
             url, 
             headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
@@ -81,17 +73,6 @@ def kanunu_firebase_yukle(kanun_id, kanun_kisa_adi):
     except Exception as e:
         print(f"❌ HATA ({kanun_kisa_adi}): {str(e)}")
 
-# ========================================================
-# 🚀 HANGİ KANUNU YÜKLEMEK İSTİYORSAN BURADAN ÇALIŞTIR
-# ========================================================
 if __name__ == "__main__":
-    print("Mevzuat Yükleyici Başlatılıyor...")
-    
-    # İstediğin kanunun başındaki # işaretini kaldırıp çalıştır!
-    
-    kanunu_firebase_yukle("5237", "TCK") 
-    kanunu_firebase_yukle("4857", "İK")
-    kanunu_firebase_yukle("4721", "TMK")
-    # kanunu_firebase_yukle("6098", "TBK")
-    # kanunu_firebase_yukle("6102", "TTK")
-    # kanunu_firebase_yukle("5271", "CMK")
+    # kanunu_firebase_yukle("4857", "İK")
+    pass
