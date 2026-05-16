@@ -89,9 +89,9 @@ if __name__ == "__main__":
     
     # İstediğin kanunun başındaki # işaretini kaldırıp çalıştır!
     
-    # kanunu_firebase_yukle("5237", "TCK") 
+    kanunu_firebase_yukle("5237", "TCK") 
     kanunu_firebase_yukle("4857", "İK")
-    # kanunu_firebase_yukle("4721", "TMK")
+    kanunu_firebase_yukle("4721", "TMK")
     # kanunu_firebase_yukle("6098", "TBK")
     # kanunu_firebase_yukle("6102", "TTK")
     # kanunu_firebase_yukle("5271", "CMK")
