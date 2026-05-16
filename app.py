@@ -354,85 +354,85 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 elif secim == "Adliye":
-        # ==========================================
-        # 🏛️ ADLİYE SEKRESİ (MEVZUAT ARAŞTIRMA VE GİZLI YEREL ENJEKSİYON)
-        # ==========================================
-        st.header("⚖️ JUNILEX Adliye - Mevzuat Araştırma Merkezi")
+    # ==========================================
+    # 🏛️ ADLİYE SEKRESİ (MEVZUAT ARAŞTIRMA VE GİZLI YEREL ENJEKSİYON)
+    # ==========================================
+    st.header("⚖️ JUNILEX Adliye - Mevzuat Araştırma Merkezi")
         
-        kanun_listesi = MevzuatBulutEngine.get_kanunlar()
+    kanun_listesi = MevzuatBulutEngine.get_kanunlar()
         
-        st.markdown("### 🔍 Nokta Atışı Madde Sorgulama")
-        col_m1, col_m2 = st.columns([3, 1])
-        with col_m1:
-            secilen_kanun_adi = st.selectbox("İncelenecek Kanun", options=[k["isim"] for k in kanun_listesi], key="adliye_k_secim")
-            secilen_kanun = next(k for k in kanun_listesi if k["isim"] == secilen_kanun_adi)
-        with col_m2:
-            girilen_madde = st.text_input("Madde No (Örn: 3, Geçici 2)", placeholder="No...")
+    st.markdown("### 🔍 Nokta Atışı Madde Sorgulama")
+    col_m1, col_m2 = st.columns([3, 1])
+    with col_m1:
+        secilen_kanun_adi = st.selectbox("İncelenecek Kanun", options=[k["isim"] for k in kanun_listesi], key="adliye_k_secim")
+        secilen_kanun = next(k for k in kanun_listesi if k["isim"] == secilen_kanun_adi)
+    with col_m2:
+        girilen_madde = st.text_input("Madde No (Örn: 3, Geçici 2)", placeholder="No...")
             
-        st.write("<br>", unsafe_allow_html=True)
-        if st.button("🚀 Maddeyi Getir", use_container_width=True):
-            if girilen_madde.strip() == "":
-                st.warning("Lütfen bir madde numarası girin!")
-            else:
-                if "aktif_madde" in st.session_state:
-                    del st.session_state["aktif_madde"]
+    st.write("<br>", unsafe_allow_html=True)
+    if st.button("🚀 Maddeyi Getir", use_container_width=True):
+        if girilen_madde.strip() == "":
+            st.warning("Lütfen bir madde numarası girin!")
+        else:
+            if "aktif_madde" in st.session_state:
+                del st.session_state["aktif_madde"]
                 
-                with st.spinner(f"Firestore'dan {secilen_kanun['kisaAd']} Madde {girilen_madde} çekiliyor..."):
-                    try:
-                        madde_verisi = MevzuatBulutEngine.madde_getir_buluttan(secilen_kanun["kisaAd"], girilen_madde)
-                        st.session_state.aktif_madde = {
-                            "kanun_adi": secilen_kanun_adi,
-                            "madde_no": girilen_madde.upper(),
-                            "baslik": madde_verisi.get("baslik", f"Madde {girilen_madde}"),
-                            "metin": madde_verisi.get("metin", "Metin bulunamadı.")
-                        }
-                    except Exception as e:
-                        st.error(f"⚠️ Veritabanı Uyarısı: {str(e)}")
-                        st.info("💡 Eğer bu kanunu veritabanına henüz eklemediyseniz, lütfen sayfanın altındaki Geliştirici Panelinden yerel senkronizasyon yapın.")
+            with st.spinner(f"Firestore'dan {secilen_kanun['kisaAd']} Madde {girilen_madde} çekiliyor..."):
+                try:
+                    madde_verisi = MevzuatBulutEngine.madde_getir_buluttan(secilen_kanun["kisaAd"], girilen_madde)
+                    st.session_state.aktif_madde = {
+                        "kanun_adi": secilen_kanun_adi,
+                        "madde_no": girilen_madde.upper(),
+                        "baslik": madde_verisi.get("baslik", f"Madde {girilen_madde}"),
+                        "metin": madde_verisi.get("metin", "Metin bulunamadı.")
+                    }
+                except Exception as e:
+                    st.error(f"⚠️ Veritabanı Uyarısı: {str(e)}")
+                    st.info("💡 Eğer bu kanunu veritabanına henüz eklemediyseniz, lütfen sayfanın altındaki Geliştirici Panelinden yerel senkronizasyon yapın.")
 
-        if "aktif_madde" in st.session_state:
-            madde = st.session_state.aktif_madde
-            st.markdown("---")
-            st.subheader(f"📜 {madde['kanun_adi']} - Madde {madde['madde_no']}")
-            st.markdown(f"**Mevzuat Başlığı:** {madde['baslik']}")
-            st.info(madde['metin'])
+    if "aktif_madde" in st.session_state:
+        madde = st.session_state.aktif_madde
+        st.markdown("---")
+        st.subheader(f"📜 {madde['kanun_adi']} - Madde {madde['madde_no']}")
+        st.markdown(f"**Mevzuat Başlığı:** {madde['baslik']}")
+        st.info(madde['metin'])
             
-            ozel_soru = st.text_input("Bu maddeye ilişkin özel bir sorunuz var mı? (İsteğe bağlı)", placeholder="Yapay zekaya sorun...")
-            if st.button("🤖 Maddeyi JUNILEX AI ile Analiz Et", use_container_width=True, type="primary"):
-                API_KEY = st.secrets["gemini"]["api_key"] 
-                with st.spinner("JUNILEX yapay zekası maddeyi yorumluyor..."):
-                    analiz_sonucu = MevzuatBulutEngine.madde_analiz_et(
-                        api_key=API_KEY, madde_metni=madde['metin'], kanun_adi=madde['kanun_adi'], madde_no=madde['madde_no'], soru=ozel_soru
-                    )
-                st.markdown("### 🧠 JUNILEX Yapay Zeka Analiz Raporu")
-                st.success(analiz_sonucu)
+        ozel_soru = st.text_input("Bu maddeye ilişkin özel bir sorunuz var mı? (İsteğe bağlı)", placeholder="Yapay zekaya sorun...")
+        if st.button("🤖 Maddeyi JUNILEX AI ile Analiz Et", use_container_width=True, type="primary"):
+            API_KEY = st.secrets["gemini"]["api_key"] 
+            with st.spinner("JUNILEX yapay zekası maddeyi yorumluyor..."):
+                analiz_sonucu = MevzuatBulutEngine.madde_analiz_et(
+                    api_key=API_KEY, madde_metni=madde['metin'], kanun_adi=madde['kanun_adi'], madde_no=madde['madde_no'], soru=ozel_soru
+                )
+            st.markdown("### 🧠 JUNILEX Yapay Zeka Analiz Raporu")
+            st.success(analiz_sonucu)
 
-        # 🤫 GİZLİ YEREL ENJEKSİYON PANELİ (SADECE OZAN ŞEF GİRİŞ YAPTIĞINDA GÖRÜNÜR)
-        if st.session_state.get("aktif_kullanici") == "Ozan Şahin Sicim":
-            st.write("<br><br><br>", unsafe_allow_html=True)
-            with st.expander("🔑 JUNILEX Geliştirici Özel Veri Yükleme Paneli", expanded=False):
-                st.markdown("<small>Devlet sitesinin IP engellerini aşmak için tarayıcınız üzerinden doğrudan Firestore enjeksiyonu yapar.</small>", unsafe_allow_html=True)
+    # 🤫 GİZLİ YEREL ENJEKSİYON PANELİ (SADECE OZAN ŞEF GİRİŞ YAPTIĞINDA GÖRÜNÜR)
+    if st.session_state.get("aktif_kullanici") == "Ozan Şahin Sicim":
+        st.write("<br><br><br>", unsafe_allow_html=True)
+        with st.expander("🔑 JUNILEX Geliştirici Özel Veri Yükleme Paneli", expanded=False):
+            st.markdown("<small>Devlet sitesinin IP engellerini aşmak için tarayıcınız üzerinden doğrudan Firestore enjeksiyonu yapar.</small>", unsafe_allow_html=True)
                 
-                yuklenen_json = st.file_uploader("Firebase Anahtar Dosyasını Seç (kilit.json)", type=["json"])
-                hedef_kanun_adi = st.selectbox("Yüklenecek Kanun", options=[k["isim"] for k in kanun_listesi], key="admin_yerel_secim")
-                hedef_kanun = next(k for k in kanun_listesi if k["isim"] == hedef_kanun_adi)
+            yuklenen_json = st.file_uploader("Firebase Anahtar Dosyasını Seç (kilit.json)", type=["json"])
+            hedef_kanun_adi = st.selectbox("Yüklenecek Kanun", options=[k["isim"] for k in kanun_listesi], key="admin_yerel_secim")
+            hedef_kanun = next(k for k in kanun_listesi if k["isim"] == hedef_kanun_adi)
                 
-                if st.button("⚡ Kanunu Tarayıcıdan Firestore'a Fırlat", use_container_width=True):
-                    if yuklenen_json is None:
-                        st.error("Lütfen önce bilgisayarınızdaki kilit.json dosyasını yukarıya yükleyin!")
-                    else:
-                        with st.spinner("Maddeler tarayıcınız üzerinden kazınıyor ve Firebase'e aktarılıyor..."):
-                            try:
-                                import json
-                                credentials_dict = json.load(yuklenen_json)
-                                if not firebase_admin._apps:
-                                    cred = credentials.Certificate(credentials_dict)
-                                    firebase_admin.initialize_app(cred)
-                                local_db = firestore.client()
+            if st.button("⚡ Kanunu Tarayıcıdan Firestore'a Fırlat", use_container_width=True):
+                if yuklenen_json is None:
+                    st.error("Lütfen önce bilgisayarınızdaki kilit.json dosyasını yukarıya yükleyin!")
+                else:
+                    with st.spinner("Maddeler tarayıcınız üzerinden kazınıyor ve Firebase'e aktarılıyor..."):
+                        try:
+                            import json
+                            credentials_dict = json.load(yuklenen_json)
+                            if not firebase_admin._apps:
+                                cred = credentials.Certificate(credentials_dict)
+                                firebase_admin.initialize_app(cred)
+                            local_db = firestore.client()
                                 
-                                MevzuatBulutEngine.kanunu_buluta_yukle(hedef_kanun["id"], hedef_kanun["kisaAd"], ozel_db=local_db)
-                            except Exception as e:
-                                st.error(f"Yerel Enjeksiyon Hatası: {str(e)}")
+                            MevzuatBulutEngine.kanunu_buluta_yukle(hedef_kanun["id"], hedef_kanun["kisaAd"], ozel_db=local_db)
+                        except Exception as e:
+                            st.error(f"Yerel Enjeksiyon Hatası: {str(e)}")
 
 # --- MOD 2: AKADEMİ ---
 # app.py içinde İçtihat veya Akademi butonunun tam içine:
