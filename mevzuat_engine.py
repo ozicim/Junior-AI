@@ -105,7 +105,14 @@ class MevzuatBulutEngine:
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service)
         driver.get(url)
-        time.sleep(10) 
+        time.sleep(10) # Sayfanın yüklenmesi için bekle
+        
+        # 🔴 İFRAME KONTROLÜ (GERİ GETİRİLDİ)
+        # Devletin sitesi metni iframe içine sakladıysa, o çerçevenin içine giriyoruz.
+        iframes = driver.find_elements(By.TAG_NAME, "iframe")
+        if len(iframes) > 0:
+            driver.switch_to.frame(iframes[0])
+            time.sleep(3)
         
         html = driver.page_source
         driver.quit()
@@ -115,11 +122,12 @@ class MevzuatBulutEngine:
             for tag in soup(["script", "style", "nav", "header", "footer", "button"]):
                 tag.extract()
             
+            # İçeriği bul
             metin_alani = soup.find(id="MevzuatMetin") or soup.find(id="MevzuatMetinBul")
             if not metin_alani:
                 metin_alani = soup
                 
-            # 🔴 SİLAH 1: HTML etiketlerini zorla alt satıra indir (Satırların yapışmasını engeller)
+            # 🔴 SİLAH 1: Satırların yapışmasını engelle
             for br in metin_alani.find_all("br"):
                 br.replace_with("\n")
             for tag in metin_alani.find_all(["p", "div", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6"]):
@@ -129,8 +137,7 @@ class MevzuatBulutEngine:
             saf_metin = metin_alani.get_text(separator="\n", strip=True)
             saf_metin = saf_metin.replace('\xa0', ' ').replace('\r', '')
             
-            # 🔴 SİLAH 2: Jilet Regex! Hala yapışık kalan "Madde" başlıklarını yakala ve zorla alt satıra at
-            # Kanun içinde geçen "Madde 16'ya göre" cümlelerini bozmamak için sadece sonunda tire (-) olan başlıkları hedef alırız.
+            # 🔴 SİLAH 2: Hala yapışık kalan başlıkları ayır
             saf_metin = re.sub(r'(?i)(?<!\n)((?:ek\s+|geçici\s+)?madde\s+[0-9]+[a-zçğıöşüA-Z/]*\s*[-\u2013\u2014])', r'\n\1', saf_metin)
 
             satirlar = saf_metin.split('\n')
@@ -140,17 +147,14 @@ class MevzuatBulutEngine:
             aktif_madde_baslik = ""
             kanun_ref = cls.db.collection('kanunlar').document(kanun_kisa_adi).collection('maddeler')
 
-            # ... (üst kısımlar aynı)
-            
             for satir in satirlar:
                 satir = satir.strip()
                 if not satir: continue
                 
-                # 🔴 SİLAH 3 GÜNCELLENDİ: "Ek" ve "Geçici" kelimelerini yakalayan grup (ek\s+|geçici\s+)? eklendi
+                # 🔴 SİLAH 3: Ek ve Geçici maddeleri ezilmeden yakala
                 match = re.search(r'^\W*(ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
                 
                 if match:
-                    # Bir önceki maddeyi kaydet
                     if aktif_madde_no:
                         kanun_ref.document(str(aktif_madde_no)).set({
                             "no": aktif_madde_no, 
@@ -158,23 +162,19 @@ class MevzuatBulutEngine:
                             "metin": "\n\n".join(aktif_madde_metni)
                         })
                     
-                    # 🔴 YENİ HAYAT KURTARAN KISIM: Prefix (Ön Ek) ve Asıl Numarayı ayır
-                    # Eğer "Geçici" yazıyorsa onu al ve ilk harfini büyüt (Örn: "Geçici ")
+                    # Prefix (Ön Ek) ve Asıl Numarayı ayırarak çakışmayı önle
                     on_ek = match.group(1).strip().capitalize() + " " if match.group(1) else ""
                     asil_no = match.group(2).upper()
                     
-                    # Artık kimlikler "3", "Geçici 3", "Ek 5/A" şeklinde tertemiz ayrılıyor!
                     aktif_madde_no = f"{on_ek}{asil_no}".strip() 
                     
                     parcalar = re.split(r'[-\u2013\u2014]', satir, maxsplit=1) 
-                    # Başlığı da on ek ile birlikte düzgünce oluştur
                     aktif_madde_baslik = parcalar[1].strip() if len(parcalar) > 1 else f"{on_ek}Madde {asil_no}".strip()
                     aktif_madde_metni = []
                     
                 elif aktif_madde_no:
                     aktif_madde_metni.append(satir)
 
-            # Döngü bittiğinde elde kalan son maddeyi de kaydet
             if aktif_madde_no:
                 kanun_ref.document(str(aktif_madde_no)).set({
                     "no": aktif_madde_no, 
@@ -186,6 +186,5 @@ class MevzuatBulutEngine:
             
         except Exception as e:
             print(f"❌ Hata oluştu ({kanun_kisa_adi}): {e}")
-
 if __name__ == "__main__":
     pass
