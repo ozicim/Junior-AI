@@ -207,29 +207,6 @@ try:
     AkademikEngine.veritabanini_baslat()
 except Exception as e:
     st.error(f"Veritabanı başlatılamadı: {e}")
-# ==========================================
-# 🛠️ SADECE OZAN ŞEFİN GÖREBİLECEĞİ YÖNETİCİ PANELİ
-# ==========================================
-if st.session_state.aktif_kullanici == "Ozan Şahin Sicim":
-    st.sidebar.write("<br>", unsafe_allow_html=True)
-    with st.sidebar.expander("⚙️ JUNILEX Veritabanı Yönetimi", expanded=False):
-        st.markdown("<small>Mevzuat sitesinden canlı veri kazıyarak Firestore'u günceller.</small>", unsafe_allow_html=True)
-        
-        # Kanun listesini mevzuat_engine içinden dinamik çekiyoruz
-        kanun_listesi = MevzuatBulutEngine.get_kanunlar()
-        secilen_kanun_adi = st.selectbox(
-            "Güncellenecek Kanun", 
-            options=[k["isim"] for k in kanun_listesi],
-            key="admin_kanun_secim"
-        )
-        
-        # Seçilen kanunun ID ve Kısa Adını eşleştirelim
-        secilen_kanun = next(k for k in kanun_listesi if k["isim"] == secilen_kanun_adi)
-        
-        # 📥 İŞTE O BEKLENEN BUTON!
-        if st.button(f"📥 {secilen_kanun['kisaAd']}'u Canlı Çek ve Göster", use_container_width=True):
-            # Artık buluta yüklemek yerine canlı çekip ekrana basan fonksiyonu çağırıyoruz
-            MevzuatBulutEngine.kanunu_canli_getir_ve_yazdir(secilen_kanun["id"], secilen_kanun["kisaAd"])
 
 
 # 1. SAYFA AYARLARI
