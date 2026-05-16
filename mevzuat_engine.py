@@ -31,7 +31,6 @@ class MevzuatBulutEngine:
     @classmethod
     def veritabanini_baslat(cls):
         if not firebase_admin._apps:
-            # Secrets içindeki 'firebase' başlığını bir sözlük olarak alıyoruz
             firebase_dict = dict(st.secrets["firebase"])
             cred = credentials.Certificate(firebase_dict)
             firebase_admin.initialize_app(cred)
@@ -63,16 +62,14 @@ class MevzuatBulutEngine:
             if arama_terimi in metin or arama_terimi in baslik:
                 sonuclar.append(veri)
         
-        return sorted(sonuclar, key=lambda x: int(x['no']) if x['no'].isdigit() else x['no'])
+        return sorted(sonuclar, key=lambda x: int(x['no']) if str(x['no']).isdigit() else str(x['no']))
 
-    # --- AI ANALİZ FONKSİYONU (DÜZELTİLDİ) ---
     @classmethod
     def madde_analiz_et(cls, api_key, madde_metni, kanun_adi, madde_no, soru): 
         try:
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('models/gemini-2.5-flash')
             
-            # Parametredeki 'soru' değişkenini de prompta dahil ettim
             prompt = f"""
             Sen profesyonel bir hukuk asistanısın. Aşağıda metni verilen kanun maddesini bir hukukçu titizliğiyle analiz et.
             Kullanıcının özel sorusu varsa, analizini bu soruya odaklanarak yap.
@@ -89,55 +86,64 @@ class MevzuatBulutEngine:
             Madde Metni: {madde_metni}
             """
             
-            # Doğrudan metni döndürecek şekilde temizlendi
             response = model.generate_content(prompt)
             return response.text
-            
         except Exception as e:
             return f"Analiz başarısız oldu: {str(e)}"
 
-    # --- KAZIMA FONKSİYONU (YAPIŞIK MADDELERİ AYIRAN DÜZELTME) ---
+    # --- KAZIMA FONKSİYONU (YAPAY ZEKA DESTEKLİ BULMA) ---
     @classmethod
     def kanunu_buluta_yukle(cls, kanun_id, kanun_kisa_adi):
         cls.veritabanini_baslat()
         url = cls.BASE_URL.format(kanun_id)
+        print(f"🌍 [{kanun_kisa_adi}] sitesine bağlanılıyor...")
         
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless') # Tarayıcıyı arka planda gizli çalıştırır (hızı artırır)
         service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service)
-        driver.get(url)
-        time.sleep(10) # Sayfanın yüklenmesi için bekle
+        driver = webdriver.Chrome(service=service, options=options)
         
-        # 🔴 İFRAME KONTROLÜ (GERİ GETİRİLDİ)
-        # Devletin sitesi metni iframe içine sakladıysa, o çerçevenin içine giriyoruz.
-        iframes = driver.find_elements(By.TAG_NAME, "iframe")
-        if len(iframes) > 0:
-            driver.switch_to.frame(iframes[0])
-            time.sleep(3)
+        driver.get(url)
+        time.sleep(10) # Sayfanın render olması için kesin bekleme
         
         html = driver.page_source
+        
+        # 🔴 AKILLI IFRAME DEDEKTİFİ: Ana sayfada madde yoksa, iframe'leri tek tek gezip "Madde" kelimesini arar.
+        if "Madde 1" not in html and "MADDE 1" not in html:
+            print("🕵️ Ana sayfada metin yok, Iframe'ler taranıyor...")
+            iframes = driver.find_elements(By.TAG_NAME, "iframe")
+            for i, frame in enumerate(iframes):
+                driver.switch_to.frame(frame)
+                if "Madde" in driver.page_source or "MADDE" in driver.page_source:
+                    html = driver.page_source
+                    print(f"🎯 Doğru metin {i}. iframe'de bulundu!")
+                    break
+                driver.switch_to.default_content() # Bulamazsa ana sayfaya dönüp diğerine bakar
+        
         driver.quit()
+        
+        # 🔴 HAYALET BELGE ÖNLEYİCİ: Alt koleksiyon açmadan önce ana belgeyi fiziksel olarak oluşturur
+        cls.db.collection('kanunlar').document(kanun_kisa_adi).set({
+            "isim": kanun_kisa_adi,
+            "durum": "Aktif"
+        }, merge=True)
         
         try:
             soup = BeautifulSoup(html, 'html.parser')
             for tag in soup(["script", "style", "nav", "header", "footer", "button"]):
                 tag.extract()
             
-            # İçeriği bul
-            metin_alani = soup.find(id="MevzuatMetin") or soup.find(id="MevzuatMetinBul")
-            if not metin_alani:
-                metin_alani = soup
-                
-            # 🔴 SİLAH 1: Satırların yapışmasını engelle
-            for br in metin_alani.find_all("br"):
+            # SİLAH 1: HTML etiketlerini zorla alt satıra indir (Satırların yapışmasını engeller)
+            for br in soup.find_all("br"):
                 br.replace_with("\n")
-            for tag in metin_alani.find_all(["p", "div", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6"]):
+            for tag in soup.find_all(["p", "div", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6"]):
                 tag.insert_before("\n")
                 tag.insert_after("\n")
                 
-            saf_metin = metin_alani.get_text(separator="\n", strip=True)
+            saf_metin = soup.get_text(separator="\n", strip=True)
             saf_metin = saf_metin.replace('\xa0', ' ').replace('\r', '')
             
-            # 🔴 SİLAH 2: Hala yapışık kalan başlıkları ayır
+            # SİLAH 2: Jilet Regex! Hala yapışık kalan "Madde" başlıklarını yakala ve zorla alt satıra at
             saf_metin = re.sub(r'(?i)(?<!\n)((?:ek\s+|geçici\s+)?madde\s+[0-9]+[a-zçğıöşüA-Z/]*\s*[-\u2013\u2014])', r'\n\1', saf_metin)
 
             satirlar = saf_metin.split('\n')
@@ -147,11 +153,13 @@ class MevzuatBulutEngine:
             aktif_madde_baslik = ""
             kanun_ref = cls.db.collection('kanunlar').document(kanun_kisa_adi).collection('maddeler')
 
+            eklenen_madde_sayisi = 0
+
             for satir in satirlar:
                 satir = satir.strip()
                 if not satir: continue
                 
-                # 🔴 SİLAH 3: Ek ve Geçici maddeleri ezilmeden yakala
+                # SİLAH 3: Üzerine Yazmayı Engelleyen, Ek/Geçici tanıyan kusursuz Regex
                 match = re.search(r'^\W*(ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
                 
                 if match:
@@ -161,8 +169,8 @@ class MevzuatBulutEngine:
                             "baslik": aktif_madde_baslik, 
                             "metin": "\n\n".join(aktif_madde_metni)
                         })
+                        eklenen_madde_sayisi += 1
                     
-                    # Prefix (Ön Ek) ve Asıl Numarayı ayırarak çakışmayı önle
                     on_ek = match.group(1).strip().capitalize() + " " if match.group(1) else ""
                     asil_no = match.group(2).upper()
                     
@@ -181,10 +189,15 @@ class MevzuatBulutEngine:
                     "baslik": aktif_madde_baslik, 
                     "metin": "\n\n".join(aktif_madde_metni)
                 })
+                eklenen_madde_sayisi += 1
                 
-            print(f"✅ {kanun_kisa_adi} başarıyla eksiksiz olarak buluta yüklendi!")
+            print(f"✅ {kanun_kisa_adi} YÜKLENDİ! Toplam {eklenen_madde_sayisi} madde Firestore'a yazıldı.")
             
+            if eklenen_madde_sayisi == 0:
+                print(f"⚠️ DİKKAT: {kanun_kisa_adi} için 0 madde bulundu! Siteden doğru metin çekilemedi.")
+                
         except Exception as e:
             print(f"❌ Hata oluştu ({kanun_kisa_adi}): {e}")
+
 if __name__ == "__main__":
     pass
