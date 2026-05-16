@@ -10,6 +10,7 @@ from akademik_sinav_modu import AkademikSinavEngine
 from ictihat_engine import IctihatEngine
 from chat_engine import ChatEngine
 from fpdf import FPDF
+from firebase_admin import firestore
 import os
 import urllib.request
 import google.generativeai as genai
