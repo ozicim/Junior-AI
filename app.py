@@ -376,119 +376,76 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- MOD 1: ADLİYE (MEVZUAT) ---
-if "Adliye" in menu:
-    if st.session_state.aktif_ekran == 'liste':
-        st.markdown("### ⚖️ Mevzuat Kütüphanesi")
-        kategori_ikonlari = {"Ceza Hukuku": "⚖️", "Özel Hukuk": "🏛️", "Ticaret Hukuku": "💼", "İş Hukuku": "🤝"}
-        tum_kanunlar = MevzuatBulutEngine.get_kanunlar()
-        kategoriler = sorted(list(set(k['kategori'] for k in tum_kanunlar)))
+# ==========================================
+# 🏛️ ADLİYE SEKRESİ (CANLI MEVZUAT VE Aİ ANALİZ)
+# ==========================================
+st.header("⚖️ JUNILEX Adliye - Canlı Mevzuat Araştırması")
 
-        for kategori in kategoriler:
-            ikon = kategori_ikonlari.get(kategori, "📌")
-            with st.expander(f"{ikon} {kategori}", expanded=False):
-                kategori_kanunlari = [k for k in tum_kanunlar if k['kategori'] == kategori]
-                for kanun in kategori_kanunlari:
-                    c1, c2 = st.columns([4, 1])
-                    with c1: st.markdown(f"**{kanun['isim']}** ({kanun['kisaAd']})")
-                    with c2:
-                        if st.button("Seç", key=f"btn_{kanun['id']}", use_container_width=True):
-                            kanun_sec(kanun)
-                            st.rerun()
+# Kanun ve Madde Seçimi Yan Yana
+col1, col2 = st.columns([2, 1])
+with col1:
+    kanun_listesi = MevzuatBulutEngine.get_kanunlar()
+    secilen_kanun_adi = st.selectbox("İncelenecek Kanun", options=[k["isim"] for k in kanun_listesi])
+with col2:
+    girilen_madde = st.text_input("Madde No (Örn: 3, Geçici 2, Ek 1)")
 
-    elif st.session_state.aktif_ekran == 'maddeSecim':
-        kanun = st.session_state.secili_kanun
-        if st.button("⬅️ Kanun Listesine Dön"):
-            ekran_degistir('liste')
-            st.rerun()
+# Getir Butonu
+if st.button("🚀 Maddeyi Getir", use_container_width=True):
+    if girilen_madde.strip() == "":
+        st.warning("Lütfen bir madde numarası girin!")
+    else:
+        # Hafızadaki eski maddeyi temizle ki yeni tıklandığında ekran temizlensin
+        if "aktif_madde" in st.session_state:
+            del st.session_state["aktif_madde"]
         
-        st.markdown(f"## 📖 {kanun['isim']}")
-        t1, t2 = st.tabs(["🔢 Madde No", "🔍 Kelime ile Ara"])
+        secilen_kanun = next(k for k in kanun_listesi if k["isim"] == secilen_kanun_adi)
         
-        with t1:
-            with st.form("no_sorgu"):
-                no_in = st.text_input("Madde Numarası")
-                if st.form_submit_button("Sorgula"):
-                    try:
-                        st.session_state.bulunan_madde = MevzuatBulutEngine.madde_getir_buluttan(kanun['kisaAd'], no_in.strip())
-                        ekran_degistir('maddeGosterim')
-                        st.rerun()
-                    except Exception as e: st.error(str(e))
-
-        with t2:
-            with st.form("kelime_sorgu"):
-                anahtar = st.text_input("Aranacak Kavram")
-                if st.form_submit_button("Kanunu Tara"):
-                    st.session_state.arama_sonuclari = MevzuatBulutEngine.kelime_ile_ara(kanun['kisaAd'], anahtar)
+        with st.spinner(f"Siteden {secilen_kanun['kisaAd']} Madde {girilen_madde} çekiliyor..."):
+            basarili_mi, baslik, metin_veya_hata = MevzuatBulutEngine.tek_madde_getir(secilen_kanun["id"], girilen_madde)
             
-            if st.session_state.arama_sonuclari:
-                for s in st.session_state.arama_sonuclari:
-                    with st.expander(f"Madde {s['no']}: {s['baslik']}"):
-                        st.write(s['metin'][:200] + "...")
-                        if st.button("Tam Metin", key=f"det_{kanun['kisaAd']}_{s['no']}"):
-                            st.session_state.bulunan_madde = s
-                            ekran_degistir('maddeGosterim')
-                            st.rerun()
+        if basarili_mi:
+            # Bulunan maddeyi session_state (geçici hafızaya) kaydediyoruz ki butonlara basınca kaybolmasın
+            st.session_state.aktif_madde = {
+                "kanun_adi": secilen_kanun_adi,
+                "madde_no": girilen_madde.upper(),
+                "baslik": baslik,
+                "metin": metin_veya_hata
+            }
+        else:
+            st.error(metin_veya_hata)
 
-    elif st.session_state.aktif_ekran == 'maddeGosterim':
-        kanun = st.session_state.secili_kanun
-        madde = st.session_state.bulunan_madde
-        
-        col_geri, col_ana = st.columns(2)
-        with col_geri:
-            if st.button("⬅️ Yeni Sorgu"):
-                ekran_degistir('maddeSecim')
-                st.rerun()
-        with col_ana:
-            if st.button("🏠 Ana Menü"):
-                ekran_degistir('liste')
-                st.rerun()
-        
-        p_html = "".join([f"<p>{p}</p>" for p in madde['metin'].split('\n') if p.strip()])
-        st.markdown(f"""
-            <div class="madde-kutusu">
-                <div class="madde-baslik">
-                    <span style="font-size:12px; color:#888; font-weight:400; text-transform:uppercase;">{kanun['isim']}</span><br>
-                    Madde {madde['no']}: {madde['baslik']}
-                </div>
-                <div class="madde-icerik">{p_html}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        if st.session_state.bulunan_madde: # Eğer bir madde bulunduysa
-            # 1. Önce maddenin metnini bir değişkene hapsedelim
-            mevcut_madde = st.session_state.bulunan_madde
-            madde_metni = mevcut_madde['metin'] # İşte NameError'ı bitiren satır!
+# ---------------------------------------------------------
+# EĞER BİR MADDE ÇEKİLDİYSE EKRANDA GÖSTER VE ANALİZ BUTONU ÇIKART
+# ---------------------------------------------------------
+if "aktif_madde" in st.session_state:
+    madde = st.session_state.aktif_madde
     
-            st.divider()
-            st.markdown("### 🤖 JUNILEX AI - Madde Yorumlama")
+    # 1. Madde Metnini Göster
+    st.markdown("---")
+    st.subheader(f"📜 {madde['kanun_adi']} - Madde {madde['madde_no']}")
+    st.markdown(f"**Başlık:** {madde['baslik']}")
+    st.info(madde['metin'])
     
-            mevzuat_sorusu = st.text_input("Bu madde hakkında neyi merak ediyorsun?", key="mevzuat_input")
-
-            if st.button("⚖️ Maddeyi Analiz Et"):
-                if mevzuat_sorusu and st.session_state.bulunan_madde:
-                    st.info("📊 JUNILEX Analiz Ediyor...")
+    # 2. Opsiyonel Özel Soru Alanı
+    ozel_soru = st.text_input("Bu maddeyle ilgili özel bir sorunuz var mı? (İsteğe bağlı)", 
+                              placeholder="Örn: Bu madde memurlar için uygulanır mı?")
+    
+    # 3. Analiz Butonu
+    if st.button("🤖 Maddeyi JUNILEX AI ile Analiz Et", use_container_width=True, type="primary"):
+        # Not: Kendi Gemini API anahtarını buraya vermelisin (st.secrets["gemini"]["api_key"] vb.)
+        API_KEY = st.secrets["gemini"]["api_key"] 
         
-                    # 1. Akışı (Stream) başlatıyoruz
-                    stream = MevzuatBulutEngine.madde_analiz_et(
-                        MY_API_KEY, 
-                        st.session_state.bulunan_madde['metin'], 
-                        st.session_state.secili_kanun['isim'], 
-                        st.session_state.bulunan_madde['no'], 
-                        mevzuat_sorusu
-                    )
+        with st.spinner("JUNILEX yapay zekası maddeyi yorumluyor..."):
+            analiz_sonucu = MevzuatBulutEngine.madde_analiz_et(
+                api_key=API_KEY, 
+                madde_metni=madde['metin'], 
+                kanun_adi=madde['kanun_adi'], 
+                madde_no=madde['madde_no'], 
+                soru=ozel_soru
+            )
         
-                    # 2. İŞTE BURASI KRİTİK: Gelen paketlerden sadece metni süzen fonksiyon
-                    def metin_suzucu():
-                        for parca in stream:
-                            # Paket boş değilse ve içinde metin varsa gönder
-                            if parca.text:
-                                yield parca.text
-
-                    # 3. Filtrelenmiş metni daktilo gibi yazdırıyoruz
-                    st.write_stream(metin_suzucu)
-                else:
-                    st.warning("Lütfen bir soru yazın ustam!")
+        st.markdown("### 🧠 JUNILEX Analiz Raporu")
+        st.success(analiz_sonucu)
 
 # --- MOD 2: AKADEMİ ---
 # app.py içinde İçtihat veya Akademi butonunun tam içine:
