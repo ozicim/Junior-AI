@@ -408,7 +408,53 @@ if getir_butonu:
                 # Hafifletilmiş yeni motorumuzla veriyi buluttan anında çekiyoruz
                 madde_verisi = MevzuatBulutEngine.madde_getir_buluttan(secilen_kanun["kisaAd"], girilen_madde)
                 
-                # Çekilen veriyi hafızaya alıyoruz
+                # Çekilen veriyi hafızaya alıyoruz ki AI analiz butonuna basınca ekrandan kaybolmasın
+                st.session_state.aktif_madde = {
+                    "kanun_adi": secilen_kanun_adi,
+                    "madde_no": girilen_madde.upper(),
+                    "baslik": madde_verisi.get("baslik", f"Madde {girilen_madde}"),
+                    "metin": madde_verisi.get("metin", "Metin bulunamadı.")
+                }
+            except Exception as e:
+                st.error(f"⚠️ Veritabanı Uyarısı: {str(e)}")
+                st.info("💡 Eğer bu kanunu veritabanına henüz eklemediyseniz veya veriler boş görünüyorsa, lütfen yukarıdaki **'Güncelle / Yükle'** butonuna basarak saniyeler içinde sistemi senkronize edin.")
+
+# ---------------------------------------------------------
+# 📜 MADDE GÖSTERİMİ VE YAPAY ZEKA ANALİZ ALANI
+# ---------------------------------------------------------
+if "aktif_madde" in st.session_state:
+    madde = st.session_state.aktif_madde
+    
+    st.markdown("---")
+    st.subheader(f"📜 {madde['kanun_adi']} - Madde {madde['madde_no']}")
+    st.markdown(f"**Mevzuat Başlığı:** {madde['baslik']}")
+    
+    # Kanun metnini temiz bir bilgi kutusunda gösteriyoruz
+    st.info(madde['metin'])
+    
+    # Kullanıcının yapay zekaya yöneltebileceği özel soru alanı
+    ozel_soru = st.text_input(
+        "Bu maddeye ilişkin özel bir sorunuz var mı? (İsteğe bağlı)", 
+        placeholder="Örn: Bu maddenin cezai sorumluluk bakımından doğuracağı sonuçlar nelerdir?"
+    )
+    
+    # 🤖 JUNILEX AI Analiz Butonu
+    if st.button("🤖 Maddeyi JUNILEX AI ile Analiz Et", use_container_width=True, type="primary"):
+        # Gemini API anahtarını secrets yapından çekiyoruz
+        API_KEY = st.secrets["gemini"]["api_key"] 
+        
+        with st.spinner("JUNILEX yapay zekası maddeyi bir hukukçu titizliğiyle yorumluyor..."):
+            analiz_sonucu = MevzuatBulutEngine.madde_analiz_et(
+                api_key=API_KEY, 
+                madde_metni=madde['metin'], 
+                kanun_adi=madde['kanun_adi'], 
+                madde_no=madde['madde_no'], 
+                soru=ozel_soru
+            )
+        
+        # Sonuç Raporu
+        st.markdown("### 🧠 JUNILEX Yapay Zeka Analiz Raporu")
+        st.success(analiz_sonucu)
 
 # --- MOD 2: AKADEMİ ---
 # app.py içinde İçtihat veya Akademi butonunun tam içine:
