@@ -227,9 +227,9 @@ if st.session_state.aktif_kullanici == "Ozan Şahin Sicim":
         secilen_kanun = next(k for k in kanun_listesi if k["isim"] == secilen_kanun_adi)
         
         # 📥 İŞTE O BEKLENEN BUTON!
-        if st.button(f"📥 {secilen_kanun['kisaAd']}'u Sıfırla ve Yükle", use_container_width=True):
-            # Mevzuat motorundaki o yeni hazırladığımız arayüz destekli fonksiyonu çağırıyoruz
-            MevzuatBulutEngine.kanunu_buluta_yukle(secilen_kanun["id"], secilen_kanun["kisaAd"])
+        if st.button(f"📥 {secilen_kanun['kisaAd']}'u Canlı Çek ve Göster", use_container_width=True):
+            # Artık buluta yüklemek yerine canlı çekip ekrana basan fonksiyonu çağırıyoruz
+            MevzuatBulutEngine.kanunu_canli_getir_ve_yazdir(secilen_kanun["id"], secilen_kanun["kisaAd"])
 
 
 # 1. SAYFA AYARLARI
