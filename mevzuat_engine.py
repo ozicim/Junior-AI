@@ -92,48 +92,55 @@ class MevzuatBulutEngine:
             return f"Analiz başarısız oldu: {str(e)}"
 
     # --- KAZIMA FONKSİYONU (YAPAY ZEKA DESTEKLİ BULMA) ---
+    # --- KAZIMA FONKSİYONU (STREAMLIT CLOUD VE ARAYÜZ UYUMLU) ---
     @classmethod
     def kanunu_buluta_yukle(cls, kanun_id, kanun_kisa_adi):
         cls.veritabanini_baslat()
         url = cls.BASE_URL.format(kanun_id)
-        print(f"🌍 [{kanun_kisa_adi}] sitesine bağlanılıyor...")
         
-        options = webdriver.ChromeOptions()
-        options.add_argument('--headless') # Tarayıcıyı arka planda gizli çalıştırır (hızı artırır)
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=options)
-        
-        driver.get(url)
-        time.sleep(10) # Sayfanın render olması için kesin bekleme
-        
-        html = driver.page_source
-        
-        # 🔴 AKILLI IFRAME DEDEKTİFİ: Ana sayfada madde yoksa, iframe'leri tek tek gezip "Madde" kelimesini arar.
-        if "Madde 1" not in html and "MADDE 1" not in html:
-            print("🕵️ Ana sayfada metin yok, Iframe'ler taranıyor...")
-            iframes = driver.find_elements(By.TAG_NAME, "iframe")
-            for i, frame in enumerate(iframes):
-                driver.switch_to.frame(frame)
-                if "Madde" in driver.page_source or "MADDE" in driver.page_source:
-                    html = driver.page_source
-                    print(f"🎯 Doğru metin {i}. iframe'de bulundu!")
-                    break
-                driver.switch_to.default_content() # Bulamazsa ana sayfaya dönüp diğerine bakar
-        
-        driver.quit()
-        
-        # 🔴 HAYALET BELGE ÖNLEYİCİ: Alt koleksiyon açmadan önce ana belgeyi fiziksel olarak oluşturur
-        cls.db.collection('kanunlar').document(kanun_kisa_adi).set({
-            "isim": kanun_kisa_adi,
-            "durum": "Aktif"
-        }, merge=True)
+        # 🔴 EKRANA MESAJ BASALIM (Print yerine Streamlit arayüzünü kullanıyoruz)
+        st.info(f"🌍 [{kanun_kisa_adi}] mevzuat sitesine bağlanılıyor. Bulut tarayıcı hazırlanıyor...")
         
         try:
+            options = webdriver.ChromeOptions()
+            options.add_argument('--headless') 
+            # 🔴 SUNUCU (STREAMLIT CLOUD) İÇİN ZORUNLU HAYAT KURTARAN AYARLAR
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            options.add_argument('--disable-gpu')
+            
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=options)
+            
+            driver.get(url)
+            time.sleep(10) # Sayfanın render olması için bekleme
+            
+            html = driver.page_source
+            
+            # AKILLI IFRAME DEDEKTİFİ
+            if "Madde 1" not in html and "MADDE 1" not in html:
+                st.warning("🕵️ Ana sayfada metin yok, Iframe'ler (Gizli Çerçeveler) taranıyor...")
+                iframes = driver.find_elements(By.TAG_NAME, "iframe")
+                for i, frame in enumerate(iframes):
+                    driver.switch_to.frame(frame)
+                    if "Madde" in driver.page_source or "MADDE" in driver.page_source:
+                        html = driver.page_source
+                        st.success(f"🎯 Doğru metin {i}. iframe'de bulundu!")
+                        break
+                    driver.switch_to.default_content() 
+            
+            driver.quit()
+            
+            # Hayalet Belge Önleyici
+            cls.db.collection('kanunlar').document(kanun_kisa_adi).set({
+                "isim": kanun_kisa_adi,
+                "durum": "Aktif"
+            }, merge=True)
+            
             soup = BeautifulSoup(html, 'html.parser')
             for tag in soup(["script", "style", "nav", "header", "footer", "button"]):
                 tag.extract()
             
-            # SİLAH 1: HTML etiketlerini zorla alt satıra indir (Satırların yapışmasını engeller)
             for br in soup.find_all("br"):
                 br.replace_with("\n")
             for tag in soup.find_all(["p", "div", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6"]):
@@ -142,8 +149,6 @@ class MevzuatBulutEngine:
                 
             saf_metin = soup.get_text(separator="\n", strip=True)
             saf_metin = saf_metin.replace('\xa0', ' ').replace('\r', '')
-            
-            # SİLAH 2: Jilet Regex! Hala yapışık kalan "Madde" başlıklarını yakala ve zorla alt satıra at
             saf_metin = re.sub(r'(?i)(?<!\n)((?:ek\s+|geçici\s+)?madde\s+[0-9]+[a-zçğıöşüA-Z/]*\s*[-\u2013\u2014])', r'\n\1', saf_metin)
 
             satirlar = saf_metin.split('\n')
@@ -159,7 +164,6 @@ class MevzuatBulutEngine:
                 satir = satir.strip()
                 if not satir: continue
                 
-                # SİLAH 3: Üzerine Yazmayı Engelleyen, Ek/Geçici tanıyan kusursuz Regex
                 match = re.search(r'^\W*(ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
                 
                 if match:
@@ -191,13 +195,14 @@ class MevzuatBulutEngine:
                 })
                 eklenen_madde_sayisi += 1
                 
-            print(f"✅ {kanun_kisa_adi} YÜKLENDİ! Toplam {eklenen_madde_sayisi} madde Firestore'a yazıldı.")
-            
-            if eklenen_madde_sayisi == 0:
-                print(f"⚠️ DİKKAT: {kanun_kisa_adi} için 0 madde bulundu! Siteden doğru metin çekilemedi.")
+            # SONUÇLARI EKRANDA GÖSTER
+            if eklenen_madde_sayisi > 0:
+                st.success(f"✅ BAŞARILI! {kanun_kisa_adi} için toplam {eklenen_madde_sayisi} madde veritabanına yazıldı.")
+                st.balloons()
+            else:
+                st.error(f"⚠️ DİKKAT: {kanun_kisa_adi} için 0 madde bulundu! Siteden metin çekilemedi.")
                 
         except Exception as e:
-            print(f"❌ Hata oluştu ({kanun_kisa_adi}): {e}")
-
+            st.error(f"❌ TEKNİK HATA OLUŞTU ({kanun_kisa_adi}): {str(e)}")
 if __name__ == "__main__":
     pass
