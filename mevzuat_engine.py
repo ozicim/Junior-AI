@@ -104,15 +104,17 @@ class MevzuatBulutEngine:
         try:
             options = webdriver.ChromeOptions()
             options.add_argument('--headless') 
-            # 🔴 SUNUCU (STREAMLIT CLOUD) İÇİN ZORUNLU HAYAT KURTARAN AYARLAR
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--disable-gpu')
             
-            # 🔴 YENİ: İnternetten indirmeyi bırak, Streamlit'in kendi içindeki Chrome'u kullan!
-            options.binary_location = shutil.which("chromium") or "/usr/bin/chromium"
+            # 🚀 RAM KURTARICI VE ZAMAN AŞIMI (TIMEOUT) ÖNLEYİCİ YENİ AYARLAR
+            options.page_load_strategy = 'eager'  # Sitenin ağır script'lerini beklemeden sadece iskeleti çeker
+            options.add_argument('--blink-settings=imagesEnabled=false') # Sitedeki resimleri/logoları indirmeyi kapatır
+            options.add_argument('--disable-software-rasterizer')
+            options.add_argument('--disable-extensions')
             
-            # 🔴 YENİ: packages.txt ile kurduğumuz yerel sürücüyü(driver) gösteriyoruz
+            options.binary_location = shutil.which("chromium") or "/usr/bin/chromium"
             sistem_driver_yolu = shutil.which("chromedriver") or "/usr/bin/chromedriver"
             
             if not sistem_driver_yolu:
@@ -121,8 +123,11 @@ class MevzuatBulutEngine:
             service = Service(sistem_driver_yolu)
             driver = webdriver.Chrome(service=service, options=options)
             
+            # 🔴 SÜRE SINIRI: Chrome 30 saniye içinde siteyi açamazsa kilitlenmek yerine işlemi zorla keser
+            driver.set_page_load_timeout(30)
+            
             driver.get(url)
-            time.sleep(10) # Sayfanın render olması için bekleme
+            time.sleep(5) # Eager modunda olduğumuz için 10 saniye beklemeye gerek kalmadı, 5'e düşürdük
             
             html = driver.page_source
             
