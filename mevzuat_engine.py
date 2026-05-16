@@ -38,20 +38,29 @@ class MevzuatBulutEngine:
             options.add_argument('--window-size=1920,1080')
             options.add_argument('--disable-extensions')
             
-            # Sitenin ağır kodlarını bekleme, iskelet gelince kopar al
-            options.page_load_strategy = 'eager' 
+            # 🚀 HAYAT KURTARAN AYARLAR BURADA:
+            options.add_argument('--blink-settings=imagesEnabled=false') # Resimleri asla indirme
+            options.page_load_strategy = 'none' # Sitenin yüklenmesini bekleme, kontrolü anında Python'a ver!
             
             options.binary_location = shutil.which("chromium") or "/usr/bin/chromium"
             sistem_driver_yolu = shutil.which("chromedriver") or "/usr/bin/chromedriver"
             
             if not sistem_driver_yolu:
-                raise Exception("Chromedriver bulunamadı! 'packages.txt' dosyasını kontrol et.")
+                return False, None, "❌ Chromedriver bulunamadı! 'packages.txt' dosyasını kontrol et."
                 
             service = Service(sistem_driver_yolu)
             driver = webdriver.Chrome(service=service, options=options)
             
-            driver.get(url)
-            time.sleep(4) # Çok kısa bekleme süresi, çünkü sadece 1 madde arıyoruz
+            # 120 saniye bekleme eziyetine son! 15 saniyede sayfa tepki vermezse zorla kes.
+            driver.set_page_load_timeout(15)
+            
+            try:
+                driver.get(url)
+            except Exception:
+                # 'none' modunda bazen timeout verse bile iskelet inmiş olur, o yüzden hatayı yut ve devam et.
+                pass 
+                
+            time.sleep(5) # Sayfanın iskeletinin ekrana düşmesi için kısa bir nefes
             
             html = driver.page_source
             
@@ -85,7 +94,6 @@ class MevzuatBulutEngine:
             kaydedilen_metin = []
             bulunan_baslik = ""
             
-            # Aranacak maddeyi standart format yap (Örn: "geçici 3" -> "GEÇİCİ 3")
             hedef_no = str(istenen_madde_no).strip().upper()
 
             for satir in satirlar:
@@ -100,12 +108,9 @@ class MevzuatBulutEngine:
                     okunan_no = f"{on_ek}{asil_no}".strip()
                     
                     if madde_bulundu:
-                        # HIZ HİLESİ: Aradığımız maddeyi okuyorduk, şimdi BİR SONRAKİ maddeye denk geldik.
-                        # Sayfanın geri kalan 1000 satırını okumaya gerek yok, direkt çık!
-                        break
+                        break # Aradığımız maddeyi aldık, bir sonrakini gördüğümüz an kaçıyoruz!
                         
                     if okunan_no == hedef_no:
-                        # İstenen maddeyi bulduk, kaydetmeye başla
                         madde_bulundu = True
                         parcalar = re.split(r'[-\u2013\u2014]', satir, maxsplit=1) 
                         bulunan_baslik = parcalar[1].strip() if len(parcalar) > 1 else f"{on_ek}Madde {asil_no}".strip()
@@ -119,8 +124,10 @@ class MevzuatBulutEngine:
             return True, bulunan_baslik, "\n\n".join(kaydedilen_metin)
 
         except Exception as e:
+            # Arka planda açık kalan Chrome varsa zorla kapat (RAM sızıntısını önler)
+            try: driver.quit() 
+            except: pass
             return False, None, f"❌ Çekim sırasında hata oluştu: {str(e)}"
-
     @classmethod
     def madde_analiz_et(cls, api_key, madde_metni, kanun_adi, madde_no, soru=""): 
         try:
