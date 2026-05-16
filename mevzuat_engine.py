@@ -1,5 +1,6 @@
 import re
 import urllib.request
+import time
 import streamlit as st
 from bs4 import BeautifulSoup
 import firebase_admin
@@ -36,7 +37,6 @@ class MevzuatBulutEngine:
     @classmethod
     def madde_getir_buluttan(cls, kanun_kisa_adi, madde_no):
         cls.veritabanini_baslat()
-        # Kullanıcı "geçici 3" yazarsa "Geçici 3" yapıp öyle arasın
         madde_id = str(madde_no).strip().title() if "geçici" in str(madde_no).lower() or "ek" in str(madde_no).lower() else str(madde_no).strip().upper()
         
         doc_ref = cls.db.collection('kanunlar').document(kanun_kisa_adi).collection('maddeler').document(madde_id)
@@ -84,39 +84,50 @@ class MevzuatBulutEngine:
             Madde No: {madde_no}
             Madde Metni: {madde_metni}
             """
-            
             response = model.generate_content(prompt)
             return response.text
         except Exception as e:
             return f"Analiz başarısız oldu: {str(e)}"
 
-    # --- KAZIMA FONKSİYONU (SELENIUM YOK, IŞIK HIZINDA VERİTABANINA YAZAR) ---
     @classmethod
-    def kanunu_buluta_yukle(cls, kanun_id, kanun_kisa_adi):
-        cls.veritabanini_baslat()
+    def kanunu_buluta_yukle(cls, kanun_id, kanun_kisa_adi, ozel_db=None):
+        # Eğer yerel enjeksiyondan bir db bağlantısı gelirse onu kullan, yoksa sistemi başlat
+        current_db = ozel_db if ozel_db else cls.db
+        if not current_db:
+            cls.veritabanini_baslat()
+            current_db = cls.db
+            
         url = cls.BASE_URL.format(kanun_id)
-        
-        st.info(f"🌍 [{kanun_kisa_adi}] Işık hızıyla mevzuat sitesine bağlanılıyor. RAM tüketimi sıfır...")
+        st.info(f"🌍 [{kanun_kisa_adi}] Mevzuat sitesine inatçı bot ile bağlanılıyor...")
         
         try:
-            # Doğrudan Python üzerinden saf bağlantı atıyoruz (Chrome yok)
-            req = urllib.request.Request(
-                url, 
-                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-            )
-            with urllib.request.urlopen(req, timeout=15) as response:
-                html = response.read().decode('utf-8')
-            
-            # Hayalet Belge Önleyici
-            cls.db.collection('kanunlar').document(kanun_kisa_adi).set({
+            html = ""
+            for deneme in range(3):
+                try:
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+                        'Connection': 'keep-alive'
+                    }
+                    req = urllib.request.Request(url, headers=headers)
+                    with urllib.request.urlopen(req, timeout=45) as response:
+                        html = response.read().decode('utf-8')
+                    break
+                except Exception as e:
+                    if deneme < 2:
+                        st.warning(f"⏳ Site yavaş yanıt veriyor, {deneme + 2}. deneme yapılıyor...")
+                        time.sleep(3)
+                    else:
+                        raise Exception(f"Mevzuat sitesi kilitli veya yanıt vermiyor: {str(e)}")
+
+            current_db.collection('kanunlar').document(kanun_kisa_adi).set({
                 "isim": kanun_kisa_adi,
                 "durum": "Aktif"
             }, merge=True)
             
             soup = BeautifulSoup(html, 'html.parser')
-            metin_alani = soup.find(id="MevzuatMetin") or soup.find(id="MevzuatMetinBul")
-            if not metin_alani:
-                metin_alani = soup
+            metin_alani = soup.find(id="MevzuatMetin") or soup.find(id="MevzuatMetinBul") or soup
                 
             for tag in metin_alani(["script", "style", "nav", "header", "footer", "button"]):
                 tag.extract()
@@ -135,7 +146,7 @@ class MevzuatBulutEngine:
             aktif_madde_no = None
             aktif_madde_metni = []
             aktif_madde_baslik = ""
-            kanun_ref = cls.db.collection('kanunlar').document(kanun_kisa_adi).collection('maddeler')
+            kanun_ref = current_db.collection('kanunlar').document(kanun_kisa_adi).collection('maddeler')
 
             eklenen_madde_sayisi = 0
 
@@ -143,7 +154,6 @@ class MevzuatBulutEngine:
                 satir = satir.strip()
                 if not satir: continue
                 
-                # Geçici ve Ek maddeleri tanıyan, ezmeyi önleyen güçlü Regex
                 match = re.search(r'^\W*(ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
                 
                 if match:
@@ -157,7 +167,6 @@ class MevzuatBulutEngine:
                     
                     on_ek = match.group(1).strip().capitalize() + " " if match.group(1) else ""
                     asil_no = match.group(2).upper()
-                    
                     aktif_madde_no = f"{on_ek}{asil_no}".strip() 
                     
                     parcalar = re.split(r'[-\u2013\u2014]', satir, maxsplit=1) 
@@ -176,10 +185,10 @@ class MevzuatBulutEngine:
                 eklenen_madde_sayisi += 1
                 
             if eklenen_madde_sayisi > 0:
-                st.success(f"✅ BAŞARILI! {kanun_kisa_adi} YÜKLENDİ! Toplam {eklenen_madde_sayisi} madde veritabanına yazıldı.")
+                st.success(f"✅ BAŞARILI! {kanun_kisa_adi} için toplam {eklenen_madde_sayisi} madde veritabanına yazıldı.")
                 st.balloons()
             else:
-                st.error(f"⚠️ DİKKAT: {kanun_kisa_adi} için 0 madde bulundu!")
+                st.error(f"⚠️ DİKKAT: {kanun_kisa_adi} için 0 madde bulundu! Sitenin içeriği okunamadı.")
                 
         except Exception as e:
             st.error(f"❌ Hata oluştu ({kanun_kisa_adi}): {str(e)}")
