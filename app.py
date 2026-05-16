@@ -329,17 +329,35 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 5. KENAR ÇUBUĞU
+# ==========================================
+# # 5. KENAR ÇUBUĞU (SIDEBAR)
+# ==========================================
 with st.sidebar:
     st.title("⚖️ Junilex AI")
-    # İşte burası 'menu' değişkeninin doğduğu yer:
-    menu = st.radio(
+    # Kullanıcının seçtiği departmanı 'secim' değişkenine eşitliyoruz
+    secim = st.radio(
         "Lütfen bir departman seçin:",
-        ["🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)","⚖️ İçtihat Sorgulama", "💬 JUNILEX Chat"])
+        [
+            "🏛️ Adliye (Mevzuat Sorgu)", 
+            "🎓 Akademi (Ders Notları)", 
+            "📝 Arzuhal(Dilekçe Yazım Merkezi)",
+            "⚖️ İçtihat Sorgulama", 
+            "💬 JUNILEX Chat"
+        ]
+    )
     st.divider()
     st.info("Ozan Şahin Sicim | JUNILEX AI v2.0")
+    
+    # 6. Sidebar Temizleme Butonu (Sadece menü ağacının altında kalmalı)
+    if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
+        st.session_state.chat_messages = [
+            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
+        ]
+        st.rerun()
 
-# 6. LOGO VE ÜST BAŞLIK
+# ==========================================
+# # 6. LOGO VE ÜST BAŞLIK (HER SAYFADA ORTAK)
+# ==========================================
 st.markdown("""
     <div class="header-container">
         <svg class="header-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -353,24 +371,14 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-                    if not full_response.strip():
-                        full_response = "⚠️ Ustam, sistem tamamen sessiz kaldı. Çıktı engellendi."
-                    
-                    message_placeholder.markdown(full_response)
-                    st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-                    st.rerun()
-            
-    # 6. Sidebar Temizleme Butonu
-    if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
-        st.session_state.chat_messages = [
-            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
-        ]
-        st.rerun()
 
 # ==========================================
-# 🏛️ ADLİYE SEKRESİ (MEVZUAT ARAŞTIRMA VE GİZLİ YEREL ENJEKSİYON)
+# 🧭 DEPARTMAN KONTROL PANELİ (IF-ELIF ZİNCİRİ)
 # ==========================================
-elif secim == "Adliye":
+
+# 🟢 NOT: Eğer kodunun yukarılarında başka bir 'if secim ==' başladıysa, 
+# aşağıdaki ilk satırı 'elif secim == "🏛️ Adliye (Mevzuat Sorgu)":' yapabilirsin.
+if secim == "🏛️ Adliye (Mevzuat Sorgu)":
     st.header("⚖️ JUNILEX Adliye - Mevzuat Araştırma Merkezi")
     
     kanun_listesi = MevzuatBulutEngine.get_kanunlar()
@@ -421,7 +429,7 @@ elif secim == "Adliye":
             st.markdown("### 🧠 JUNILEX Yapay Zeka Analiz Raporu")
             st.success(analiz_sonucu)
 
-    # 🤫 GİZLİ YEREL ENJEKSİYON PANELİ (SADECE OZAN ŞEF GİRİŞ YAPTIĞINDA GÖRÜNÜR)
+    # 🤫 GİZLİ YEREL ENJEKSİYON PANELİ (SADECE SEN GİRİŞ YAPTIĞINDA GÖRÜNÜR)
     if st.session_state.get("aktif_kullanici") == "Ozan Şahin Sicim":
         st.write("<br><br><br>", unsafe_allow_html=True)
         with st.expander("🔑 JUNILEX Geliştirici Özel Veri Yükleme Paneli", expanded=False):
@@ -448,6 +456,7 @@ elif secim == "Adliye":
                         except Exception as e:
                             st.error(f"Yerel Enjeksiyon Hatası: {str(e)}")
 
+# 💬 Buradan aşağıya diğer elif secim == "🎓 Akademi (Ders Notları)": vs. sekmelerin devam edebilir dayı...
 # --- MOD 2: AKADEMİ ---
 # app.py içinde İçtihat veya Akademi butonunun tam içine:
 elif menu == "🎓 Akademi (Ders Notları)":
