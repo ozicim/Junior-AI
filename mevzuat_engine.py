@@ -37,10 +37,9 @@ class MevzuatBulutEngine:
             options.add_argument('--disable-gpu')
             options.add_argument('--window-size=1920,1080')
             options.add_argument('--disable-extensions')
+            options.add_argument('--blink-settings=imagesEnabled=false')
             
-            # 🚀 HAYAT KURTARAN AYARLAR BURADA:
-            options.add_argument('--blink-settings=imagesEnabled=false') # Resimleri asla indirme
-            options.page_load_strategy = 'none' # Sitenin yüklenmesini bekleme, kontrolü anında Python'a ver!
+            options.page_load_strategy = 'none' 
             
             options.binary_location = shutil.which("chromium") or "/usr/bin/chromium"
             sistem_driver_yolu = shutil.which("chromedriver") or "/usr/bin/chromedriver"
@@ -50,31 +49,47 @@ class MevzuatBulutEngine:
                 
             service = Service(sistem_driver_yolu)
             driver = webdriver.Chrome(service=service, options=options)
-            
-            # 120 saniye bekleme eziyetine son! 15 saniyede sayfa tepki vermezse zorla kes.
             driver.set_page_load_timeout(15)
             
             try:
                 driver.get(url)
-            except Exception:
-                # 'none' modunda bazen timeout verse bile iskelet inmiş olur, o yüzden hatayı yut ve devam et.
+            except:
                 pass 
                 
-            time.sleep(5) # Sayfanın iskeletinin ekrana düşmesi için kısa bir nefes
+            # 🔴 AKILLI RADAR (SMART WAIT) SİSTEMİ
+            # Körü körüne beklemek yerine her saniye ekranı kontrol eder.
+            html = ""
+            metin_geldi = False
             
-            html = driver.page_source
-            
-            if "Madde 1" not in html and "MADDE 1" not in html:
+            # Ana sayfayı 15 saniye boyunca saniye saniye tara
+            for _ in range(15):
+                html = driver.page_source
+                if "MevzuatMetin" in html or "Madde 1" in html or "MADDE 1" in html:
+                    metin_geldi = True
+                    break
+                time.sleep(1)
+                
+            # Eğer ana sayfada hala metin yoksa (Devlet iframe içine saklamışsa)
+            if not metin_geldi:
                 iframes = driver.find_elements(By.TAG_NAME, "iframe")
                 for frame in iframes:
                     driver.switch_to.frame(frame)
-                    if "Madde" in driver.page_source or "MADDE" in driver.page_source:
+                    # Iframe'in içinin dolmasını maks 10 saniye bekle
+                    for _ in range(10):
                         html = driver.page_source
+                        if "Madde 1" in html or "MADDE 1" in html:
+                            metin_geldi = True
+                            break
+                        time.sleep(1)
+                    if metin_geldi:
                         break
                     driver.switch_to.default_content() 
             
             driver.quit()
             
+            if not metin_geldi:
+                return False, None, "⚠️ Mevzuat sitesi şu an çok yavaş veya yanıt vermiyor. Lütfen tekrar 'Getir' butonuna bas."
+
             soup = BeautifulSoup(html, 'html.parser')
             for tag in soup(["script", "style", "nav", "header", "footer", "button"]):
                 tag.extract()
@@ -108,7 +123,7 @@ class MevzuatBulutEngine:
                     okunan_no = f"{on_ek}{asil_no}".strip()
                     
                     if madde_bulundu:
-                        break # Aradığımız maddeyi aldık, bir sonrakini gördüğümüz an kaçıyoruz!
+                        break # Aranan maddeyi aldık, sonraki maddeyi gördüğümüz an kaçıyoruz!
                         
                     if okunan_no == hedef_no:
                         madde_bulundu = True
@@ -119,12 +134,11 @@ class MevzuatBulutEngine:
                     kaydedilen_metin.append(satir)
 
             if not kaydedilen_metin and not bulunan_baslik:
-                return False, None, f"⚠️ Bu kanunda '{hedef_no}' numaralı madde bulunamadı."
+                return False, None, f"⚠️ Bu kanunda '{hedef_no}' numaralı madde bulunamadı. (Siteden {len(saf_metin)} karakter okundu)"
                 
             return True, bulunan_baslik, "\n\n".join(kaydedilen_metin)
 
         except Exception as e:
-            # Arka planda açık kalan Chrome varsa zorla kapat (RAM sızıntısını önler)
             try: driver.quit() 
             except: pass
             return False, None, f"❌ Çekim sırasında hata oluştu: {str(e)}"
