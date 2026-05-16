@@ -93,7 +93,6 @@ class MevzuatBulutEngine:
             return f"Analiz başarısız oldu: {str(e)}"
 
     # --- KAZIMA FONKSİYONU (YAPAY ZEKA DESTEKLİ BULMA) ---
-    # --- KAZIMA FONKSİYONU (STREAMLIT CLOUD VE ARAYÜZ UYUMLU) ---
     @classmethod
     def kanunu_buluta_yukle(cls, kanun_id, kanun_kisa_adi):
         cls.veritabanini_baslat()
@@ -110,20 +109,16 @@ class MevzuatBulutEngine:
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--disable-gpu')
             
-            try:
-            options = webdriver.ChromeOptions()
-            options.add_argument('--headless') 
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--disable-gpu')
-            
             # 🔴 YENİ: İnternetten indirmeyi bırak, Streamlit'in kendi içindeki Chrome'u kullan!
             options.binary_location = shutil.which("chromium") or "/usr/bin/chromium"
             
             # 🔴 YENİ: packages.txt ile kurduğumuz yerel sürücüyü(driver) gösteriyoruz
             sistem_driver_yolu = shutil.which("chromedriver") or "/usr/bin/chromedriver"
-            service = Service(sistem_driver_yolu)
             
+            if not sistem_driver_yolu:
+                raise Exception("Chromedriver bulunamadı! Lütfen 'packages.txt' dosyasının varlığından emin olun.")
+                
+            service = Service(sistem_driver_yolu)
             driver = webdriver.Chrome(service=service, options=options)
             
             driver.get(url)
