@@ -65,16 +65,19 @@ class MevzuatBulutEngine:
         
         return sorted(sonuclar, key=lambda x: int(x['no']) if x['no'].isdigit() else x['no'])
 
-    # --- AI ANALİZ FONKSİYONU (YENİ SİLAHIMIZ) ---
+    # --- AI ANALİZ FONKSİYONU (DÜZELTİLDİ) ---
     @classmethod
-    def madde_analiz_et(cls, api_key, madde_metni, kanun_adi, madde_no, soru): # 'soru' burada olmalı
+    def madde_analiz_et(cls, api_key, madde_metni, kanun_adi, madde_no, soru): 
         try:
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('models/gemini-2.5-flash')
             
-            
+            # Parametredeki 'soru' değişkenini de prompta dahil ettim
             prompt = f"""
             Sen profesyonel bir hukuk asistanısın. Aşağıda metni verilen kanun maddesini bir hukukçu titizliğiyle analiz et.
+            Kullanıcının özel sorusu varsa, analizini bu soruya odaklanarak yap.
+            
+            Kullanıcının Sorusu/Talebi: {soru}
             
             Analiz şunları içermelidir:
             1. Maddenin Özeti (Anlaşılır bir dil)
@@ -85,15 +88,15 @@ class MevzuatBulutEngine:
             Madde No: {madde_no}
             Madde Metni: {madde_metni}
             """
-            response = model.generate_content(prompt, stream=True)
-            return response
             
+            # Doğrudan metni döndürecek şekilde temizlendi
             response = model.generate_content(prompt)
             return response.text
+            
         except Exception as e:
             return f"Analiz başarısız oldu: {str(e)}"
 
-    # --- KAZIMA FONKSİYONU (HATA BURADAYDI, DÜZELTİLDİ) ---
+    # --- KAZIMA FONKSİYONU (SİHİRLİ REGEX VE DOĞRUDAN HEDEFLEME EKLENDİ) ---
     @classmethod
     def kanunu_buluta_yukle(cls, kanun_id, kanun_kisa_adi):
         cls.veritabanini_baslat()
@@ -102,13 +105,9 @@ class MevzuatBulutEngine:
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service)
         driver.get(url)
-        time.sleep(15)
+        time.sleep(10) # Sayfanın render olması için yeterli süre
         
-        iframes = driver.find_elements(By.TAG_NAME, "iframe")
-        if len(iframes) > 0:
-            driver.switch_to.frame(iframes[0])
-            time.sleep(2)
-        
+        # DİKKAT: Kör iframe geçişi tamamen kaldırıldı. 
         html = driver.page_source
         driver.quit()
         
@@ -116,8 +115,13 @@ class MevzuatBulutEngine:
             soup = BeautifulSoup(html, 'html.parser')
             for tag in soup(["script", "style", "nav", "header", "footer", "button"]):
                 tag.extract()
+            
+            # 1. AKILLI HEDEFLEME: Sadece kanun metninin olduğu div'i bul
+            metin_alani = soup.find(id="MevzuatMetin") or soup.find(id="MevzuatMetinBul")
+            if not metin_alani:
+                metin_alani = soup # Div bulunamazsa tüm sayfayı kullan
                 
-            saf_metin = soup.get_text(separator="\n", strip=True)
+            saf_metin = metin_alani.get_text(separator="\n", strip=True)
             saf_metin = saf_metin.replace('\xa0', ' ').replace('\r', '')
             satirlar = saf_metin.split('\n')
             
@@ -129,30 +133,41 @@ class MevzuatBulutEngine:
             for satir in satirlar:
                 satir = satir.strip()
                 if not satir: continue
-                match = re.search(r'^madde\s*(\d+)', satir, re.CASEINSENSITIVE)
+                
+                # 2. SİHİRLİ REGEX: "Madde 12/A", "Ek Madde 1", "Geçici Madde 5" hepsini yakalar
+                match = re.search(r'^(?:ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
                 
                 if match:
+                    # Bir önceki maddeyi veritabanına kaydet
                     if aktif_madde_no:
                         kanun_ref.document(str(aktif_madde_no)).set({
                             "no": aktif_madde_no, 
                             "baslik": aktif_madde_baslik, 
                             "metin": "\n\n".join(aktif_madde_metni)
                         })
-                    aktif_madde_no = match.group(1)
+                    
+                    # Yeni maddeye geçiş yap
+                    aktif_madde_no = match.group(1).upper() # 12/a gibi yapıları 12/A'ya çevir
                     parcalar = re.split(r'[-\u2013\u2014]', satir, maxsplit=1) 
                     aktif_madde_baslik = parcalar[1].strip() if len(parcalar) > 1 else f"Madde {aktif_madde_no}"
                     aktif_madde_metni = []
+                    
                 elif aktif_madde_no:
+                    # Madde başlığı değilse, aktif maddenin içeriğine ekle
                     aktif_madde_metni.append(satir)
 
+            # Döngü bittiğinde elde kalan son maddeyi de kaydet
             if aktif_madde_no:
                 kanun_ref.document(str(aktif_madde_no)).set({
                     "no": aktif_madde_no, 
                     "baslik": aktif_madde_baslik, 
                     "metin": "\n\n".join(aktif_madde_metni)
                 })
+                
+            print(f"✅ {kanun_kisa_adi} başarıyla eksiksiz olarak buluta yüklendi!")
+            
         except Exception as e:
-            print(f"Hata oluştu: {e}")
+            print(f"❌ Hata oluştu ({kanun_kisa_adi}): {e}")
 
 if __name__ == "__main__":
     pass
