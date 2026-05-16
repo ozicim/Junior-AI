@@ -9,7 +9,7 @@ from firebase_admin import firestore
 # 🔑 FIREBASE AYARLARI (KENDİ BİLGİSAYARIN İÇİN)
 # ========================================================
 # İNDİRDİĞİN JSON DOSYASININ YOLUNU BURAYA YAZ:
-FIREBASE_JSON_YOLU = "firebase_kimlik_dosyan.json" 
+FIREBASE_JSON_YOLU = "kilit.json" 
 
 # Firebase'i Başlat
 cred = credentials.Certificate(FIREBASE_JSON_YOLU)
