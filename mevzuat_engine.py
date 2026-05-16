@@ -140,14 +140,17 @@ class MevzuatBulutEngine:
             aktif_madde_baslik = ""
             kanun_ref = cls.db.collection('kanunlar').document(kanun_kisa_adi).collection('maddeler')
 
+            # ... (üst kısımlar aynı)
+            
             for satir in satirlar:
                 satir = satir.strip()
                 if not satir: continue
                 
-                # 🔴 SİLAH 3: Satır başında boşluk veya sembol olsa bile maddeyi tanıyan toleranslı arama
-                match = re.search(r'^\W*(?:ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
+                # 🔴 SİLAH 3 GÜNCELLENDİ: "Ek" ve "Geçici" kelimelerini yakalayan grup (ek\s+|geçici\s+)? eklendi
+                match = re.search(r'^\W*(ek\s+|geçici\s+)?madde\s*([0-9]+[a-zçğıöşüA-Z/]*)', satir, re.IGNORECASE)
                 
                 if match:
+                    # Bir önceki maddeyi kaydet
                     if aktif_madde_no:
                         kanun_ref.document(str(aktif_madde_no)).set({
                             "no": aktif_madde_no, 
@@ -155,14 +158,23 @@ class MevzuatBulutEngine:
                             "metin": "\n\n".join(aktif_madde_metni)
                         })
                     
-                    aktif_madde_no = match.group(1).upper() 
+                    # 🔴 YENİ HAYAT KURTARAN KISIM: Prefix (Ön Ek) ve Asıl Numarayı ayır
+                    # Eğer "Geçici" yazıyorsa onu al ve ilk harfini büyüt (Örn: "Geçici ")
+                    on_ek = match.group(1).strip().capitalize() + " " if match.group(1) else ""
+                    asil_no = match.group(2).upper()
+                    
+                    # Artık kimlikler "3", "Geçici 3", "Ek 5/A" şeklinde tertemiz ayrılıyor!
+                    aktif_madde_no = f"{on_ek}{asil_no}".strip() 
+                    
                     parcalar = re.split(r'[-\u2013\u2014]', satir, maxsplit=1) 
-                    aktif_madde_baslik = parcalar[1].strip() if len(parcalar) > 1 else f"Madde {aktif_madde_no}"
+                    # Başlığı da on ek ile birlikte düzgünce oluştur
+                    aktif_madde_baslik = parcalar[1].strip() if len(parcalar) > 1 else f"{on_ek}Madde {asil_no}".strip()
                     aktif_madde_metni = []
                     
                 elif aktif_madde_no:
                     aktif_madde_metni.append(satir)
 
+            # Döngü bittiğinde elde kalan son maddeyi de kaydet
             if aktif_madde_no:
                 kanun_ref.document(str(aktif_madde_no)).set({
                     "no": aktif_madde_no, 
