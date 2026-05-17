@@ -22,6 +22,7 @@ import json
 # 💾 KALICI VERİTABANI MOTORU (JSON)
 # ==========================================
 DB_DOSYASI = "kullanicilar.json"
+HATIRLA_DOSYASI = "hatirla.json"
 
 def veritabani_yukle():
     # Eğer daha önce dosya açılmamışsa, yeni dosya yarat ve seni yönetici yap
@@ -38,6 +39,29 @@ def veritabani_kaydet(veri):
     # Yeni biri kayıt olduğunda dosyayı fiziksel olarak güncelle
     with open(DB_DOSYASI, "w", encoding="utf-8") as f:
         json.dump(veri, f, ensure_ascii=False, indent=4)
+
+# ==========================================
+# 🔑 BENİ HATIRLA MOTORU
+# ==========================================
+def hatirla_kaydet(email, sifre):
+    """Kullanıcının bilgilerini hatırla dosyasına yazar."""
+    with open(HATIRLA_DOSYASI, "w", encoding="utf-8") as f:
+        json.dump({"email": email, "sifre": sifre}, f, ensure_ascii=False)
+
+def hatirla_yukle():
+    """Kaydedilmiş kullanıcı bilgilerini döndürür, yoksa boş döner."""
+    if os.path.exists(HATIRLA_DOSYASI):
+        try:
+            with open(HATIRLA_DOSYASI, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def hatirla_sil():
+    """Hatırlanan kullanıcı bilgilerini siler (çıkış yapınca)."""
+    if os.path.exists(HATIRLA_DOSYASI):
+        os.remove(HATIRLA_DOSYASI)
 
 # ==========================================
 # 📧 E-POSTA GÖNDERME MOTORU
@@ -68,7 +92,24 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "aktif_kullanici" not in st.session_state:
     st.session_state.aktif_kullanici = ""
-    
+
+# 🔑 Hatırla dosyasını uygulama ilk açıldığında bir kez yükle
+if "hatirla_yuklendi" not in st.session_state:
+    st.session_state.hatirla_yuklendi = True
+    hatirla_veri = hatirla_yukle()
+    st.session_state.hatirla_email = hatirla_veri.get("email", "")
+    st.session_state.hatirla_sifre = hatirla_veri.get("sifre", "")
+    st.session_state.hatirla_secili = bool(hatirla_veri)  # Dosya varsa checkbox işaretli gelsin
+
+    # Eğer "beni hatırla" aktifse ve bilgiler eşleşiyorsa otomatik giriş yap
+    if st.session_state.hatirla_secili and st.session_state.hatirla_email:
+        db_gecici = veritabani_yukle()
+        kayitli = db_gecici.get(st.session_state.hatirla_email, {})
+        if kayitli.get("sifre") == st.session_state.hatirla_sifre:
+            st.session_state.logged_in = True
+            st.session_state.aktif_kullanici = kayitli["isim"]
+            st.session_state.kullanici_veritabani = db_gecici
+
 # 🔴 YENİ: Veritabanını artık JSON dosyasından çekiyoruz
 if "kullanici_veritabani" not in st.session_state:
     st.session_state.kullanici_veritabani = veritabani_yukle() 
@@ -95,16 +136,47 @@ if not st.session_state.logged_in:
         
         # --- 1. GİRİŞ YAP SEKMESİ ---
         with tab_giris:
-            giris_email = st.text_input("E-Posta Adresi", key="giris_email")
-            giris_sifre = st.text_input("Şifre", type="password", key="giris_sifre")
+            # Hatırla dosyasından gelen değerleri varsayılan olarak kullan
+            giris_email = st.text_input(
+                "E-Posta Adresi", 
+                value=st.session_state.get("hatirla_email", ""),
+                key="giris_email"
+            )
+            giris_sifre = st.text_input(
+                "Şifre", 
+                type="password", 
+                value=st.session_state.get("hatirla_sifre", ""),
+                key="giris_sifre"
+            )
+            
+            # Beni Hatırla checkbox'ı
+            beni_hatirla = st.checkbox(
+                "🔑 Beni Hatırla", 
+                value=st.session_state.get("hatirla_secili", False),
+                key="beni_hatirla_cb",
+                help="İşaretlediğinizde bir dahaki açılışta otomatik giriş yapılır."
+            )
             
             if st.button("🚀 Sisteme Giriş Yap", use_container_width=True):
-                # Anlık olarak JSON'daki en güncel veriyi çekelim ki başka cihazdan kayıt olanları da görsün
+                # Anlık olarak JSON'daki en güncel veriyi çekelim
                 st.session_state.kullanici_veritabani = veritabani_yukle()
                 
                 if giris_email in st.session_state.kullanici_veritabani and st.session_state.kullanici_veritabani[giris_email]["sifre"] == giris_sifre:
                     st.session_state.logged_in = True
                     st.session_state.aktif_kullanici = st.session_state.kullanici_veritabani[giris_email]["isim"]
+                    
+                    # Beni Hatırla seçiliyse bilgileri kaydet, değilse sil
+                    if beni_hatirla:
+                        hatirla_kaydet(giris_email, giris_sifre)
+                        st.session_state.hatirla_email = giris_email
+                        st.session_state.hatirla_sifre = giris_sifre
+                        st.session_state.hatirla_secili = True
+                    else:
+                        hatirla_sil()
+                        st.session_state.hatirla_email = ""
+                        st.session_state.hatirla_sifre = ""
+                        st.session_state.hatirla_secili = False
+                    
                     st.rerun() 
                 else:
                     st.error("E-posta adresi veya şifre hatalı!")
@@ -115,6 +187,13 @@ if not st.session_state.logged_in:
             if st.session_state.onay_bekleyen is None:
                 kayit_isim = st.text_input("İsim Soyisim", key="kayit_isim") 
                 kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
+                
+                # E-posta girilir girilmez anında kayıtlı mı kontrol et
+                if kayit_email and "@" in kayit_email:
+                    db_anlik = veritabani_yukle()
+                    if kayit_email in db_anlik:
+                        st.warning("⚠️ Bu e-posta adresi zaten kayıtlı! Lütfen 'Giriş Yap' sekmesini kullanın.")
+                
                 kayit_sifre = st.text_input("Yeni Şifre", type="password", key="kayit_sifre")
                 kayit_sifre_tekrar = st.text_input("Şifre Tekrar", type="password", key="kayit_sifre_tekrar")
                 
@@ -126,7 +205,7 @@ if not st.session_state.logged_in:
                     elif "@" not in kayit_email or "." not in kayit_email:
                         st.warning("⚠️ Lütfen geçerli bir e-posta adresi giriniz!")
                     elif kayit_email in st.session_state.kullanici_veritabani:
-                        st.warning("Bu e-posta adresi zaten sisteme kayıtlı!")
+                        st.warning("⚠️ Bu e-posta adresi zaten sisteme kayıtlı! Lütfen 'Giriş Yap' sekmesini kullanın.")
                     elif kayit_sifre != kayit_sifre_tekrar:
                         st.error("Şifreler uyuşmuyor!")
                     elif len(kayit_sifre) < 6:
@@ -200,8 +279,14 @@ if not st.session_state.logged_in:
 # ==========================================
 st.sidebar.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.aktif_kullanici}")
 if st.sidebar.button("🚪 Çıkış Yap", use_container_width=True):
+    # Beni hatırla seçili değilse, çıkışta kayıtlı bilgileri temizle
+    if not st.session_state.get("hatirla_secili", False):
+        hatirla_sil()
+        st.session_state.hatirla_email = ""
+        st.session_state.hatirla_sifre = ""
     st.session_state.logged_in = False
     st.session_state.aktif_kullanici = ""
+    st.session_state.hatirla_yuklendi = False  # Bir sonraki açılışta tekrar yüklensin
     st.rerun()
 st.sidebar.markdown("---")
 try:
