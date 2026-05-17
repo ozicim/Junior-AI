@@ -18,15 +18,15 @@ class MevzuatBulutEngine:
     def get_kanunlar(cls):
         """
         app.py içerisindeki selectbox ve arayüz elemanlarının 
-        beklediği Sözlük (Dictionary) formatında kanun listesini döner.
+        beklediği Sözlük formatında ve eksiksiz kanun listesini döner.
         """
         return [
-            {"id": "5237", "kisa_ad": "TCK", "isim": "Türk Ceza Kanunu"},
-            {"id": "5271", "kisa_ad": "CMK", "isim": "Ceza Muhakemesi Kanunu"},
-            {"id": "4721", "kisa_ad": "TMK", "isim": "Türk Medeni Kanunu"},
-            {"id": "6098", "kisa_ad": "TBK", "isim": "Türk Borçlar Kanunu"},
-            {"id": "6102", "kisa_ad": "TTK", "isim": "Türk Ticaret Kanunu"},
-            {"id": "4857", "kisa_ad": "İK", "isim": "İş Kanunu"}
+            {"id": "5237", "kisa_ad": "TCK", "isim": "Türk Ceza Kanunu", "kategori": "Ceza Hukuku", "aciklama": "Temel Ceza Mevzuatı"},
+            {"id": "5271", "kisa_ad": "CMK", "isim": "Ceza Muhakemesi Kanunu", "kategori": "Ceza Hukuku", "aciklama": "Yargılama Usulleri"},
+            {"id": "4721", "kisa_ad": "TMK", "isim": "Türk Medeni Kanunu", "kategori": "Özel Hukuk", "aciklama": "Temel Medeni Haklar"},
+            {"id": "6098", "kisa_ad": "TBK", "isim": "Türk Borçlar Kanunu", "kategori": "Özel Hukuk", "aciklama": "Borç İlişkileri ve Sözleşmeler"},
+            {"id": "6102", "kisa_ad": "TTK", "isim": "Türk Ticaret Kanunu", "kategori": "Ticaret Hukuku", "aciklama": "Ticari İşletme ve Şirketler"},
+            {"id": "4857", "kisa_ad": "İK", "isim": "İş Kanunu", "kategori": "İş Hukuku", "aciklama": "İşçi ve İşveren İlişkileri"}
         ]
 
     @classmethod
