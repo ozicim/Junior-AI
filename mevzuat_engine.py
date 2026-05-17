@@ -1,247 +1,94 @@
-import streamlit as st
-import chromadb
-import google.generativeai as genai
-import re
-import json
-import os
-import zipfile
-from sentence_transformers import SentenceTransformer
+if secim == "🏛️ Adliye (Mevzuat Sorgu)":
+    st.title("🏛️ Junilex Akıllı Mevzuat Bankası")
+    st.markdown("Kategori filtreli kanun kütüphanesi. Maddeleri numarayla çağırabilir veya içinde geçen kelimelerle aratabilirsiniz.")
 
-YASAL_UYARI = (
-    "⚠️ **Bilgi Amaçlıdır:** Bu madde metni Junilex yerel veritabanından getirilmiştir. "
-    "Güncel ve hukuken bağlayıcı metin için mevzuat.gov.tr adresini kontrol ediniz."
-)
+    kanun_listesi = MevzuatBulutEngine.get_kanunlar()
 
-class MevzuatBulutEngine:
-    _model = None
+    # 1. Kategori ve Kanun Seçim Paneli
+    filtre_col, secim_col = st.columns([1, 2])
+    with filtre_col:
+        kategoriler = ["🌟 Tüm Alanlar"] + sorted(list(set([k["kategori"] for k in kanun_listesi])))
+        secilen_kategori = st.selectbox("📁 Hukuk Alanı Filtresi", kategoriler)
 
-    @classmethod
-    def get_kanunlar(cls):
-        return [
-            # --- KAMU HUKUKU ---
-            {"id": "2709", "kisaAd": "AY", "isim": "Türkiye Cumhuriyeti Anayasası", "kategori": "🏛️ Kamu Hukuku", "aciklama": "Devletin Temel Yapısı ve Haklar"},
-            {"id": "2577", "kisaAd": "İYUK", "isim": "İdari Yargılama Usulü Kanunu", "kategori": "🏛️ Kamu Hukuku", "aciklama": "İptal ve Tam Yargı Davaları"},
-            {"id": "657", "kisaAd": "DMK", "isim": "Devlet Memurları Kanunu", "kategori": "🏛️ Kamu Hukuku", "aciklama": "Memur Hakları ve Disiplin Hükümleri"},
-            {"id": "2942", "kisaAd": "KK", "isim": "Kamulaştırma Kanunu", "kategori": "🏛️ Kamu Hukuku", "aciklama": "Kamu Yararı ve Kamulaştırma Bedeli"},
+    if secilen_kategori == "🌟 Tüm Alanlar":
+        filtrelenmis_kanunlar = kanun_listesi
+    else:
+        filtrelenmis_kanunlar = [k for k in kanun_listesi if k["kategori"] == secilen_kategori]
+
+    with secim_col:
+        gosterim_adlari = [f"{k['kisaAd']} | {k['isim']}" for k in filtrelenmis_kanunlar]
+        secilen_gosterim = st.selectbox("📜 İlgili Kanun Mevzuatı", gosterim_adlari)
+
+    secilen_indeks = gosterim_adlari.index(secilen_gosterim)
+    secilen_kanun = filtrelenmis_kanunlar[secilen_indeks]
+
+    st.caption(f"📂 **Kategori:** {secilen_kanun['kategori']} | 🆔 **Kanun No:** {secilen_kanun['id']} | 💡 **Kapsam:** {secilen_kanun['aciklama']}")
+    st.write("---")
+
+    # 2. SEKMELİ ARAMA MOTORU MİMARİSİ
+    arama_sekmeleri = st.tabs(["🔢 Madde Numarası İle Nokta Atışı", "🔤 Kelime / Kavram İle İçerik Taraması"])
+
+    # --------------------------------------------------------
+    # TAB 1: MADDE NUMARASI İLE NOKTA ATIŞI ARAMA
+    # --------------------------------------------------------
+    with arama_sekmeleri[0]:
+        giriş_col, buton_col = st.columns([2, 1])
+        with giriş_col:
+            girilen_madde = st.text_input("🔢 Aranacak Madde Numarası", placeholder="Örn: 86, Geçici_1...", key="input_no")
+        with buton_col:
+            st.write("##")
+            madde_ara_butonu = st.button("🔍 Maddeyi Getir", use_container_width=True, key="btn_no_ara")
+
+        if madde_ara_butonu and girilen_madde:
+            with st.spinner("⚖️ Hafızadan madde getiriliyor..."):
+                sonuc = MevzuatBulutEngine.madde_getir_buluttan(secilen_kanun['kisaAd'], girilen_madde)
+                if sonuc and isinstance(sonuc, dict):
+                    st.session_state["aktif_no_sonucu"] = sonuc
+                    st.session_state["aktif_no_madde"] = girilen_madde
+                    st.session_state["aktif_no_kanun"] = secilen_kanun['kisaAd']
+
+        if "aktif_no_sonucu" in st.session_state and st.session_state["aktif_no_kanun"] == secilen_kanun['kisaAd']:
+            res = st.session_state["aktif_no_sonucu"]
+            st.success(f"✅ {res.get('baslik')}")
+            st.info(res.get("metin"))
             
-            # --- CEZA HUKUKU ---
-            {"id": "5237", "kisaAd": "TCK", "isim": "Türk Ceza Kanunu", "kategori": "⚖️ Ceza Hukuku", "aciklama": "Suçlar ve Ceza Sorumluluğu"},
-            {"id": "5271", "kisaAd": "CMK", "isim": "Ceza Muhakemesi Kanunu", "kategori": "⚖️ Ceza Hukuku", "aciklama": "Ceza Soruşturma ve Kovuşturma Usulü"},
-            {"id": "5275", "kisaAd": "CGİK", "isim": "Ceza ve Güvenlik Tedbirlerinin İnfazı Hakkında Kanun", "kategori": "⚖️ Ceza Hukuku", "aciklama": "İnfaz Rejimi ve Denetimli Serbestlik"},
+            if "henüz yüklenmemiş" not in res.get("metin") and "bulunamadı" not in res.get("metin"):
+                st.write("---")
+                st.subheader("🤖 Hakim Gözüyle Yapay Zeka Analizi")
+                if st.button("🏛️ Hukuki Analizi Başlat", type="primary", key="btn_analiz_no"):
+                    with st.spinner("🔮 Kıdemli Yargıtay Tetkik Hakimi analizi üretiliyor..."):
+                        api_key = MY_API_KEY if 'MY_API_KEY' in locals() else st.secrets["GEMINI_API_KEY"]
+                        akış = MevzuatBulutEngine.madde_analiz_et(api_key, secilen_kanun['kisaAd'], st.session_state["aktif_no_madde"], res.get("metin"))
+                        if akış: st.write_stream(akış)
+
+    # --------------------------------------------------------
+    # TAB 2: KELİME / KAVRAM İLE İÇERİK TARAMASI
+    # --------------------------------------------------------
+    with arama_sekmeleri[1]:
+        k_giriş_col, k_buton_col = st.columns([2, 1])
+        with k_giriş_col:
+            aranan_kelime = st.text_input("🔤 İçinde Geçen Kelime veya İfade", placeholder="Örn: yaralama, kıdem tazminatı, zamanaşımı...", key="input_kelime")
+        with k_buton_col:
+            st.write("##")
+            kelime_ara_butonu = st.button("🔎 Kanunu Baştan Sona Tara", use_container_width=True, key="btn_kelime_ara")
+
+        if kelime_ara_butonu and aranan_kelime:
+            with st.spinner(f"🔎 {secilen_kanun['kisaAd']} külliyatında '{aranan_kelime}' taranıyor..."):
+                maddeler_havuzu = MevzuatBulutEngine.kelime_ile_ara(secilen_kanun['kisaAd'], aranan_kelime)
+                st.session_state["k_arama_sonuclari"] = maddeler_havuzu
+                st.session_state["k_arama_kelimesi"] = aranan_kelime
+                st.session_state["k_arama_kanun"] = secilen_kanun['kisaAd']
+
+        if "k_arama_sonuclari" in st.session_state and st.session_state["k_arama_kanun"] == secilen_kanun['kisaAd']:
+            havuz = st.session_state["k_arama_sonuclari"]
+            st.markdown(f"📊 **'{st.session_state['k_arama_kelimesi']}'** ifadesini içeren **{len(havuz)}** adet madde listelendi:")
             
-            # --- ÖZEL HUKUK ---
-            {"id": "4721", "kisaAd": "TMK", "isim": "Türk Medeni Kanunu", "kategori": "🏡 Özel Hukuk", "aciklama": "Kişiler, Aile, Miras ve Eşya Hukuku"},
-            {"id": "6098", "kisaAd": "TBK", "isim": "Türk Borçlar Kanunu", "kategori": "🏡 Özel Hukuk", "aciklama": "Sözleşmeler ve Haksız Fiil Tazminatı"},
-            {"id": "6502", "kisaAd": "TKHK", "isim": "Tüketicinin Korunması Hakkında Kanun", "kategori": "🏡 Özel Hukuk", "aciklama": "Ayıplı Mal ve Tüketici Hakem Heyeti"},
-            {"id": "4722", "kisaAd": "TMKYK", "isim": "Türk Medeni Kanununun Yürürlüğü ve Uygulama Şekli Hakkında Kanun", "kategori": "🏡 Özel Hukuk", "aciklama": "Medeni Kanun Geçiş Hükümleri"},
-            
-            # --- TİCARET & İŞ HUKUKU ---
-            {"id": "6102", "kisaAd": "TTK", "isim": "Türk Ticaret Kanunu", "kategori": "💼 Ticaret & İş Hukuku", "aciklama": "Şirketler, Kıymetli Evrak ve Deniz Ticareti"},
-            {"id": "4857", "kisaAd": "İK", "isim": "İş Kanunu", "kategori": "💼 Ticaret & İş Hukuku", "aciklama": "İşçi-İşveren İlişkileri ve Kıdem Tazminatı"},
-            {"id": "6331", "kisaAd": "İSGK", "isim": "İş Sağlığı ve Güvenliği Kanunu", "kategori": "💼 Ticaret & İş Hukuku", "aciklama": "İş Kazaları ve Önleyici Tedbirler"},
-            {"id": "5953", "kisaAd": "BİK", "isim": "Basın İş Kanunu", "kategori": "💼 Ticaret & İş Hukuku", "aciklama": "Gazeteciler ve Basın Çalışanları Hakları"},
-
-            # --- USUL & İCRA HUKUKU ---
-            {"id": "6100", "kisaAd": "HMK", "isim": "Hukuk Muhakemeleri Kanunu", "kategori": "🏛️ Usul & İcra Hukuku", "aciklama": "Hukuk Davaları Yargılama Usulü"},
-            {"id": "2004", "kisaAd": "İİK", "isim": "İcra ve İflas Kanunu", "kategori": "🏛️ Usul & İcra Hukuku", "aciklama": "İlamsız-İlamlı Takip ve İflas Rejimi"},
-            {"id": "1136", "kisaAd": "AK", "isim": "Avukatlık Kanunu", "kategori": "🏛️ Usul & İcra Hukuku", "aciklama": "Avukatlık Meslek Kuralları ve Barolar"},
-            {"id": "2575", "kisaAd": "DK", "isim": "Danıştay Kanunu", "kategori": "🏛️ Usul & İcra Hukuku", "aciklama": "Danıştay Organları ve Yargılama Alanı"},
-            {"id": "2797", "kisaAd": "YK", "isim": "Yargıtay Kanunu", "kategori": "🏛️ Usul & İcra Hukuku", "aciklama": "Yargıtay Daireleri ve İçtihadı Birleştirme"}
-        ]
-
-    @classmethod
-    def _modeli_hazirla(cls, api_key):
-        if cls._model is None:
-            genai.configure(api_key=api_key)
-            cls._model = genai.GenerativeModel('models/gemini-2.5-flash')
-        return cls._model
-
-    @classmethod
-    def kanunu_buluta_yukle(cls, *args, **kwargs):
-        kanun_id = None
-        kisa_ad = None
-        bilinen_kanunlar = {k["id"]: k["kisaAd"] for k in cls.get_kanunlar()}
-        tum_degerler = list(args) + list(kwargs.values())
-        for deger in list(tum_degerler):
-            if isinstance(deger, dict):
-                tum_degerler.extend(deger.keys())
-                tum_degerler.extend(deger.values())
-        for v in tum_degerler:
-            v_str = str(v).strip()
-            if v_str in bilinen_kanunlar:
-                kanun_id = v_str
-                kisa_ad = bilinen_kanunlar[v_str]
-                break
-            elif v_str in bilinen_kanunlar.values():
-                kisa_ad = v_str
-                for k, val in bilinen_kanunlar.items():
-                    if val == v_str:
-                        kanun_id = k
-                        break
-                break
-        if not kisa_ad or not kanun_id:
-            st.error("❌ Kritik Tarama Hatası: Kanun tanınamadı.")
-            return 0
-        zip_dosya_adi = "mevzuat_arsiv.zip" 
-        ic_dosya_adi = "mevzuat_ham.json"
-        if not os.path.exists(zip_dosya_adi):
-            st.error(f"⚠️ {zip_dosya_adi} bulunamadı!")
-            return 0
-        with st.spinner(f"🧠 {kisa_ad} dev arşivden çıkarılıp Junilex beynine kazınıyor..."):
-            try:
-                chroma_client = chromadb.PersistentClient(path="./junilex_vector_db")
-                collection = chroma_client.get_or_create_collection(name="turk_mevzuati")
-                embedding_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-                with zipfile.ZipFile(zip_dosya_adi, 'r') as z:
-                    with z.open(ic_dosya_adi) as f:
-                        tum_mevzuat = json.loads(f.read().decode('utf-8'))
-                hedef_kanun = None
-                for kanun in tum_mevzuat:
-                    if str(kanun.get("kanun_numarasi")) == str(kanun_id):
-                        hedef_kanun = kanun
-                        break
-                if not hedef_kanun:
-                    st.error(f"❌ {kisa_ad} dev arşivde bulunamadı!")
-                    return 0
-                maddeler = hedef_kanun.get("maddeler", [])
-                ids, documents, metadatas, embeddings = [], [], [], []
-                for sira, madde in enumerate(maddeler):
-                    madde_no_ham = str(madde.get("madde_numarasi", ""))
-                    madde_no = madde_no_ham.replace("MADDE", "").replace("Madde", "").strip()
-                    icerik = madde.get("text", "")
-                    aranacak_metin = f"{kisa_ad} Madde {madde_no}: {icerik}"
-                    ids.append(f"{kisa_ad}_{madde_no}_{sira}")
-                    documents.append(icerik)
-                    metadatas.append({"kanun": kisa_ad, "madde": madde_no})
-                    embeddings.append(embedding_model.encode(aranacak_metin).tolist())
-                collection.add(embeddings=embeddings, documents=documents, metadatas=metadatas, ids=ids)
-                st.success(f"🚀 BAŞARILI! {len(maddeler)} adet {kisa_ad} maddesi Junilex yerel hafızasına alındı.")
-                return len(maddeler)
-            except Exception as e:
-                st.error(f"❌ Yükleme hatası: {str(e)}")
-                return 0
-
-    @classmethod
-    def madde_getir_buluttan(cls, *args, **kwargs):
-        try:
-            kanun_kisa_ad = kwargs.get("kanun_kisa_ad") or kwargs.get("kanun_kisa_ad_bul") or kwargs.get("kisaAd")
-            madde_no_tam = kwargs.get("madde_no_tam") or kwargs.get("madde_no") or kwargs.get("girilen_madde")
-            tum_degerler = list(args) + list(kwargs.values())
-            for deger in list(tum_degerler):
-                if isinstance(deger, dict):
-                    tum_degerler.extend(deger.values())
-            bilinen_kisaltmalar = [k["kisaAd"] for k in cls.get_kanunlar()]
-            if not kanun_kisa_ad:
-                for v in tum_degerler:
-                    if str(v).strip() in bilinen_kisaltmalar:
-                        kanun_kisa_ad = str(v).strip()
-                        break
-            if not madde_no_tam:
-                for v in tum_degerler:
-                    v_str = str(v).strip()
-                    if v_str != kanun_kisa_ad and (v_str.isdigit() or "GECİCİ" in v_str.upper() or "EK" in v_str.upper()):
-                        madde_no_tam = v_str
-                        break
-            if not kanun_kisa_ad or not madde_no_tam:
-                return {"no": "BİLİNMEYEN", "baslik": "Hata", "metin": "❌ Eksik parametre gönderildi."}
-
-            chroma_client = chromadb.PersistentClient(path="./junilex_vector_db")
-            collection = chroma_client.get_collection(name="turk_mevzuati")
-            istenen_tur = "normal"
-            istenen_sayi = str(madde_no_tam).upper()
-            if istenen_sayi.startswith("GECİCİ_") or istenen_sayi.startswith("GEÇİCİ_"):
-                istenen_tur = "gecici"
-                istenen_sayi = istenen_sayi.split("_")[1]
-            elif istenen_sayi.startswith("EK_"):
-                istenen_tur = "ek"
-                istenen_sayi = istenen_sayi.split("_")[1]
-
-            sonuclar = collection.get(where={"kanun": {"$eq": kanun_kisa_ad}})
-            if not sonuclar or not sonuclar['documents']:
-                return {"no": madde_no_tam, "baslik": "Veritabanı Boş", "metin": f"⚠️ {kanun_kisa_ad} henüz yüklenmemiş."}
-                
-            bulunan_metin = None
-            for metin, meta in zip(sonuclar['documents'], sonuclar['metadatas']):
-                db_madde_no = str(meta.get("madde", "")).upper()
-                metin_baslik = metin[:100].upper()
-                rakam_eslesmesi = re.findall(r'\d+', db_madde_no)
-                db_rakam = rakam_eslesmesi[0] if rakam_eslesmesi else db_madde_no
-                if db_rakam == istenen_sayi:
-                    if istenen_tur == "normal" and "GEÇİCİ" not in db_madde_no and "EK MADDE" not in metin_baslik:
-                        bulunan_metin = metin
-                        break
-                    elif istenen_tur == "gecici" and ("GEÇİCİ" in db_madde_no or "GECİCİ" in db_madde_no):
-                        bulunan_metin = metin
-                        break
-                    elif istenen_tur == "ek" and "EK" in db_madde_no:
-                        bulunan_metin = metin
-                        break
-            if not bulunan_metin:
-                for metin, meta in zip(sonuclar['documents'], sonuclar['metadatas']):
-                    if str(meta.get("madde", "")) == str(madde_no_tam):
-                        bulunan_metin = metin
-                        break
-            if bulunan_metin:
-                return {"no": str(madde_no_tam), "baslik": f"{kanun_kisa_ad} - Madde {str(madde_no_tam).replace('_', ' ')}", "metin": bulunan_metin + f"\n\n{YASAL_UYARI}"}
-            else:
-                return {"no": madde_no_tam, "baslik": "Madde Eksik", "metin": f"⚠️ {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')} bulunamadı."}
-        except Exception as e:
-            return {"no": "HATA", "baslik": "Bağlantı Hatası", "metin": f"❌ Veritabanı Hatası: {e}"}
-
-    @classmethod
-    def kelime_ile_ara(cls, kanun_kisa_ad: str, anahtar_kelime: str):
-        """
-        [YENİ] Seçilen kanun içinde harf/kelime araması yapar.
-        Eşleşen tüm maddeleri listeler ve doğal sayı sırasına göre sıralar.
-        """
-        try:
-            chroma_client = chromadb.PersistentClient(path="./junilex_vector_db")
-            collection = chroma_client.get_collection(name="turk_mevzuati")
-            sonuclar = collection.get(where={"kanun": {"$eq": kanun_kisa_ad}})
-            
-            if not sonuclar or not sonuclar['documents']:
-                return []
-                
-            bulunan_maddeler = []
-            aranan = anahtar_kelime.lower().strip()
-            
-            for metin, meta in zip(sonuclar['documents'], sonuclar['metadatas']):
-                if aranan in metin.lower():
-                    madde_no = meta.get("madde", "Bilinmeyen")
-                    bulunan_maddeler.append({
-                        "no": madde_no,
-                        "baslik": f"{kanun_kisa_ad} - Madde {madde_no}",
-                        "metin": metin + f"\n\n{YASAL_UYARI}"
-                    })
-            
-            # Doğal sıralama (Örn: Madde 2, Madde 10, Madde 100 sıralaması için)
-            def dogal_sirala(item):
-                return [int(c) if c.isdigit() else c for c in re.split(r'(\d+)', str(item["no"]))]
-                
-            try:
-                bulunan_maddeler.sort(key=dogal_sirala)
-            except:
-                pass
-            return bulunan_maddeler
-        except Exception as e:
-            return []
-
-    @classmethod
-    def madde_analiz_et(cls, api_key, kanun_kisa_ad, madde_no_tam, madde_metni):
-        try:
-            model = cls._modeli_hazirla(api_key)
-            prompt = f"""
-            Sen kıdemli bir Yargıtay Tetkik Hakimisin. Aşağıda sana verilen kanun maddesini analiz et.
-            İncelenecek Mevzuat: {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')}
-            Kanun Metni: {madde_metni}
-            
-            Başlıklar:
-            - **🎯 Maddenin Amacı ve Korunan Hukuki Yarar:**
-            - **⚖️ Kritik Unsurlar ve Şartlar:**
-            - **🏛️ Uygulama ve Yargıtay Eğilimi (Muhtemel Riskler):**
-            """
-            response = model.generate_content(prompt, stream=True)
-            return (chunk.text for chunk in response if chunk.text)
-        except Exception as e:
-            st.error(f"❌ AI Analiz Hatası: {str(e)}")
-            return None
+            for i, m in enumerate(havuz):
+                with st.expander(f"📜 {m['baslik']}"):
+                    st.info(m['metin'])
+                    
+                    if st.button("🏛️ Bu Maddeyi Yapay Zekaya Analiz Ettir", key=f"btn_analiz_k_{m['no']}_{i}"):
+                        with st.spinner("🔮 Madde analiz ediliyor..."):
+                            api_key = MY_API_KEY if 'MY_API_KEY' in locals() else st.secrets["GEMINI_API_KEY"]
+                            akış = MevzuatBulutEngine.madde_analiz_et(api_key, secilen_kanun['kisaAd'], m['no'], m['metin'])
+                            if akış: st.write_stream(akış)
