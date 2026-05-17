@@ -40,6 +40,10 @@ class MevzuatBulutEngine:
 
     @classmethod
     def madde_getir_buluttan(cls, kanun_kisa_adi, madde_no):
+        # db başlatılmamışsa başlat
+        if cls.db is None:
+            cls.veritabanini_baslat()
+
         # ✅ Önce session_state cache'ine bak — Firebase isteği yapmadan
         madde_id = (
             str(madde_no).strip().title()
