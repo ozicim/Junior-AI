@@ -1166,7 +1166,7 @@ elif secim == "💬 JUNILEX Chat":
     if 'chat_mode' not in st.session_state:
         st.session_state.chat_mode = "Özet"
     if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi aydınlatalım?"}]
+        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam, hangi meseleyi aydınlatalım?"}]
 
     # 2. Mesaj Geçmişini Göster (Yeni Nesil Avatarlarla)
     for message in st.session_state.chat_messages:
