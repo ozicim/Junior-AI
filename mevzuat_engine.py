@@ -37,7 +37,7 @@ class MevzuatBulutEngine:
         return cls._model
 
     @classmethod
-    def madde_getir(cls, kanun_kisa_ad: str, madde_no_tam: str):
+    def madde_getir_buluttan(cls, kanun_kisa_ad: str, madde_no_tam: str):
         try:
             chroma_client = chromadb.PersistentClient(path="./junilex_vector_db")
             collection = chroma_client.get_collection(name="turk_mevzuati")
