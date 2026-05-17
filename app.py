@@ -22,7 +22,6 @@ import json
 # 💾 KALICI VERİTABANI MOTORU (JSON)
 # ==========================================
 DB_DOSYASI = "kullanicilar.json"
-HATIRLA_DOSYASI = "hatirla.json"
 
 def veritabani_yukle():
     # Eğer daha önce dosya açılmamışsa, yeni dosya yarat ve seni yönetici yap
@@ -39,29 +38,6 @@ def veritabani_kaydet(veri):
     # Yeni biri kayıt olduğunda dosyayı fiziksel olarak güncelle
     with open(DB_DOSYASI, "w", encoding="utf-8") as f:
         json.dump(veri, f, ensure_ascii=False, indent=4)
-
-# ==========================================
-# 🔑 BENİ HATIRLA MOTORU
-# ==========================================
-def hatirla_kaydet(email, sifre):
-    """Kullanıcının bilgilerini hatırla dosyasına yazar."""
-    with open(HATIRLA_DOSYASI, "w", encoding="utf-8") as f:
-        json.dump({"email": email, "sifre": sifre}, f, ensure_ascii=False)
-
-def hatirla_yukle():
-    """Kaydedilmiş kullanıcı bilgilerini döndürür, yoksa boş döner."""
-    if os.path.exists(HATIRLA_DOSYASI):
-        try:
-            with open(HATIRLA_DOSYASI, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
-
-def hatirla_sil():
-    """Hatırlanan kullanıcı bilgilerini siler (çıkış yapınca)."""
-    if os.path.exists(HATIRLA_DOSYASI):
-        os.remove(HATIRLA_DOSYASI)
 
 # ==========================================
 # 📧 E-POSTA GÖNDERME MOTORU
@@ -92,24 +68,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "aktif_kullanici" not in st.session_state:
     st.session_state.aktif_kullanici = ""
-
-# 🔑 Hatırla dosyasını uygulama ilk açıldığında bir kez yükle
-if "hatirla_yuklendi" not in st.session_state:
-    st.session_state.hatirla_yuklendi = True
-    hatirla_veri = hatirla_yukle()
-    st.session_state.hatirla_email = hatirla_veri.get("email", "")
-    st.session_state.hatirla_sifre = hatirla_veri.get("sifre", "")
-    st.session_state.hatirla_secili = bool(hatirla_veri)  # Dosya varsa checkbox işaretli gelsin
-
-    # Eğer "beni hatırla" aktifse ve bilgiler eşleşiyorsa otomatik giriş yap
-    if st.session_state.hatirla_secili and st.session_state.hatirla_email:
-        db_gecici = veritabani_yukle()
-        kayitli = db_gecici.get(st.session_state.hatirla_email, {})
-        if kayitli.get("sifre") == st.session_state.hatirla_sifre:
-            st.session_state.logged_in = True
-            st.session_state.aktif_kullanici = kayitli["isim"]
-            st.session_state.kullanici_veritabani = db_gecici
-
+    
 # 🔴 YENİ: Veritabanını artık JSON dosyasından çekiyoruz
 if "kullanici_veritabani" not in st.session_state:
     st.session_state.kullanici_veritabani = veritabani_yukle() 
@@ -136,47 +95,16 @@ if not st.session_state.logged_in:
         
         # --- 1. GİRİŞ YAP SEKMESİ ---
         with tab_giris:
-            # Hatırla dosyasından gelen değerleri varsayılan olarak kullan
-            giris_email = st.text_input(
-                "E-Posta Adresi", 
-                value=st.session_state.get("hatirla_email", ""),
-                key="giris_email"
-            )
-            giris_sifre = st.text_input(
-                "Şifre", 
-                type="password", 
-                value=st.session_state.get("hatirla_sifre", ""),
-                key="giris_sifre"
-            )
-            
-            # Beni Hatırla checkbox'ı
-            beni_hatirla = st.checkbox(
-                "🔑 Beni Hatırla", 
-                value=st.session_state.get("hatirla_secili", False),
-                key="beni_hatirla_cb",
-                help="İşaretlediğinizde bir dahaki açılışta otomatik giriş yapılır."
-            )
+            giris_email = st.text_input("E-Posta Adresi", key="giris_email")
+            giris_sifre = st.text_input("Şifre", type="password", key="giris_sifre")
             
             if st.button("🚀 Sisteme Giriş Yap", use_container_width=True):
-                # Anlık olarak JSON'daki en güncel veriyi çekelim
+                # Anlık olarak JSON'daki en güncel veriyi çekelim ki başka cihazdan kayıt olanları da görsün
                 st.session_state.kullanici_veritabani = veritabani_yukle()
                 
                 if giris_email in st.session_state.kullanici_veritabani and st.session_state.kullanici_veritabani[giris_email]["sifre"] == giris_sifre:
                     st.session_state.logged_in = True
                     st.session_state.aktif_kullanici = st.session_state.kullanici_veritabani[giris_email]["isim"]
-                    
-                    # Beni Hatırla seçiliyse bilgileri kaydet, değilse sil
-                    if beni_hatirla:
-                        hatirla_kaydet(giris_email, giris_sifre)
-                        st.session_state.hatirla_email = giris_email
-                        st.session_state.hatirla_sifre = giris_sifre
-                        st.session_state.hatirla_secili = True
-                    else:
-                        hatirla_sil()
-                        st.session_state.hatirla_email = ""
-                        st.session_state.hatirla_sifre = ""
-                        st.session_state.hatirla_secili = False
-                    
                     st.rerun() 
                 else:
                     st.error("E-posta adresi veya şifre hatalı!")
@@ -187,13 +115,6 @@ if not st.session_state.logged_in:
             if st.session_state.onay_bekleyen is None:
                 kayit_isim = st.text_input("İsim Soyisim", key="kayit_isim") 
                 kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
-                
-                # E-posta girilir girilmez anında kayıtlı mı kontrol et
-                if kayit_email and "@" in kayit_email:
-                    db_anlik = veritabani_yukle()
-                    if kayit_email in db_anlik:
-                        st.warning("⚠️ Bu e-posta adresi zaten kayıtlı! Lütfen 'Giriş Yap' sekmesini kullanın.")
-                
                 kayit_sifre = st.text_input("Yeni Şifre", type="password", key="kayit_sifre")
                 kayit_sifre_tekrar = st.text_input("Şifre Tekrar", type="password", key="kayit_sifre_tekrar")
                 
@@ -205,7 +126,7 @@ if not st.session_state.logged_in:
                     elif "@" not in kayit_email or "." not in kayit_email:
                         st.warning("⚠️ Lütfen geçerli bir e-posta adresi giriniz!")
                     elif kayit_email in st.session_state.kullanici_veritabani:
-                        st.warning("⚠️ Bu e-posta adresi zaten sisteme kayıtlı! Lütfen 'Giriş Yap' sekmesini kullanın.")
+                        st.warning("Bu e-posta adresi zaten sisteme kayıtlı!")
                     elif kayit_sifre != kayit_sifre_tekrar:
                         st.error("Şifreler uyuşmuyor!")
                     elif len(kayit_sifre) < 6:
@@ -279,14 +200,8 @@ if not st.session_state.logged_in:
 # ==========================================
 st.sidebar.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.aktif_kullanici}")
 if st.sidebar.button("🚪 Çıkış Yap", use_container_width=True):
-    # Beni hatırla seçili değilse, çıkışta kayıtlı bilgileri temizle
-    if not st.session_state.get("hatirla_secili", False):
-        hatirla_sil()
-        st.session_state.hatirla_email = ""
-        st.session_state.hatirla_sifre = ""
     st.session_state.logged_in = False
     st.session_state.aktif_kullanici = ""
-    st.session_state.hatirla_yuklendi = False  # Bir sonraki açılışta tekrar yüklensin
     st.rerun()
 st.sidebar.markdown("---")
 try:
@@ -466,17 +381,27 @@ st.markdown("""
 # aşağıdaki ilk satırı 'elif secim == "🏛️ Adliye (Mevzuat Sorgu)":' yapabilirsin.
 if secim == "🏛️ Adliye (Mevzuat Sorgu)":
     st.header("⚖️ JUNILEX Adliye - Mevzuat Araştırma Merkezi")
-    
+
+    # ⚖️ YASAL UYARI — HER ZAMAN GÖRÜNÜR
+    from mevzuat_engine import YASAL_UYARI
+    st.warning(YASAL_UYARI)
+
     kanun_listesi = MevzuatBulutEngine.get_kanunlar()
-    
+
     st.markdown("### 🔍 Nokta Atışı Madde Sorgulama")
     col_m1, col_m2 = st.columns([3, 1])
     with col_m1:
-        secilen_kanun_adi = st.selectbox("İncelenecek Kanun", options=[k["isim"] for k in kanun_listesi], key="adliye_k_secim")
+        secilen_kanun_adi = st.selectbox(
+            "İncelenecek Kanun",
+            options=[k["isim"] for k in kanun_listesi],
+            key="adliye_k_secim"
+        )
         secilen_kanun = next(k for k in kanun_listesi if k["isim"] == secilen_kanun_adi)
+        # Kanun hakkında kısa bilgi
+        st.caption(f"📂 {secilen_kanun['kategori']} | Kanun No: {secilen_kanun['id']} | {secilen_kanun['aciklama']}")
     with col_m2:
-        girilen_madde = st.text_input("Madde No (Örn: 3, Geçici 2)", placeholder="No...")
-        
+        girilen_madde = st.text_input("Madde No (Örn: 86, Geçici 2)", placeholder="No...")
+
     st.write("<br>", unsafe_allow_html=True)
     if st.button("🚀 Maddeyi Getir", use_container_width=True):
         if girilen_madde.strip() == "":
@@ -484,68 +409,108 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
         else:
             if "aktif_madde" in st.session_state:
                 del st.session_state["aktif_madde"]
-            
-            with st.spinner(f"Firestore'dan {secilen_kanun['kisaAd']} Madde {girilen_madde} çekiliyor..."):
+
+            with st.spinner(f"⚖️ Adalet Bakanlığı veritabanından {secilen_kanun['kisaAd']} Madde {girilen_madde} çekiliyor..."):
                 try:
                     madde_verisi = MevzuatBulutEngine.madde_getir_buluttan(secilen_kanun["kisaAd"], girilen_madde)
                     st.session_state.aktif_madde = {
-                        "kanun_adi": secilen_kanun_adi,
-                        "madde_no": girilen_madde.upper(),
-                        "baslik": madde_verisi.get("baslik", f"Madde {girilen_madde}"),
-                        "metin": madde_verisi.get("metin", "Metin bulunamadı.")
+                        "kanun_adi":  secilen_kanun_adi,
+                        "kanun_no":   secilen_kanun["id"],
+                        "madde_no":   girilen_madde.upper(),
+                        "baslik":     madde_verisi.get("baslik", f"Madde {girilen_madde}"),
+                        "metin":      madde_verisi.get("metin", "Metin bulunamadı.")
                     }
                 except Exception as e:
-                    st.error(f"⚠️ Veritabanı Uyarısı: {str(e)}")
-                    st.info("💡 Eğer bu kanunu veritabanına henüz eklemediyseniz, lütfen sayfanın altındaki Geliştirici Panelinden yerel senkronizasyon yapın.")
+                    st.error(f"⚠️ {str(e)}")
+                    st.info(
+                        "💡 **İpucu:** Bu kanun henüz veritabanında yoksa aşağıdaki "
+                        "Geliştirici Panelinden yükleyebilirsiniz. "
+                        "Yeni kanunlar Bedesten API üzerinden otomatik çekilir."
+                    )
 
     if "aktif_madde" in st.session_state:
         madde = st.session_state.aktif_madde
         st.markdown("---")
-        st.subheader(f"📜 {madde['kanun_adi']} - Madde {madde['madde_no']}")
-        st.markdown(f"**Mevzuat Başlığı:** {madde['baslik']}")
-        st.info(madde['metin'])
-        
-        ozel_soru = st.text_input("Bu maddeye ilişkin özel bir sorunuz var mı? (İsteğe bağlı)", placeholder="Yapay zekaya sorun...")
+        st.subheader(f"📜 {madde['kanun_adi']} — Madde {madde['madde_no']}")
+        st.markdown(f"**Başlık:** {madde['baslik']}")
+
+        # Madde metni siyah kutu
+        st.markdown(f"""
+        <div class="madde-kutusu">
+            <div class="madde-baslik">📋 MADDE {madde['madde_no']} — {madde['baslik'].upper()}</div>
+            <div class="madde-icerik"><p>{madde['metin'].replace(chr(10), '<br>')}</p></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Kaynak bağlantısı
+        resmi_url = f"https://www.mevzuat.gov.tr/mevzuat?MevzuatNo={madde['kanun_no']}&MevzuatTur=1&MevzuatTertip=5"
+        st.caption(f"📌 Resmi kaynak: [mevzuat.gov.tr]({resmi_url}) — Hukuken bağlayıcı metin için bu adresi ziyaret edin.")
+
+        st.markdown("---")
+        ozel_soru = st.text_input(
+            "Bu maddeye ilişkin özel bir sorunuz var mı? (İsteğe bağlı)",
+            placeholder="Örn: Bu madde kapsamında zamanaşımı süresi nedir?",
+            key="adliye_ozel_soru"
+        )
         if st.button("🤖 Maddeyi JUNILEX AI ile Analiz Et", use_container_width=True, type="primary"):
-            API_KEY = st.secrets["GEMINI_API_KEY"]
             with st.spinner("JUNILEX yapay zekası maddeyi yorumluyor..."):
                 analiz_sonucu = MevzuatBulutEngine.madde_analiz_et(
-                    api_key=API_KEY, madde_metni=madde['metin'], kanun_adi=madde['kanun_adi'], madde_no=madde['madde_no'], soru=ozel_soru
+                    api_key=MY_API_KEY,
+                    madde_metni=madde["metin"],
+                    kanun_adi=madde["kanun_adi"],
+                    madde_no=madde["madde_no"],
+                    soru=ozel_soru
                 )
             st.markdown("### 🧠 JUNILEX Yapay Zeka Analiz Raporu")
-            st.success(analiz_sonucu)
+            st.markdown(f"""
+            <div class="hoca-anlatim-kutusu">
+                {analiz_sonucu.replace(chr(10), '<br>')}
+            </div>
+            """, unsafe_allow_html=True)
+            # Analiz altına da uyarı ekle
+            st.caption("⚠️ Yapay zeka analizi hukuki danışmanlık değildir. Kesin bilgi için avukat veya resmi kaynaklara başvurunuz.")
 
-    # 🤫 GİZLİ YEREL ENJEKSİYON PANELİ (SADECE SEN GİRİŞ YAPTIĞINDA GÖRÜNÜR)
+    # 🔑 GELİŞTİRİCİ PANELİ
     if st.session_state.get("aktif_kullanici") == "Ozan Şahin Sicim":
         st.write("<br><br><br>", unsafe_allow_html=True)
-        with st.expander("🔑 JUNILEX Geliştirici Özel Veri Yükleme Paneli", expanded=False):
-            st.markdown("<small>Devlet sitesinin IP engellerini aşmak için tarayıcınız üzerinden doğrudan Firestore enjeksiyonu yapar.</small>", unsafe_allow_html=True)
-            
+        with st.expander("🔑 JUNILEX Geliştirici — Kanun Yükleme Paneli", expanded=False):
+            st.markdown("""
+            <small>
+            <b>Yeni sistem:</b> Önce Bedesten API (Adalet Bakanlığı resmi servisi) denenir — scraping yok, IP engeli yok.<br>
+            Bedesten başarısız olursa mevzuat.gov.tr kazımasına geçilir.
+            </small>
+            """, unsafe_allow_html=True)
+
             yuklenen_json = st.file_uploader("Firebase Anahtar Dosyasını Seç (kilit.json)", type=["json"])
-            hedef_kanun_adi = st.selectbox("Yüklenecek Kanun", options=[k["isim"] for k in kanun_listesi], key="admin_yerel_secim")
+            hedef_kanun_adi = st.selectbox(
+                "Yüklenecek Kanun",
+                options=[k["isim"] for k in kanun_listesi],
+                key="admin_yerel_secim"
+            )
             hedef_kanun = next(k for k in kanun_listesi if k["isim"] == hedef_kanun_adi)
-            
-            if st.button("⚡ Kanunu Tarayıcıdan Firestore'a Fırlat", use_container_width=True):
+
+            if st.button("⚡ Kanunu Bedesten/Scraping ile Firebase'e Yükle", use_container_width=True):
                 if yuklenen_json is None:
-                    st.error("Lütfen önce bilgisayarınızdaki kilit.json dosyasını yukarıya yükleyin!")
+                    st.error("Lütfen önce kilit.json dosyasını yükleyin!")
                 else:
-                    with st.spinner("Maddeler tarayıcınız üzerinden kazınıyor ve Firebase'e aktarılıyor..."):
+                    with st.spinner("Maddeler çekiliyor ve Firebase'e aktarılıyor..."):
                         try:
-                            import json
-                            credentials_dict = json.load(yuklenen_json)
+                            import json as _json
+                            credentials_dict = _json.load(yuklenen_json)
                             if not firebase_admin._apps:
                                 cred = credentials.Certificate(credentials_dict)
                                 firebase_admin.initialize_app(cred)
                             local_db = firestore.client()
-                            
-                            MevzuatBulutEngine.kanunu_buluta_yukle(hedef_kanun["id"], hedef_kanun["kisaAd"], ozel_db=local_db)
+                            MevzuatBulutEngine.kanunu_buluta_yukle(
+                                hedef_kanun["id"], hedef_kanun["kisaAd"], ozel_db=local_db
+                            )
                         except Exception as e:
-                            st.error(f"Yerel Enjeksiyon Hatası: {str(e)}")
+                            st.error(f"Yükleme Hatası: {str(e)}")
 
 # 💬 Buradan aşağıya diğer elif secim == "🎓 Akademi (Ders Notları)": vs. sekmelerin devam edebilir dayı...
 # --- MOD 2: AKADEMİ ---
 # app.py içinde İçtihat veya Akademi butonunun tam içine:
-elif secim == "🎓 Akademi (Ders Notları)":
+elif menu == "🎓 Akademi (Ders Notları)":
     st.header("🎓 Akademik Asistan")
     
     # Sekmeleri net bir şekilde tanımlıyoruz
@@ -983,7 +948,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
 #tab_dilekce = st.tabs(["Dilekçe Yaz"]) # Mevcut sekmelerine ekle
 
 # 3. BÖLÜM: DİLEKÇE (YENİ YERİ)
-elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
+elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
     st.header("📝 Dilekçe Taslağı Oluştur")
     st.info("Lütfen olayları ve tarafları detaylıca giriniz.")
     
@@ -1036,7 +1001,7 @@ elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
             )
 
 # --- MOD 4: İÇTİHAT SORGULAMA (Tamamen Düzeltilmiş) ---
-elif secim == "⚖️ İçtihat Sorgulama":
+elif menu == "⚖️ İçtihat Sorgulama":
     # --- KESİN ÇÖZÜM BURASI ---
     # Değişkeni en başta, hiçbir bloğa girmeden 'boş' olarak tanımlıyoruz.
     
@@ -1159,14 +1124,14 @@ elif secim == "⚖️ İçtihat Sorgulama":
                         st.rerun()
 # ... diğer elif (Akademi, Adliye vb.) bloklarından sonra ekle:
 
-elif secim == "💬 JUNILEX Chat":
+elif menu == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
     
     # 1. Hafıza ve Mod Başlatma
     if 'chat_mode' not in st.session_state:
         st.session_state.chat_mode = "Özet"
     if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam, hangi meseleyi aydınlatalım?"}]
+        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi aydınlatalım?"}]
 
     # 2. Mesaj Geçmişini Göster (Yeni Nesil Avatarlarla)
     for message in st.session_state.chat_messages:
@@ -1313,4 +1278,9 @@ elif secim == "💬 JUNILEX Chat":
                     st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
                     st.rerun()
             
-    
+    # 6. Sidebar Temizleme Butonu
+    if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
+        st.session_state.chat_messages = [
+            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
+        ]
+        st.rerun()
