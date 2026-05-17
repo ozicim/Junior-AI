@@ -349,12 +349,7 @@ with st.sidebar:
     st.divider()
     st.info("Ozan Şahin Sicim | JUNILEX AI v2.0")
     
-    # 6. Sidebar Temizleme Butonu (Sadece menü ağacının altında kalmalı)
-    if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
-        st.session_state.chat_messages = [
-            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
-        ]
-        st.rerun()
+   
 
 # ==========================================
 # # 6. LOGO VE ÜST BAŞLIK (HER SAYFADA ORTAK)
