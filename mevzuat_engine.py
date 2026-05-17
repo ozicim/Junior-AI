@@ -8,14 +8,7 @@ YASAL_UYARI = (
     "Güncel ve hukuken bağlayıcı metin için mevzuat.gov.tr adresini kontrol ediniz."
 )
 
-# Orijinal app.py ve yerel_yukleyici.py ile tam uyumlu sabit kanun listesi
-KANUNLAR = [
-    ("5237", "TCK", "Türk Ceza Kanunu"),
-    ("5271", "CMK", "Ceza Muhakemesi Kanunu"),
-    ("4721", "TMK", "Türk Medeni Kanunu"),
-    ("6098", "TBK", "Türk Borçlar Kanunu"),
-    ("6102", "TTK", "Türk Ticaret Kanunu"),
-    ("4857", "İK", "İş Kanunu"),
+
 ]
 
 class MevzuatBulutEngine:
@@ -25,9 +18,16 @@ class MevzuatBulutEngine:
     def get_kanunlar(cls):
         """
         app.py içerisindeki selectbox ve arayüz elemanlarının 
-        çökmesini engelleyen, sistemdeki kayıtlı kanunları dönen fonksiyon.
+        beklediği Sözlük (Dictionary) formatında kanun listesini döner.
         """
-        return KANUNLAR
+        return [
+            {"id": "5237", "kisa_ad": "TCK", "isim": "Türk Ceza Kanunu"},
+            {"id": "5271", "kisa_ad": "CMK", "isim": "Ceza Muhakemesi Kanunu"},
+            {"id": "4721", "kisa_ad": "TMK", "isim": "Türk Medeni Kanunu"},
+            {"id": "6098", "kisa_ad": "TBK", "isim": "Türk Borçlar Kanunu"},
+            {"id": "6102", "kisa_ad": "TTK", "isim": "Türk Ticaret Kanunu"},
+            {"id": "4857", "kisa_ad": "İK", "isim": "İş Kanunu"}
+        ]
 
     @classmethod
     def _modeli_hazirla(cls, api_key):
