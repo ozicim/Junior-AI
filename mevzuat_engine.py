@@ -30,19 +30,64 @@ class MevzuatBulutEngine:
         return cls._model
 
     @classmethod
-    def kanunu_buluta_yukle(cls, *args, **kwargs):
+    def kanunu_buluta_yukle(cls, db, kanun_id, kisa_ad, tam_ad):
         """
-        app.py içindeki Yükleme Panelinin çökmesini engeller.
-        Eski Selenium yapısını devreden çıkardığımız için sadece uyarı verir.
+        Arayüzdeki Yükleme butonuna basıldığında, GitHub reposundaki .json dosyasını okur
+        ve Junilex'in yerel beynine (ChromaDB) işler. (Terminal Gerektirmez)
         """
-        st.error("⚠️ **Sistem Uyarı:** Canlı web kazıma devredışı bırakılmıştır! Kanunları sisteme eklemek için lütfen terminalden `python yerel_yukleyici.py` komutunu çalıştırın.")
-        return 0
+        import json
+        import os
+        from sentence_transformers import SentenceTransformer
+        
+        dosya_adi = f"{kisa_ad.lower()}.json" # Örn: tck.json
+        
+        if not os.path.exists(dosya_adi):
+            st.error(f"⚠️ {dosya_adi} dosyası bulunamadı! Lütfen GitHub üzerinden projenize {dosya_adi} adında bir dosya ekleyip içine maddeleri yapıştırın.")
+            return 0
+            
+        with st.spinner(f"🧠 {kisa_ad} Junilex beynine işleniyor... (Bu işlem metnin uzunluğuna göre 1-2 dakika sürebilir)"):
+            try:
+                chroma_client = chromadb.PersistentClient(path="./junilex_vector_db")
+                collection = chroma_client.get_or_create_collection(name="turk_mevzuati")
+                
+                # Sadece bu işlem sırasında modeli yüklüyoruz ki normal zamanda rami yormasın
+                embedding_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+                
+                with open(dosya_adi, "r", encoding="utf-8") as f:
+                    kanun_verisi = json.load(f)
+                    
+                ids = []
+                documents = []
+                metadatas = []
+                embeddings = []
+                
+                for sira, madde in enumerate(kanun_verisi):
+                    madde_no = str(madde.get("madde_no", ""))
+                    icerik = madde.get("icerik", "")
+                    # Aramalarda kanun adı ve madde numarasını da hesaba katması için
+                    aranacak_metin = f"{kisa_ad} Madde {madde_no}: {icerik}"
+                    
+                    ids.append(f"{kisa_ad}_{madde_no}_{sira}")
+                    documents.append(icerik)
+                    metadatas.append({"kanun": kisa_ad, "madde": madde_no})
+                    embeddings.append(embedding_model.encode(aranacak_metin).tolist())
+                    
+                collection.add(
+                    embeddings=embeddings,
+                    documents=documents,
+                    metadatas=metadatas,
+                    ids=ids
+                )
+                
+                st.success(f"🚀 BAŞARILI! {len(kanun_verisi)} adet {kisa_ad} maddesi Junilex'in kalıcı hafızasına kazındı.")
+                return len(kanun_verisi)
+                
+            except Exception as e:
+                st.error(f"❌ Yükleme sırasında hata oluştu: {str(e)}")
+                return 0
 
     @classmethod
     def madde_getir_buluttan(cls, kanun_kisa_ad: str, madde_no_tam: str):
-        """
-        app.py'nin çökmemesi için string yerine DİCT (Sözlük) döndürür.
-        """
         try:
             chroma_client = chromadb.PersistentClient(path="./junilex_vector_db")
             collection = chroma_client.get_collection(name="turk_mevzuati")
@@ -60,31 +105,25 @@ class MevzuatBulutEngine:
             sonuclar = collection.get(where={"kanun": {"$eq": kanun_kisa_ad}})
             
             if not sonuclar or not sonuclar['documents']:
-                # Sözlük olarak döndürüyoruz ki app.py .get("metin") yaparken patlamasın
-                return {"no": madde_no_tam, "baslik": "Veritabanı Boş", "metin": f"⚠️ {kanun_kisa_ad} henüz Junilex'in yerel beynine yüklenmemiş. Lütfen terminalden JSON dosyasını yükleyin."}
+                return {"no": madde_no_tam, "baslik": "Veritabanı Boş", "metin": f"⚠️ {kanun_kisa_ad} henüz yüklenmemiş. Önce yükleme panelinden kanunu hafızaya alın."}
                 
             bulunan_metin = None
-            
             for metin, meta in zip(sonuclar['documents'], sonuclar['metadatas']):
                 db_madde_no = str(meta.get("madde", "")).upper()
                 metin_baslik = metin[:100].upper()
-                
                 rakam_eslesmesi = re.findall(r'\d+', db_madde_no)
                 db_rakam = rakam_eslesmesi[0] if rakam_eslesmesi else db_madde_no
                 
                 if db_rakam == istenen_sayi:
-                    if istenen_tur == "normal":
-                        if "GEÇİCİ" not in db_madde_no and "GEÇİCİ" not in metin_baslik and "EK MADDE" not in metin_baslik:
-                            bulunan_metin = metin
-                            break
-                    elif istenen_tur == "gecici":
-                        if "GEÇİCİ" in db_madde_no or "GECİCİ" in db_madde_no or "GEÇİCİ" in metin_baslik:
-                            bulunan_metin = metin
-                            break
-                    elif istenen_tur == "ek":
-                        if "EK" in db_madde_no or "EK MADDE" in metin_baslik:
-                            bulunan_metin = metin
-                            break
+                    if istenen_tur == "normal" and "GEÇİCİ" not in db_madde_no and "EK MADDE" not in metin_baslik:
+                        bulunan_metin = metin
+                        break
+                    elif istenen_tur == "gecici" and ("GEÇİCİ" in db_madde_no or "GECİCİ" in db_madde_no):
+                        bulunan_metin = metin
+                        break
+                    elif istenen_tur == "ek" and "EK" in db_madde_no:
+                        bulunan_metin = metin
+                        break
 
             if not bulunan_metin:
                 for metin, meta in zip(sonuclar['documents'], sonuclar['metadatas']):
@@ -93,38 +132,31 @@ class MevzuatBulutEngine:
                         break
 
             if bulunan_metin:
-                # Başarılı sonuç da sözlük formatında dönüyor
                 return {
                     "no": str(madde_no_tam),
                     "baslik": f"{kanun_kisa_ad} - Madde {str(madde_no_tam).replace('_', ' ')}",
                     "metin": bulunan_metin + f"\n\n{YASAL_UYARI}"
                 }
             else:
-                return {"no": madde_no_tam, "baslik": "Madde Eksik", "metin": f"⚠️ {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')} veritabanında (JSON) eksik."}
+                return {"no": madde_no_tam, "baslik": "Madde Eksik", "metin": f"⚠️ {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')} bulunamadı."}
                 
         except Exception as e:
-            return {"no": "HATA", "baslik": "Sistem Hatası", "metin": f"❌ Yerel veritabanı bağlantı hatası: {e}"}
+            return {"no": "HATA", "baslik": "Bağlantı Hatası", "metin": f"❌ Veritabanı Hatası: {e}"}
 
     @classmethod
     def madde_analiz_et(cls, api_key, kanun_kisa_ad, madde_no_tam, madde_metni):
         try:
             model = cls._modeli_hazirla(api_key)
-            prompt = f"""
-            Sen kıdemli bir Yargıtay Tetkik Hakimisin. Aşağıda sana verilen kanun maddesini, 
-            meslektaşların (avukatlar ve hakimler) için yapısal bir şekilde analiz et.
+            prompt = f"""Sen Yargıtay Tetkik Hakimisin. Aşağıdaki kanunu analiz et.
+            Mevzuat: {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')}
+            Metin: {madde_metni}
             
-            İncelenecek Mevzuat: {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')}
-            Kanun Metni: {madde_metni}
-            
-            Lütfen analizini SADECE şu başlıklar altında yap:
-            - **🎯 Maddenin Amacı ve Korunan Hukuki Yarar:**
-            - **⚖️ Kritik Unsurlar ve Şartlar:**
-            - **🏛️ Uygulama ve Yargıtay Eğilimi (Muhtemel Riskler):**
-            
-            DİKKAT: Analizini tamamen sana verdiğim kanun metnine dayandır. Başka bir madde uydurma.
+            Başlıklar:
+            - **🎯 Maddenin Amacı:**
+            - **⚖️ Şartlar:**
+            - **🏛️ Yargıtay Eğilimi:**
             """
-            response = model.generate_content(prompt, stream=True)
-            return response
+            return model.generate_content(prompt, stream=True)
         except Exception as e:
-            st.error(f"❌ AI Analiz Hatası: {str(e)}")
+            st.error(f"❌ Hata: {str(e)}")
             return None
