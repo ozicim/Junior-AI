@@ -476,8 +476,7 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
                         if analiz_akisi:
                             # Harika bir akış efektiyle cevabı ekrana yazdır
                             st.write_stream(analiz_akisi)
-            else:
-                st.error("❌ Kritik Hata: Veritabanı motorundan geçersiz veri formatı döndü.")
+           
 
     if "aktif_madde" in st.session_state:
         madde = st.session_state.aktif_madde
