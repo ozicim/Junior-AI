@@ -2,6 +2,10 @@ import streamlit as st
 import chromadb
 import google.generativeai as genai
 import re
+import json
+import os
+import zipfile
+from sentence_transformers import SentenceTransformer
 
 YASAL_UYARI = (
     "⚠️ **Bilgi Amaçlıdır:** Bu madde metni Junilex yerel veritabanından getirilmiştir. "
@@ -13,13 +17,16 @@ class MevzuatBulutEngine:
 
     @classmethod
     def get_kanunlar(cls):
+        # Bütün arşivi indirdiğimiz için menüyü dilediğin kadar genişletebilirsin!
         return [
             {"id": "5237", "kisaAd": "TCK", "isim": "Türk Ceza Kanunu", "kategori": "Ceza Hukuku", "aciklama": "Temel Ceza Mevzuatı"},
             {"id": "5271", "kisaAd": "CMK", "isim": "Ceza Muhakemesi Kanunu", "kategori": "Ceza Hukuku", "aciklama": "Yargılama Usulleri"},
             {"id": "4721", "kisaAd": "TMK", "isim": "Türk Medeni Kanunu", "kategori": "Özel Hukuk", "aciklama": "Temel Medeni Haklar"},
             {"id": "6098", "kisaAd": "TBK", "isim": "Türk Borçlar Kanunu", "kategori": "Özel Hukuk", "aciklama": "Borç İlişkileri ve Sözleşmeler"},
             {"id": "6102", "kisaAd": "TTK", "isim": "Türk Ticaret Kanunu", "kategori": "Ticaret Hukuku", "aciklama": "Ticari İşletme ve Şirketler"},
-            {"id": "4857", "kisaAd": "İK", "isim": "İş Kanunu", "kategori": "İş Hukuku", "aciklama": "İşçi ve İşveren İlişkileri"}
+            {"id": "4857", "kisaAd": "İK", "isim": "İş Kanunu", "kategori": "İş Hukuku", "aciklama": "İşçi ve İşveren İlişkileri"},
+            {"id": "2004", "kisaAd": "İİK", "isim": "İcra ve İflas Kanunu", "kategori": "İcra Hukuku", "aciklama": "Takip ve Tahsilat"},
+            {"id": "6502", "kisaAd": "TKHK", "isim": "Tüketicinin Korunması Hakkında Kanun", "kategori": "Özel Hukuk", "aciklama": "Tüketici Hakları"}
         ]
 
     @classmethod
@@ -32,52 +39,63 @@ class MevzuatBulutEngine:
     @classmethod
     def kanunu_buluta_yukle(cls, *args, **kwargs):
         """
-        app.py'den gelen tüm parametre yapılarına (*args, **kwargs) tam uyum sağlar.
-        ozel_db veya db gibi isimlendirme çakışmalarından etkilenmez.
+        ZIP dosyasını açmadan hafızadan okur ve sadece istenilen kanunu ChromaDB'ye işler.
         """
-        import json
-        import os
-        from sentence_transformers import SentenceTransformer
-        
-        # app.py içerisinden gelebilecek tüm olası anahtar kelimeleri esnekçe tarıyoruz
         kisa_ad = kwargs.get("kisa_ad") or kwargs.get("kisaAd") or kwargs.get("kisa_ad_bul")
+        kanun_id = kwargs.get("kanun_id") or kwargs.get("id")
         
-        # Eğer isimle değil de sıralı (positional) gönderildiyse yerinden tahmin ediyoruz
-        if not kisa_ad:
+        if not kisa_ad or not kanun_id:
             if len(args) >= 3:
-                kisa_ad = args[2] # Yaygın sıra: (db, id, kisa_ad, tam_ad)
-            elif len(args) == 2:
-                kisa_ad = args[1]
+                kanun_id = args[1]
+                kisa_ad = args[2]
                 
-        if not kisa_ad:
-            st.error("❌ Kritik Hata: Yüklenmek istenen kanunun kısa adı (TCK, TBK vb.) kod içerisinden ayıklanamadı.")
+        if not kisa_ad or not kanun_id:
+            st.error("❌ Hata: Kanun kısa adı veya numarası alınamadı.")
             return 0
             
-        dosya_adi = f"{str(kisa_ad).lower()}.json" # Örn: tck.json
+        zip_dosya_adi = "mevzuat_arsiv.zip" 
+        ic_dosya_adi = "mevzuat_ham.json"
         
-        if not os.path.exists(dosya_adi):
-            st.error(f"⚠️ {dosya_adi} dosyası bulunamadı! Lütfen GitHub üzerinden projenize {dosya_adi} adında bir dosya ekleyip içine maddeleri yapıştırın.")
+        if not os.path.exists(zip_dosya_adi):
+            st.error(f"⚠️ {zip_dosya_adi} bulunamadı! Lütfen arşivi GitHub'a yükleyin.")
             return 0
             
-        with st.spinner(f"🧠 {kisa_ad} Junilex beynine işleniyor... (Bu işlem metnin uzunluğuna göre 1-2 dakika sürebilir)"):
+        with st.spinner(f"🧠 {kisa_ad} dev arşivden (ZIP) çıkarılıp Junilex beynine işleniyor... (Bu işlem 1-2 dakika sürebilir)"):
             try:
                 chroma_client = chromadb.PersistentClient(path="./junilex_vector_db")
                 collection = chroma_client.get_or_create_collection(name="turk_mevzuati")
-                
-                # Bellek optimizasyonu için modeli sadece ihtiyaç anında yüklüyoruz
                 embedding_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
                 
-                with open(dosya_adi, "r", encoding="utf-8") as f:
-                    kanun_verisi = json.load(f)
+                # ZIP dosyasının içinden JSON'u belleğe okuyoruz (Diske çıkarmadan!)
+                with zipfile.ZipFile(zip_dosya_adi, 'r') as z:
+                    with z.open(ic_dosya_adi) as f:
+                        tum_mevzuat = json.loads(f.read().decode('utf-8'))
+                    
+                hedef_kanun = None
+                for kanun in tum_mevzuat:
+                    if str(kanun.get("kanun_numarasi")) == str(kanun_id):
+                        hedef_kanun = kanun
+                        break
+                        
+                if not hedef_kanun:
+                    st.error(f"❌ {kisa_ad} (Kanun No: {kanun_id}) dev arşivde bulunamadı!")
+                    return 0
+                    
+                maddeler = hedef_kanun.get("maddeler", [])
+                if not maddeler:
+                    st.error(f"❌ {kisa_ad} bulundu ancak içi boş (maddeleri yok).")
+                    return 0
                     
                 ids = []
                 documents = []
                 metadatas = []
                 embeddings = []
                 
-                for sira, madde in enumerate(kanun_verisi):
-                    madde_no = str(madde.get("madde_no", ""))
-                    icerik = madde.get("icerik", "")
+                for sira, madde in enumerate(maddeler):
+                    madde_no_ham = str(madde.get("madde_numarasi", ""))
+                    madde_no = madde_no_ham.replace("MADDE", "").replace("Madde", "").strip()
+                    icerik = madde.get("text", "")
+                    
                     aranacak_metin = f"{kisa_ad} Madde {madde_no}: {icerik}"
                     
                     ids.append(f"{kisa_ad}_{madde_no}_{sira}")
@@ -92,18 +110,15 @@ class MevzuatBulutEngine:
                     ids=ids
                 )
                 
-                st.success(f"🚀 BAŞARILI! {len(kanun_verisi)} adet {kisa_ad} maddesi Junilex'in kalıcı hafızasına kazındı.")
-                return len(kanun_verisi)
+                st.success(f"🚀 BAŞARILI! {len(maddeler)} adet {kisa_ad} maddesi Junilex'in kalıcı hafızasına kazındı.")
+                return len(maddeler)
                 
             except Exception as e:
-                st.error(f"❌ Yükleme sırasında hata oluştu: {str(e)}")
+                st.error(f"❌ Yükleme sırasında hata: {str(e)}")
                 return 0
 
     @classmethod
     def madde_getir_buluttan(cls, *args, **kwargs):
-        """
-        Aynı esnekliği arama motoruna da entegre ediyoruz ki app.py çağrıları asla kırılmasın.
-        """
         try:
             kanun_kisa_ad = kwargs.get("kanun_kisa_ad") or kwargs.get("kanun_kisa_ad_bul")
             madde_no_tam = kwargs.get("madde_no_tam") or kwargs.get("madde_no")
