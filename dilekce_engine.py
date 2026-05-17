@@ -3,11 +3,26 @@ from docx import Document
 import io
 
 class DilekceEngine:
+    # ✅ Model cache'leniyor
+    _model = None
+    _configured_key = None
+
+    @classmethod
+    def _modeli_hazirla(cls, api_key):
+        """Modeli ilk kullanımda oluşturur, sonraki çağrılarda cache'den döner."""
+        if cls._configured_key != api_key:
+            genai.configure(api_key=api_key)
+            cls._configured_key = api_key
+            cls._model = None
+
+        if cls._model is None:
+            cls._model = genai.GenerativeModel('models/gemini-2.5-flash')
+
+        return cls._model
+
     @classmethod
     def dilekce_olustur(cls, api_key, konu, taraflar, olay_ozeti, talepler):
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('models/gemini-2.5-flash')
-        
+        model = cls._modeli_hazirla(api_key)
         
         prompt = f"""
         Sen profesyonel bir avukatsın. Aşağıdaki bilgilere dayanarak resmi, ağırbaşlı ve 
@@ -25,16 +40,11 @@ class DilekceEngine:
         4. Sadece dilekçe metnini döndür.
         """
         response = model.generate_content(prompt, stream=True)
-        return response # Yanıtı bir bütün olarak değil, akış (generator) olarak döndürüyoruz
-        
-        response = model.generate_content(prompt)
-        return response.text
-        # stream=True ekledik:
-        
+        return response
 
     @classmethod
     def word_dosyasi_yap(cls, metin):
-        # Yazılan metni Word dosyasına çevirir
+        """Yazılan metni Word dosyasına çevirir"""
         doc = Document()
         for line in metin.split('\n'):
             doc.add_paragraph(line)
