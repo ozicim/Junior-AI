@@ -21,12 +21,12 @@ class MevzuatBulutEngine:
         beklediği Sözlük formatında ve eksiksiz kanun listesini döner.
         """
         return [
-            {"id": "5237", "kisa_ad": "TCK", "isim": "Türk Ceza Kanunu", "kategori": "Ceza Hukuku", "aciklama": "Temel Ceza Mevzuatı"},
-            {"id": "5271", "kisa_ad": "CMK", "isim": "Ceza Muhakemesi Kanunu", "kategori": "Ceza Hukuku", "aciklama": "Yargılama Usulleri"},
-            {"id": "4721", "kisa_ad": "TMK", "isim": "Türk Medeni Kanunu", "kategori": "Özel Hukuk", "aciklama": "Temel Medeni Haklar"},
-            {"id": "6098", "kisa_ad": "TBK", "isim": "Türk Borçlar Kanunu", "kategori": "Özel Hukuk", "aciklama": "Borç İlişkileri ve Sözleşmeler"},
-            {"id": "6102", "kisa_ad": "TTK", "isim": "Türk Ticaret Kanunu", "kategori": "Ticaret Hukuku", "aciklama": "Ticari İşletme ve Şirketler"},
-            {"id": "4857", "kisa_ad": "İK", "isim": "İş Kanunu", "kategori": "İş Hukuku", "aciklama": "İşçi ve İşveren İlişkileri"}
+            {"id": "5237", "kisaAd": "TCK", "isim": "Türk Ceza Kanunu", "kategori": "Ceza Hukuku", "aciklama": "Temel Ceza Mevzuatı"},
+            {"id": "5271", "kisaAd": "CMK", "isim": "Ceza Muhakemesi Kanunu", "kategori": "Ceza Hukuku", "aciklama": "Yargılama Usulleri"},
+            {"id": "4721", "kisaAd": "TMK", "isim": "Türk Medeni Kanunu", "kategori": "Özel Hukuk", "aciklama": "Temel Medeni Haklar"},
+            {"id": "6098", "kisaAd": "TBK", "isim": "Türk Borçlar Kanunu", "kategori": "Özel Hukuk", "aciklama": "Borç İlişkileri ve Sözleşmeler"},
+            {"id": "6102", "kisaAd": "TTK", "isim": "Türk Ticaret Kanunu", "kategori": "Ticaret Hukuku", "aciklama": "Ticari İşletme ve Şirketler"},
+            {"id": "4857", "kisaAd": "İK", "isim": "İş Kanunu", "kategori": "İş Hukuku", "aciklama": "İşçi ve İşveren İlişkileri"}
         ]
 
     @classmethod
