@@ -373,109 +373,101 @@ st.markdown("""
 # ==========================================
 
 if secim == "🏛️ Adliye (Mevzuat Sorgu)":
-    # 1. Başlık ve Açıklama
     st.title("🏛️ Junilex Akıllı Mevzuat Bankası")
-    st.markdown(
-        "Türkiye'deki tüm temel kanunları içeren yerel yapay zeka hafızası. "
-        "Aramak istediğiniz maddeyi hızlıca bulabilir ve Yargıtay gözüyle analiz ettirebilirsiniz."
-    )
+    st.markdown("Kategori filtreli kanun kütüphanesi. Maddeleri numarayla çağırabilir veya içinde geçen kelimelerle aratabilirsiniz.")
 
-    # 2. Arka motordan 20 sınıflandırılmış kanunu çek
     kanun_listesi = MevzuatBulutEngine.get_kanunlar()
 
-    # 3. Arayüz için yan yana iki modern sütun oluşturalım
+    # 1. Kategori ve Kanun Seçim Paneli
     filtre_col, secim_col = st.columns([1, 2])
-
     with filtre_col:
-        # Benzersiz kategorileri çekip şık bir filtre kutusu yapıyoruz
         kategoriler = ["🌟 Tüm Alanlar"] + sorted(list(set([k["kategori"] for k in kanun_listesi])))
         secilen_kategori = st.selectbox("📁 Hukuk Alanı Filtresi", kategoriler)
 
-    # 4. Seçilen kategoriye göre kanun listesini saniyeler içinde daralt
     if secilen_kategori == "🌟 Tüm Alanlar":
         filtrelenmis_kanunlar = kanun_listesi
     else:
         filtrelenmis_kanunlar = [k for k in kanun_listesi if k["kategori"] == secilen_kategori]
 
     with secim_col:
-        # Listeyi daha okunabilir yapmak için formatlıyoruz
         gosterim_adlari = [f"{k['kisaAd']} | {k['isim']}" for k in filtrelenmis_kanunlar]
         secilen_gosterim = st.selectbox("📜 İlgili Kanun Mevzuatı", gosterim_adlari)
 
-    # Seçilen kanun nesnesini cımbızla havuzdan alalım
     secilen_indeks = gosterim_adlari.index(secilen_gosterim)
     secilen_kanun = filtrelenmis_kanunlar[secilen_indeks]
 
-    # Kanun Alt Detay Kartı (Şık bir bilgilendirme alanı)
     st.caption(f"📂 **Kategori:** {secilen_kanun['kategori']} | 🆔 **Kanun No:** {secilen_kanun['id']} | 💡 **Kapsam:** {secilen_kanun['aciklama']}")
-
     st.write("---")
 
-    # 5. Madde Arama ve Giriş Alanı
-    giriş_col, buton_col = st.columns([2, 1])
+    # 2. SEKMELİ ARAMA MOTORU MİMARİSİ
+    arama_sekmeleri = st.tabs(["🔢 Madde Numarası İle Nokta Atışı", "🔤 Kelime / Kavram İle İçerik Taraması"])
 
-    with giriş_col:
-        girilen_madde = st.text_input(
-            "🔢 Aranacak Madde Numarası", 
-            placeholder="Örn: 1, 135, Geçici_1, Ek_2",
-            help="Normal maddeler için sadece sayı, geçici maddeler için 'Geçici_1' şeklinde giriniz."
-        )
+    # --------------------------------------------------------
+    # TAB 1: MADDE NUMARASI İLE ARAMA
+    # --------------------------------------------------------
+    with arama_sekmeleri[0]:
+        giriş_col, buton_col = st.columns([2, 1])
+        with giriş_col:
+            girilen_madde = st.text_input("🔢 Aranacak Madde Numarası", placeholder="Örn: 86, Geçici_1...", key="input_no")
+        with buton_col:
+            st.write("##")
+            madde_ara_butonu = st.button("🔍 Maddeyi Getir", use_container_width=True, key="btn_no_ara")
 
-    with buton_col:
-        st.write("##") # Buton hizalaması için boşluk
-        madde_ara_butonu = st.button("🔍 Maddeyi Getir", use_container_width=True)
+        if madde_ara_butonu and girilen_madde:
+            with st.spinner("⚖️ Hafızadan madde getiriliyor..."):
+                sonuc = MevzuatBulutEngine.madde_getir_buluttan(secilen_kanun['kisaAd'], girilen_madde)
+                if sonuc and isinstance(sonuc, dict):
+                    st.session_state["aktif_no_sonucu"] = sonuc
+                    st.session_state["aktif_no_madde"] = girilen_madde
+                    st.session_state["aktif_no_kanun"] = secilen_kanun['kisaAd']
 
-    # 6. İşlem Tetikleme Mekanizması (Senin API Değişkenine Özel Versiyon)
-    if madde_ara_butonu and girilen_madde:
-        with st.spinner(f"⚖️ Junilex yerel hafızasından {secilen_kanun['kisaAd']} m. {girilen_madde} getiriliyor..."):
-            sonuc = MevzuatBulutEngine.madde_getir_buluttan(secilen_kanun['kisaAd'], girilen_madde)
+        if "aktif_no_sonucu" in st.session_state and st.session_state["aktif_no_kanun"] == secilen_kanun['kisaAd']:
+            res = st.session_state["aktif_no_sonucu"]
+            st.success(f"✅ {res.get('baslik')}")
+            st.info(res.get("metin"))
             
-            if sonuc and isinstance(sonuc, dict):
-                # Arama verilerini Streamlit hafızasına (session_state) kaydediyoruz
-                st.session_state["aktif_arama_sonucu"] = sonuc
-                st.session_state["aktif_arama_madde"] = girilen_madde
-                st.session_state["aktif_arama_kanun"] = secilen_kanun['kisaAd']
-            else:
-                st.error("❌ Kritik Hata: Veritabanından geçersiz format döndü.")
+            if "henüz yüklenmemiş" not in res.get("metin") and "bulunamadı" not in res.get("metin"):
+                st.write("---")
+                st.subheader("🤖 Hakim Gözüyle Yapay Zeka Analizi")
+                if st.button("🏛️ Hukuki Analizi Başlat", type="primary", key="btn_analiz_no"):
+                    with st.spinner("🔮 Kıdemli Yargıtay Tetkik Hakimi analizi üretiliyor..."):
+                        api_key = MY_API_KEY if 'MY_API_KEY' in locals() else st.secrets["GEMINI_API_KEY"]
+                        akış = MevzuatBulutEngine.madde_analiz_et(api_key, secilen_kanun['kisaAd'], st.session_state["aktif_no_madde"], res.get("metin"))
+                        if akış: st.write_stream(akış)
 
-    # Ekranda gösterim ve Yapay Zeka Analiz kısmı
-    if "aktif_arama_sonucu" in st.session_state and st.session_state["aktif_arama_kanun"] == secilen_kanun['kisaAd']:
-        sonuc = st.session_state["aktif_arama_sonucu"]
-        
-        # Madde metnini şık bir kartta göster
-        st.success(f"✅ {sonuc.get('baslik', 'Madde Bulundu')}")
-        st.info(sonuc.get("metin", "Madde içeriği boş."))
-        
-        # Madde veritabanında varsa analiz butonunu aktif et
-        if "henüz yüklenmemiş" not in sonuc.get("metin", "") and "bulunamadı" not in sonuc.get("metin", ""):
-            st.write("---")
-            st.subheader("🤖 Hakim Gözüyle Yapay Zeka Analizi")
-            st.markdown("Bu kanun maddesinin uygulamasını, amacını ve Yargıtay eğilimlerini inceleyin.")
+    # --------------------------------------------------------
+    # TAB 2: KELİME İLE MEVZUAT TARAMASI
+    # --------------------------------------------------------
+    with arama_sekmeleri[1]:
+        k_giriş_col, k_buton_col = st.columns([2, 1])
+        with k_giriş_col:
+            aranan_kelime = st.text_input("🔤 İçinde Geçen Kelime veya İfade", placeholder="Örn: yaralama, kıdem tazminatı, zamanaşımı...", key="input_kelime")
+        with k_buton_col:
+            st.write("##")
+            kelime_ara_butonu = st.button("🔎 Kanunu Baştan Sona Tara", use_container_width=True, key="btn_kelime_ara")
+
+        if kelime_ara_butonu and aranan_kelime:
+            with st.spinner(f"🔎 {secilen_kanun['kisaAd']} külliyatında '{aranan_kelime}' taranıyor..."):
+                maddeler_havuzu = MevzuatBulutEngine.kelime_ile_ara(secilen_kanun['kisaAd'], aranan_kelime)
+                st.session_state["k_arama_sonuclari"] = maddeler_havuzu
+                st.session_state["k_arama_kelimesi"] = aranan_kelime
+                st.session_state["k_arama_kanun"] = secilen_kanun['kisaAd']
+
+        if "k_arama_sonuclari" in st.session_state and st.session_state["k_arama_kanun"] == secilen_kanun['kisaAd']:
+            havuz = st.session_state["k_arama_sonuclari"]
+            st.markdown(f"📊 **'{st.session_state['k_arama_kelimesi']}'** ifadesini içeren **{len(havuz)}** adet madde listelendi:")
             
-            # Hafıza koruması sayesinde bu buton artık sayfayı sıfırlamayacak
-            if st.button("🏛️ Hukuki Analizi Başlat", type="primary"):
-                with st.spinner("🔮 Kıdemli Yargıtay Tetkik Hakimi perspektifinden analiz üretiliyor..."):
+            for i, m in enumerate(havuz):
+                # Her bir eşleşen maddeyi şık akordeon (expander) içinde saklıyoruz
+                with st.expander(f"📜 {m['baslik']}"):
+                    st.info(m['metin'])
                     
-                    # Senin tanımladığın MY_API_KEY değişkenini doğrudan buraya bağlıyoruz
-                    # Eğer fonksiyon scope'u dışında kalırsa diye secrets korumasını da arkaya koyduk
-                    try:
-                        api_key = MY_API_KEY
-                    except NameError:
-                        api_key = st.secrets["GEMINI_API_KEY"]
-                    
-                    if not api_key:
-                        st.error("❌ Hata: Streamlit Secrets panelinde GEMINI_API_KEY bulunamadı!")
-                    else:
-                        analiz_akisi = MevzuatBulutEngine.madde_analiz_et(
-                            api_key=api_key, 
-                            kanun_kisa_ad=secilen_kanun['kisaAd'],
-                            madde_no_tam=st.session_state["aktif_arama_madde"],
-                            madde_metni=sonuc.get("metin", "")
-                        )
-                        
-                        if analiz_akisi:
-                            # Harika bir akış efektiyle cevabı ekrana yazdır
-                            st.write_stream(analiz_akisi)
+                    # Her expander'ın içine bağımsız çalışan bir AI analiz butonu yerleştiriyoruz
+                    if st.button("🏛️ Bu Maddeyi Yapay Zekaya Analiz Ettir", key=f"btn_analiz_k_{m['no']}_{i}"):
+                        with st.spinner("🔮 Madde analiz ediliyor..."):
+                            api_key = MY_API_KEY if 'MY_API_KEY' in locals() else st.secrets["GEMINI_API_KEY"]
+                            akış = MevzuatBulutEngine.madde_analiz_et(api_key, secilen_kanun['kisaAd'], m['no'], m['metin'])
+                            if akış: st.write_stream(akış)
            
 
     if "aktif_madde" in st.session_state:
