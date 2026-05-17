@@ -16,7 +16,7 @@ class AkademikEngine:
     def veritabanini_baslat(cls):
         if not firebase_admin._apps:
             try:
-                firebase_info = dict(st.secrets["firebase_credentials"])
+                firebase_info = dict(st.secrets["firebase"])
                 
                 if "private_key" in firebase_info:
                     firebase_info["private_key"] = firebase_info["private_key"].replace("\\n", "\n")
