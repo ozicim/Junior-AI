@@ -425,35 +425,57 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
         st.write("##") # Buton hizalaması için boşluk
         madde_ara_butonu = st.button("🔍 Maddeyi Getir", use_container_width=True)
 
-    # 6. İşlem Tetikleme Mekanizması
+    # 6. İşlem Tetikleme Mekanizması (Senin API Değişkenine Özel Versiyon)
     if madde_ara_butonu and girilen_madde:
         with st.spinner(f"⚖️ Junilex yerel hafızasından {secilen_kanun['kisaAd']} m. {girilen_madde} getiriliyor..."):
-            # Arka plandaki esnek X-Ray motorumuzu çağırıyoruz
             sonuc = MevzuatBulutEngine.madde_getir_buluttan(secilen_kanun['kisaAd'], girilen_madde)
             
             if sonuc and isinstance(sonuc, dict):
-                # Gelen veriyi ekrana çok şık bir kart mimarisiyle basıyoruz
-                st.success(f"✅ {sonuc.get('baslik', 'Madde Bulundu')}")
-                st.info(sonuc.get("metin", "Madde içeriği boş."))
-                
-                # Eğer madde başarıyla geldiyse ve uyarı mesajı içermiyorsa Yapay Zeka Analiz Butonunu göster
-                if "henüz yüklenmemiş" not in sonuc.get("metin", "") and "bulunamadı" not in sonuc.get("metin", ""):
-                    st.write("---")
-                    st.subheader("🤖 Hakim Gözüyle Yapay Zeka Analizi")
-                    st.markdown("Bu kanun maddesinin uygulamasını, amacını ve Yargıtay eğilimlerini inceleyin.")
+                # Arama verilerini Streamlit hafızasına (session_state) kaydediyoruz
+                st.session_state["aktif_arama_sonucu"] = sonuc
+                st.session_state["aktif_arama_madde"] = girilen_madde
+                st.session_state["aktif_arama_kanun"] = secilen_kanun['kisaAd']
+            else:
+                st.error("❌ Kritik Hata: Veritabanından geçersiz format döndü.")
+
+    # Ekranda gösterim ve Yapay Zeka Analiz kısmı
+    if "aktif_arama_sonucu" in st.session_state and st.session_state["aktif_arama_kanun"] == secilen_kanun['kisaAd']:
+        sonuc = st.session_state["aktif_arama_sonucu"]
+        
+        # Madde metnini şık bir kartta göster
+        st.success(f"✅ {sonuc.get('baslik', 'Madde Bulundu')}")
+        st.info(sonuc.get("metin", "Madde içeriği boş."))
+        
+        # Madde veritabanında varsa analiz butonunu aktif et
+        if "henüz yüklenmemiş" not in sonuc.get("metin", "") and "bulunamadı" not in sonuc.get("metin", ""):
+            st.write("---")
+            st.subheader("🤖 Hakim Gözüyle Yapay Zeka Analizi")
+            st.markdown("Bu kanun maddesinin uygulamasını, amacını ve Yargıtay eğilimlerini inceleyin.")
+            
+            # Hafıza koruması sayesinde bu buton artık sayfayı sıfırlamayacak
+            if st.button("🏛️ Hukuki Analizi Başlat", type="primary"):
+                with st.spinner("🔮 Kıdemli Yargıtay Tetkik Hakimi perspektifinden analiz üretiliyor..."):
                     
-                    if st.button("🏛️ Hukuki Analizi Başlat", type="primary"):
-                        with st.spinner("🔮 Kıdemli Yargıtay Tetkik Hakimi perspektifinden analiz üretiliyor..."):
-                            # Mevzuat motorundaki analiz fonksiyonunu tetikle
-                            analiz_akisi = MevzuatBulutEngine.madde_analiz_et(
-                                api_key=st.session_state.get("gemini_api_key", ""), 
-                                kanun_kisa_ad=secilen_kanun['kisaAd'],
-                                madde_no_tam=girilen_madde,
-                                madde_metni=sonuc.get("metin", "")
-                            )
-                            
-                            if analiz_akisi:
-                                st.write_stream(analiz_akisi)
+                    # Senin tanımladığın MY_API_KEY değişkenini doğrudan buraya bağlıyoruz
+                    # Eğer fonksiyon scope'u dışında kalırsa diye secrets korumasını da arkaya koyduk
+                    try:
+                        api_key = MY_API_KEY
+                    except NameError:
+                        api_key = st.secrets["GEMINI_API_KEY"]
+                    
+                    if not api_key:
+                        st.error("❌ Hata: Streamlit Secrets panelinde GEMINI_API_KEY bulunamadı!")
+                    else:
+                        analiz_akisi = MevzuatBulutEngine.madde_analiz_et(
+                            api_key=api_key, 
+                            kanun_kisa_ad=secilen_kanun['kisaAd'],
+                            madde_no_tam=st.session_state["aktif_arama_madde"],
+                            madde_metni=sonuc.get("metin", "")
+                        )
+                        
+                        if analiz_akisi:
+                            # Harika bir akış efektiyle cevabı ekrana yazdır
+                            st.write_stream(analiz_akisi)
             else:
                 st.error("❌ Kritik Hata: Veritabanı motorundan geçersiz veri formatı döndü.")
 
