@@ -510,7 +510,7 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
 # 💬 Buradan aşağıya diğer elif secim == "🎓 Akademi (Ders Notları)": vs. sekmelerin devam edebilir dayı...
 # --- MOD 2: AKADEMİ ---
 # app.py içinde İçtihat veya Akademi butonunun tam içine:
-elif menu == "🎓 Akademi (Ders Notları)":
+elif secim == "🎓 Akademi (Ders Notları)":
     st.header("🎓 Akademik Asistan")
     
     # Sekmeleri net bir şekilde tanımlıyoruz
@@ -948,7 +948,7 @@ elif menu == "🎓 Akademi (Ders Notları)":
 #tab_dilekce = st.tabs(["Dilekçe Yaz"]) # Mevcut sekmelerine ekle
 
 # 3. BÖLÜM: DİLEKÇE (YENİ YERİ)
-elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
+elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
     st.header("📝 Dilekçe Taslağı Oluştur")
     st.info("Lütfen olayları ve tarafları detaylıca giriniz.")
     
@@ -1001,7 +1001,7 @@ elif menu == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
             )
 
 # --- MOD 4: İÇTİHAT SORGULAMA (Tamamen Düzeltilmiş) ---
-elif menu == "⚖️ İçtihat Sorgulama":
+elif secim == "⚖️ İçtihat Sorgulama":
     # --- KESİN ÇÖZÜM BURASI ---
     # Değişkeni en başta, hiçbir bloğa girmeden 'boş' olarak tanımlıyoruz.
     
@@ -1124,7 +1124,7 @@ elif menu == "⚖️ İçtihat Sorgulama":
                         st.rerun()
 # ... diğer elif (Akademi, Adliye vb.) bloklarından sonra ekle:
 
-elif menu == "💬 JUNILEX Chat":
+elif secim == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
     
     # 1. Hafıza ve Mod Başlatma
