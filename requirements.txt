@@ -8,3 +8,6 @@ selenium
 webdriver-manager
 python-docx
 fpdf2
+chromadb
+sentence-transformers
+pydantic
