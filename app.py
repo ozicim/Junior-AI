@@ -1313,9 +1313,4 @@ elif secim == "💬 JUNILEX Chat":
                     st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
                     st.rerun()
             
-    # 6. Sidebar Temizleme Butonu
-    if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
-        st.session_state.chat_messages = [
-            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
-        ]
-        st.rerun()
+    
