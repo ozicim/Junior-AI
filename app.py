@@ -512,42 +512,39 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
             # Analiz altına da uyarı ekle
             st.caption("⚠️ Yapay zeka analizi hukuki danışmanlık değildir. Kesin bilgi için avukat veya resmi kaynaklara başvurunuz.")
 
-    # 🔑 GELİŞTİRİCİ PANELİ
+ # ============================================================
+    # 🔑 GELİŞTİRİCİ PANELİ (YENİ NESİL CHROMADB VE ZIP SİSTEMİ)
+    # ============================================================
     if st.session_state.get("aktif_kullanici") == "Ozan Şahin Sicim":
         st.write("<br><br><br>", unsafe_allow_html=True)
-        with st.expander("🔑 JUNILEX Geliştirici — Kanun Yükleme Paneli", expanded=False):
+        with st.expander("🔑 JUNILEX Geliştirici — Kalıcı Hafızaya Kazıma Paneli", expanded=False):
             st.markdown("""
             <small>
-            <b>Yeni sistem:</b> Önce Bedesten API (Adalet Bakanlığı resmi servisi) denenir — scraping yok, IP engeli yok.<br>
-            Bedesten başarısız olursa mevzuat.gov.tr kazımasına geçilir.
+            <b>Yeni Vektör Sistemi (RAG):</b> Kanunlar artık maliyetli Firebase sunucularına değil, 
+            tamamen ücretsiz ve ışık hızındaki yerel vektör beynine (ChromaDB) yüklenir.<br>
+            Sistem GitHub'a attığınız <code>mevzuat_arsiv.zip</code> dosyasını açarak maddeleri ayıklar ve yapay zeka için sayısal kodlara dönüştürülür.
             </small>
             """, unsafe_allow_html=True)
 
-            yuklenen_json = st.file_uploader("Firebase Anahtar Dosyasını Seç (kilit.json)", type=["json"])
             hedef_kanun_adi = st.selectbox(
-                "Yüklenecek Kanun",
+                "Yapay Zeka Hafızasına Alınacak Kanun",
                 options=[k["isim"] for k in kanun_listesi],
                 key="admin_yerel_secim"
             )
             hedef_kanun = next(k for k in kanun_listesi if k["isim"] == hedef_kanun_adi)
 
-            if st.button("⚡ Kanunu Bedesten/Scraping ile Firebase'e Yükle", use_container_width=True):
-                if yuklenen_json is None:
-                    st.error("Lütfen önce kilit.json dosyasını yükleyin!")
-                else:
-                    with st.spinner("Maddeler çekiliyor ve Firebase'e aktarılıyor..."):
-                        try:
-                            import json as _json
-                            credentials_dict = _json.load(yuklenen_json)
-                            if not firebase_admin._apps:
-                                cred = credentials.Certificate(credentials_dict)
-                                firebase_admin.initialize_app(cred)
-                            local_db = firestore.client()
-                            MevzuatBulutEngine.kanunu_buluta_yukle(
-                                hedef_kanun["id"], hedef_kanun["kisaAd"], ozel_db=local_db
-                            )
-                        except Exception as e:
-                            st.error(f"Yükleme Hatası: {str(e)}")
+            if st.button("⚡ Seçilen Kanunu Junilex Yerel Beynine (ChromaDB) Kazı", use_container_width=True):
+                with st.spinner(f"🧠 {hedef_kanun['kisaAd']} maddeleri çözülüyor ve yapay zeka beynine kazınıyor..."):
+                    try:
+                        # Yeni esnek motorumuzu çağırıyoruz (Firebase veya kilit.json bağımlılığı tamamen bitti)
+                        adet = MevzuatBulutEngine.kanunu_buluta_yukle(
+                            id=hedef_kanun["id"], 
+                            kisa_ad=hedef_kanun["kisaAd"]
+                        )
+                        if adet > 0:
+                            st.success(f"🚀 Muhteşem! {adet} adet {hedef_kanun['kisaAd']} maddesi başarıyla Junilex hafızasına işlendi ve kullanıma hazır.")
+                    except Exception as e:
+                        st.error(f"❌ Yerel Vektörleştirme Hatası: {str(e)}")
 
 # 💬 Buradan aşağıya diğer elif secim == "🎓 Akademi (Ders Notları)": vs. sekmelerin devam edebilir dayı...
 # --- MOD 2: AKADEMİ ---
