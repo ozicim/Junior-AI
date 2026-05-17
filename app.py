@@ -372,7 +372,7 @@ st.markdown("""
 # 🧭 DEPARTMAN KONTROL PANELİ (IF-ELIF ZİNCİRİ)
 # ==========================================
 
-elif secim == "🏛️ Adliye (Mevzuat Sorgu)":
+if secim == "🏛️ Adliye (Mevzuat Sorgu)":
     # 1. Başlık ve Açıklama
     st.title("🏛️ Junilex Akıllı Mevzuat Bankası")
     st.markdown(
