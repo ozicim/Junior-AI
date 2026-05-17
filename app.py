@@ -507,7 +507,7 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
         
         ozel_soru = st.text_input("Bu maddeye ilişkin özel bir sorunuz var mı? (İsteğe bağlı)", placeholder="Yapay zekaya sorun...")
         if st.button("🤖 Maddeyi JUNILEX AI ile Analiz Et", use_container_width=True, type="primary"):
-            API_KEY = st.secrets["gemini"]["api_key"] 
+            API_KEY = st.secrets["GEMINI_API_KEY"]
             with st.spinner("JUNILEX yapay zekası maddeyi yorumluyor..."):
                 analiz_sonucu = MevzuatBulutEngine.madde_analiz_et(
                     api_key=API_KEY, madde_metni=madde['metin'], kanun_adi=madde['kanun_adi'], madde_no=madde['madde_no'], soru=ozel_soru
