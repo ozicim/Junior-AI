@@ -9,7 +9,7 @@ from sentence_transformers import SentenceTransformer
 
 YASAL_UYARI = (
     "⚠️ **Bilgi Amaçlıdır:** Bu madde metni Junilex yerel veritabanından getirilmiştir. "
-    "Güncel ve hukuken binding metin için mevzuat.gov.tr adresini kontrol ediniz."
+    "Güncel ve hukuken bağlayıcı metin için mevzuat.gov.tr adresini kontrol ediniz."
 )
 
 class MevzuatBulutEngine:
@@ -17,10 +17,6 @@ class MevzuatBulutEngine:
 
     @classmethod
     def get_kanunlar(cls):
-        """
-        Junilex Platformu İçin Sınıflandırılmış 20 Temel Kanun Listesi.
-        app.py içerisindeki selectbox ve filtreleme menülerini besler.
-        """
         return [
             # --- KAMU HUKUKU ---
             {"id": "2709", "kisaAd": "AY", "isim": "Türkiye Cumhuriyeti Anayasası", "kategori": "🏛️ Kamu Hukuku", "aciklama": "Devletin Temel Yapısı ve Haklar"},
@@ -42,7 +38,7 @@ class MevzuatBulutEngine:
             # --- TİCARET & İŞ HUKUKU ---
             {"id": "6102", "kisaAd": "TTK", "isim": "Türk Ticaret Kanunu", "kategori": "💼 Ticaret & İş Hukuku", "aciklama": "Şirketler, Kıymetli Evrak ve Deniz Ticareti"},
             {"id": "4857", "kisaAd": "İK", "isim": "İş Kanunu", "kategori": "💼 Ticaret & İş Hukuku", "aciklama": "İşçi-İşveren İlişkileri ve Kıdem Tazminatı"},
-            {"id": "6331", "kisaAd": "İSGK", "isim": "İş Sağlığı ve Güvenliği Kanunu", "kategori": "💼 Ticaret & İş Hukuku", "aciklama": "İş Kazaları ve Önleyici Tedbirler"},
+            {"id": "6331", "kisaAd": "İSGK", "isim": "İş Sağlığı ve Güvenliği Kanunu", "kategori": "💼 Ticaret & İş Hukuku", "aciklama": "İş Kazaları ve Önleyici\".Tedbirler"},
             {"id": "5953", "kisaAd": "BİK", "isim": "Basın İş Kanunu", "kategori": "💼 Ticaret & İş Hukuku", "aciklama": "Gazeteciler ve Basın Çalışanları Hakları"},
 
             # --- USUL & İCRA HUKUKU ---
@@ -62,14 +58,9 @@ class MevzuatBulutEngine:
 
     @classmethod
     def kanunu_buluta_yukle(cls, *args, **kwargs):
-        """
-        GENİŞLETİLMİŞ X-RAY TARAYICI: 20 kanunun tamamını otomatik olarak teşhis eder 
-        ve ZIP dosyasından ilgili Kanun No'yu bularak yerel beynine kazır.
-        """
         kanun_id = None
         kisa_ad = None
         
-        # 20 Kanunluk Genişletilmiş Akıllı Eşleşme Haritası
         bilinen_kanunlar = {k["id"]: k["kisaAd"] for k in cls.get_kanunlar()}
         
         tum_degerler = list(args) + list(kwargs.values())
@@ -120,7 +111,7 @@ class MevzuatBulutEngine:
                         break
                         
                 if not hedef_kanun:
-                    st.error(f"❌ {kisa_ad} (Kanun No: {kanun_id}) dev arşivin içinde bulunamadı!")
+                    st.error(f"❌ {kisa_ad} (Kanun No: {kanun_id}) dev arşivde bulunamadı!")
                     return 0
                     
                 maddeler = hedef_kanun.get("maddeler", [])
@@ -161,9 +152,6 @@ class MevzuatBulutEngine:
 
     @classmethod
     def madde_getir_buluttan(cls, *args, **kwargs):
-        """
-        Arama motoru da 20 kanunluk geniş havuzda tam uyumlu çalışır.
-        """
         try:
             kanun_kisa_ad = kwargs.get("kanun_kisa_ad") or kwargs.get("kanun_kisa_ad_bul") or kwargs.get("kisaAd")
             madde_no_tam = kwargs.get("madde_no_tam") or kwargs.get("madde_no") or kwargs.get("girilen_madde")
@@ -247,18 +235,31 @@ class MevzuatBulutEngine:
 
     @classmethod
     def madde_analiz_et(cls, api_key, kanun_kisa_ad, madde_no_tam, madde_metni):
+        """
+        [DÜZELTİLDİ] Gelen GenerateContentResponse zarflarını parçalayıp
+        st.write_stream'in beklediği ham metin parçalarını (string) süzerek iletir.
+        """
         try:
             model = cls._modeli_hazirla(api_key)
-            prompt = f"""Sen Yargıtay Tetkik Hakimisin. Aşağıdaki kanunu analiz et.
-            Mevzuat: {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')}
-            Metin: {madde_metni}
+            prompt = f"""
+            Sen kıdemli bir Yargıtay Tetkik Hakimisin. Aşağıda sana verilen kanun maddesini, 
+            meslektaşların (avukatlar ve hakimler) için yapısal bir şekilde analiz et.
             
-            Başlıklar:
-            - **🎯 Maddenin Amacı:**
-            - **⚖️ Şartlar:**
-            - **🏛️ Yargıtay Eğilimi:**
+            İncelenecek Mevzuat: {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')}
+            Kanun Metni: {madde_metni}
+            
+            Lütfen analizini SADECE şu başlıklar altında yap:
+            - **🎯 Maddenin Amacı ve Korunan Hukuki Yarar:**
+            - **⚖️ Kritik Unsurlar ve Şartlar:**
+            - **🏛️ Uygulama ve Yargıtay Eğilimi (Muhtemel Riskler):**
+            
+            DİKKAT: Analizini tamamen sana verdiğim kanun metnine dayandır. Başka bir madde uydurma.
             """
-            return model.generate_content(prompt, stream=True)
+            response = model.generate_content(prompt, stream=True)
+            
+            # ÜRETEÇ (GENERATOR): Her parçanın sadece içindeki ham yazıyı çeker
+            return (chunk.text for chunk in response if chunk.text)
+            
         except Exception as e:
-            st.error(f"❌ Hata: {str(e)}")
+            st.error(f"❌ AI Analiz Hatası: {str(e)}")
             return None
