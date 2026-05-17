@@ -518,14 +518,6 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
     if st.session_state.get("aktif_kullanici") == "Ozan Şahin Sicim":
         st.write("<br><br><br>", unsafe_allow_html=True)
         with st.expander("🔑 JUNILEX Geliştirici — Kalıcı Hafızaya Kazıma Paneli", expanded=False):
-            st.markdown("""
-            <small>
-            <b>Yeni Vektör Sistemi (RAG):</b> Kanunlar artık maliyetli Firebase sunucularına değil, 
-            tamamen ücretsiz ve ışık hızındaki yerel vektör beynine (ChromaDB) yüklenir.<br>
-            Sistem GitHub'a attığınız <code>mevzuat_arsiv.zip</code> dosyasını açarak maddeleri ayıklar ve yapay zeka için sayısal kodlara dönüştürülür.
-            </small>
-            """, unsafe_allow_html=True)
-
             hedef_kanun_adi = st.selectbox(
                 "Yapay Zeka Hafızasına Alınacak Kanun",
                 options=[k["isim"] for k in kanun_listesi],
