@@ -512,7 +512,7 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
             use_container_width=True,
             type="primary",
         ):
-            API_KEY = st.secrets["gemini"]["api_key"]
+            API_KEY = st.secrets["GEMINI_API_KEY"]
             with st.spinner("JUNILEX yapay zekası maddeyi yorumluyor..."):
                 analiz_sonucu = MevzuatBulutEngine.madde_analiz_et(
                     api_key=API_KEY,
