@@ -383,7 +383,7 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
     st.header("⚖️ JUNILEX Adliye - Mevzuat Araştırma Merkezi")
 
     # ⚖️ YASAL UYARI — HER ZAMAN GÖRÜNÜR
-    from mevzuat_engine import YASAL_UYARI
+    
     st.warning(YASAL_UYARI)
 
     kanun_listesi = MevzuatBulutEngine.get_kanunlar()
