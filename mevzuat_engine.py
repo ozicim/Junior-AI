@@ -9,7 +9,7 @@ YASAL_UYARI = (
 )
 
 
-]
+
 
 class MevzuatBulutEngine:
     _model = None
