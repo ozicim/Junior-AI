@@ -8,18 +8,11 @@ YASAL_UYARI = (
     "Güncel ve hukuken bağlayıcı metin için mevzuat.gov.tr adresini kontrol ediniz."
 )
 
-
-
-
 class MevzuatBulutEngine:
     _model = None
 
     @classmethod
     def get_kanunlar(cls):
-        """
-        app.py içerisindeki selectbox ve arayüz elemanlarının 
-        beklediği Sözlük formatında ve eksiksiz kanun listesini döner.
-        """
         return [
             {"id": "5237", "kisaAd": "TCK", "isim": "Türk Ceza Kanunu", "kategori": "Ceza Hukuku", "aciklama": "Temel Ceza Mevzuatı"},
             {"id": "5271", "kisaAd": "CMK", "isim": "Ceza Muhakemesi Kanunu", "kategori": "Ceza Hukuku", "aciklama": "Yargılama Usulleri"},
@@ -37,12 +30,23 @@ class MevzuatBulutEngine:
         return cls._model
 
     @classmethod
+    def kanunu_buluta_yukle(cls, *args, **kwargs):
+        """
+        app.py içindeki Yükleme Panelinin çökmesini engeller.
+        Eski Selenium yapısını devreden çıkardığımız için sadece uyarı verir.
+        """
+        st.error("⚠️ **Sistem Uyarı:** Canlı web kazıma devredışı bırakılmıştır! Kanunları sisteme eklemek için lütfen terminalden `python yerel_yukleyici.py` komutunu çalıştırın.")
+        return 0
+
+    @classmethod
     def madde_getir_buluttan(cls, kanun_kisa_ad: str, madde_no_tam: str):
+        """
+        app.py'nin çökmemesi için string yerine DİCT (Sözlük) döndürür.
+        """
         try:
             chroma_client = chromadb.PersistentClient(path="./junilex_vector_db")
             collection = chroma_client.get_collection(name="turk_mevzuati")
             
-            # --- AKILLI FİLTRELEME: Arayüzden gelen ID'yi çözümleme ---
             istenen_tur = "normal"
             istenen_sayi = str(madde_no_tam).upper()
             
@@ -53,12 +57,11 @@ class MevzuatBulutEngine:
                 istenen_tur = "ek"
                 istenen_sayi = istenen_sayi.split("_")[1]
 
-            # O kanunun tüm maddelerini yerel hafızadan getir
             sonuclar = collection.get(where={"kanun": {"$eq": kanun_kisa_ad}})
             
             if not sonuclar or not sonuclar['documents']:
-                st.warning(f"⚠️ {kanun_kisa_ad} yerel veritabanında bulunamadı.")
-                return None
+                # Sözlük olarak döndürüyoruz ki app.py .get("metin") yaparken patlamasın
+                return {"no": madde_no_tam, "baslik": "Veritabanı Boş", "metin": f"⚠️ {kanun_kisa_ad} henüz Junilex'in yerel beynine yüklenmemiş. Lütfen terminalden JSON dosyasını yükleyin."}
                 
             bulunan_metin = None
             
@@ -83,7 +86,6 @@ class MevzuatBulutEngine:
                             bulunan_metin = metin
                             break
 
-            # Fallback mantığı
             if not bulunan_metin:
                 for metin, meta in zip(sonuclar['documents'], sonuclar['metadatas']):
                     if str(meta.get("madde", "")) == str(madde_no_tam):
@@ -91,18 +93,17 @@ class MevzuatBulutEngine:
                         break
 
             if bulunan_metin:
-                st.success("✅ Madde yerel veritabanından akıllı filtre ile getirildi!")
-                st.markdown(f"### {kanun_kisa_ad} - Madde {str(madde_no_tam).replace('_', ' ')}")
-                st.info(bulunan_metin)
-                st.caption(YASAL_UYARI)
-                return bulunan_metin
+                # Başarılı sonuç da sözlük formatında dönüyor
+                return {
+                    "no": str(madde_no_tam),
+                    "baslik": f"{kanun_kisa_ad} - Madde {str(madde_no_tam).replace('_', ' ')}",
+                    "metin": bulunan_metin + f"\n\n{YASAL_UYARI}"
+                }
             else:
-                st.warning(f"⚠️ {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')} bulunamadı. Lütfen yerel veritabanınızı kontrol edin.")
-                return None
+                return {"no": madde_no_tam, "baslik": "Madde Eksik", "metin": f"⚠️ {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')} veritabanında (JSON) eksik."}
                 
         except Exception as e:
-            st.error(f"❌ Yerel veritabanı bağlantı hatası: {e}")
-            return None
+            return {"no": "HATA", "baslik": "Sistem Hatası", "metin": f"❌ Yerel veritabanı bağlantı hatası: {e}"}
 
     @classmethod
     def madde_analiz_et(cls, api_key, kanun_kisa_ad, madde_no_tam, madde_metni):
