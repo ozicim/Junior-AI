@@ -9,16 +9,15 @@ from firebase_admin import credentials, firestore
 
 class AkademikEngine:
     db = None
+    _hoca_model = None
+    _configured_key = None
     
     @classmethod
     def veritabanini_baslat(cls):
         if not firebase_admin._apps:
-            # DİKKAT: Artık dosya yolu değil, Secrets içindeki sözlüğü veriyoruz
             try:
-                # Streamlit secrets içindeki bilgileri bir sözlük (dict) olarak alıyoruz
                 firebase_info = dict(st.secrets["firebase_credentials"])
                 
-                # private_key içindeki \n karakterlerini düzeltmemiz gerekebilir
                 if "private_key" in firebase_info:
                     firebase_info["private_key"] = firebase_info["private_key"].replace("\\n", "\n")
                 
@@ -27,15 +26,25 @@ class AkademikEngine:
             except Exception as e:
                 st.error(f"Secrets üzerinden Firebase başlatılamadı: {e}")
                 
-        if not cls.db:
+        if cls.db is None:
             cls.db = firestore.client()
 
     @classmethod
+    def _modeli_hazirla(cls, api_key):
+        """Modeli cache'le — her analizde yeniden oluşturma"""
+        if cls._configured_key != api_key:
+            genai.configure(api_key=api_key)
+            cls._configured_key = api_key
+            cls._hoca_model = None
+
+        if cls._hoca_model is None:
+            cls._hoca_model = genai.GenerativeModel('models/gemini-2.5-flash')
+
+        return cls._hoca_model
+
+    @classmethod
     def get_akademik_mufredat(cls):
-        """
-        Dersleri sınıflara göre gruplandıran ana kütüphane.
-        Ustam, sen listeyi attığında burayı saniyeler içinde güncelleyeceğiz.
-        """
+        """Dersleri sınıflara göre gruplandıran ana kütüphane."""
         return {
             "1. Sınıf": [
                 {"id": "hukuk_baslangici", "isim": "Hukuk Başlangıcı", "ikon": "📜"},
@@ -125,7 +134,7 @@ class AkademikEngine:
             docs = db.collection("ders_notlari").where("dosya_adi", "==", dosya_adi).stream()
             for doc in docs:
                 veri = doc.to_dict()
-                return veri.get("metin", "") # Metni geri döndür
+                return veri.get("metin", "")
             return ""
         except Exception as e:
             print(f"Metin çekme hatası: {e}")
@@ -142,15 +151,13 @@ class AkademikEngine:
             return metin
         else:
             return str(yuklenen_dosya.read(), "utf-8")
+
     @classmethod
     def notlarla_ai_hoca_anlat(cls, api_key, konu_adi, ders_notu_metni):
         """Yüklenen ders notlarını baz alarak bir Profesör gibi konu anlatımı yapar."""
         try:
-            genai.configure(api_key=api_key)
-            # Senin sisteminde çalışan tam model ismi
-            model = genai.GenerativeModel('models/gemini-2.5-flash')
-            
-            # Parametre isimlerini prompt içindekilerle eşitledik
+            model = cls._modeli_hazirla(api_key)
+
             prompt = f"""
             SEN KIDEMLİ BİR HUKUK PROFESÖRÜSÜN. Kürsüdesin ve karşında hukuk öğrencileri var.
             Konu: {konu_adi}
@@ -177,7 +184,6 @@ class AkademikEngine:
             
             response = model.generate_content(prompt)
             
-            # Güvenli yanıt kontrolü
             if response and hasattr(response, 'candidates') and len(response.candidates) > 0:
                 try:
                     return response.text
@@ -189,13 +195,9 @@ class AkademikEngine:
         except Exception as e:
             return f"Hoca notları okuyamadı: {str(e)}"
 
-        except Exception as e:
-            return f"Hoca odasında bulunamadı: {str(e)}"
     @classmethod
     def mufredat_hoca_anlat(cls, gemini_key, serper_key, ders, konu, ek_not=""):
-        """
-        Müfredat konularını bir Profesör edasıyla, doktrin ağırlıklı anlatan motor.
-        """
+        """Müfredat konularını bir Profesör edasıyla, doktrin ağırlıklı anlatan motor."""
         try:
             # 1. SERPER İLE AKADEMİK KAYNAK TARAMASI
             url = "https://google.serper.dev/search"
@@ -211,11 +213,10 @@ class AkademikEngine:
             for result in search_results.get('organic', []):
                 context += f"\nKaynak: {result.get('title')}\nÖzet: {result.get('snippet')}\n"
 
-            # 2. GEMINI YAPILANDIRMASI (Senin 2.5-Flash modelinle)
-            genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel('models/gemini-2.5-flash')
+            # 2. GEMINI YAPILANDIRMASI
+            model = cls._modeli_hazirla(gemini_key)
 
-            # 3. PROFESÖR PROMPTU (İçtihatsız, Sadece Teori ve Doktrin)
+            # 3. PROFESÖR PROMPTU
             prompt = f"""
             SEN KIDEMLİ BİR HUKUK PROFESÖRÜSÜN. Kürsüdesin ve karşında hukuk öğrencileri var.
             Ders: {ders} | Konu: {konu}
@@ -241,7 +242,6 @@ class AkademikEngine:
             
             response = model.generate_content(prompt)
             
-            # 4. GÜVENLİ YANIT DÖNDÜRME
             if response and hasattr(response, 'candidates') and len(response.candidates) > 0:
                 try:
                     return response.text
