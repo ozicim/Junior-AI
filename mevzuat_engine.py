@@ -30,16 +30,30 @@ class MevzuatBulutEngine:
         return cls._model
 
     @classmethod
-    def kanunu_buluta_yukle(cls, db, kanun_id, kisa_ad, tam_ad):
+    def kanunu_buluta_yukle(cls, *args, **kwargs):
         """
-        Arayüzdeki Yükleme butonuna basıldığında, GitHub reposundaki .json dosyasını okur
-        ve Junilex'in yerel beynine (ChromaDB) işler. (Terminal Gerektirmez)
+        app.py'den gelen tüm parametre yapılarına (*args, **kwargs) tam uyum sağlar.
+        ozel_db veya db gibi isimlendirme çakışmalarından etkilenmez.
         """
         import json
         import os
         from sentence_transformers import SentenceTransformer
         
-        dosya_adi = f"{kisa_ad.lower()}.json" # Örn: tck.json
+        # app.py içerisinden gelebilecek tüm olası anahtar kelimeleri esnekçe tarıyoruz
+        kisa_ad = kwargs.get("kisa_ad") or kwargs.get("kisaAd") or kwargs.get("kisa_ad_bul")
+        
+        # Eğer isimle değil de sıralı (positional) gönderildiyse yerinden tahmin ediyoruz
+        if not kisa_ad:
+            if len(args) >= 3:
+                kisa_ad = args[2] # Yaygın sıra: (db, id, kisa_ad, tam_ad)
+            elif len(args) == 2:
+                kisa_ad = args[1]
+                
+        if not kisa_ad:
+            st.error("❌ Kritik Hata: Yüklenmek istenen kanunun kısa adı (TCK, TBK vb.) kod içerisinden ayıklanamadı.")
+            return 0
+            
+        dosya_adi = f"{str(kisa_ad).lower()}.json" # Örn: tck.json
         
         if not os.path.exists(dosya_adi):
             st.error(f"⚠️ {dosya_adi} dosyası bulunamadı! Lütfen GitHub üzerinden projenize {dosya_adi} adında bir dosya ekleyip içine maddeleri yapıştırın.")
@@ -50,7 +64,7 @@ class MevzuatBulutEngine:
                 chroma_client = chromadb.PersistentClient(path="./junilex_vector_db")
                 collection = chroma_client.get_or_create_collection(name="turk_mevzuati")
                 
-                # Sadece bu işlem sırasında modeli yüklüyoruz ki normal zamanda rami yormasın
+                # Bellek optimizasyonu için modeli sadece ihtiyaç anında yüklüyoruz
                 embedding_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
                 
                 with open(dosya_adi, "r", encoding="utf-8") as f:
@@ -64,7 +78,6 @@ class MevzuatBulutEngine:
                 for sira, madde in enumerate(kanun_verisi):
                     madde_no = str(madde.get("madde_no", ""))
                     icerik = madde.get("icerik", "")
-                    # Aramalarda kanun adı ve madde numarasını da hesaba katması için
                     aranacak_metin = f"{kisa_ad} Madde {madde_no}: {icerik}"
                     
                     ids.append(f"{kisa_ad}_{madde_no}_{sira}")
@@ -87,8 +100,22 @@ class MevzuatBulutEngine:
                 return 0
 
     @classmethod
-    def madde_getir_buluttan(cls, kanun_kisa_ad: str, madde_no_tam: str):
+    def madde_getir_buluttan(cls, *args, **kwargs):
+        """
+        Aynı esnekliği arama motoruna da entegre ediyoruz ki app.py çağrıları asla kırılmasın.
+        """
         try:
+            kanun_kisa_ad = kwargs.get("kanun_kisa_ad") or kwargs.get("kanun_kisa_ad_bul")
+            madde_no_tam = kwargs.get("madde_no_tam") or kwargs.get("madde_no")
+            
+            if not kanun_kisa_ad and len(args) >= 1:
+                kanun_kisa_ad = args[0]
+            if not madde_no_tam and len(args) >= 2:
+                madde_no_tam = args[1]
+                
+            if not kanun_kisa_ad or not madde_no_tam:
+                return {"no": "BİLİNMEYEN", "baslik": "Hata", "metin": "❌ Eksik parametre gönderildi."}
+
             chroma_client = chromadb.PersistentClient(path="./junilex_vector_db")
             collection = chroma_client.get_collection(name="turk_mevzuati")
             
