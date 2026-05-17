@@ -8,8 +8,26 @@ YASAL_UYARI = (
     "Güncel ve hukuken bağlayıcı metin için mevzuat.gov.tr adresini kontrol ediniz."
 )
 
+# Orijinal app.py ve yerel_yukleyici.py ile tam uyumlu sabit kanun listesi
+KANUNLAR = [
+    ("5237", "TCK", "Türk Ceza Kanunu"),
+    ("5271", "CMK", "Ceza Muhakemesi Kanunu"),
+    ("4721", "TMK", "Türk Medeni Kanunu"),
+    ("6098", "TBK", "Türk Borçlar Kanunu"),
+    ("6102", "TTK", "Türk Ticaret Kanunu"),
+    ("4857", "İK", "İş Kanunu"),
+]
+
 class MevzuatBulutEngine:
     _model = None
+
+    @classmethod
+    def get_kanunlar(cls):
+        """
+        app.py içerisindeki selectbox ve arayüz elemanlarının 
+        çökmesini engelleyen, sistemdeki kayıtlı kanunları dönen fonksiyon.
+        """
+        return KANUNLAR
 
     @classmethod
     def _modeli_hazirla(cls, api_key):
@@ -25,7 +43,6 @@ class MevzuatBulutEngine:
             collection = chroma_client.get_collection(name="turk_mevzuati")
             
             # --- AKILLI FİLTRELEME: Arayüzden gelen ID'yi çözümleme ---
-            # Kullanıcı arayüzünden "1", "GECİCİ_1" veya "EK_1" formatında veri gelir
             istenen_tur = "normal"
             istenen_sayi = str(madde_no_tam).upper()
             
@@ -36,7 +53,7 @@ class MevzuatBulutEngine:
                 istenen_tur = "ek"
                 istenen_sayi = istenen_sayi.split("_")[1]
 
-            # O kanunun tüm maddelerini yerel hafızadan getir (0.01 sn sürer)
+            # O kanunun tüm maddelerini yerel hafızadan getir
             sonuclar = collection.get(where={"kanun": {"$eq": kanun_kisa_ad}})
             
             if not sonuclar or not sonuclar['documents']:
@@ -47,33 +64,26 @@ class MevzuatBulutEngine:
             
             for metin, meta in zip(sonuclar['documents'], sonuclar['metadatas']):
                 db_madde_no = str(meta.get("madde", "")).upper()
-                metin_baslik = metin[:100].upper() # Metnin sadece başını kontrol ediyoruz
+                metin_baslik = metin[:100].upper()
                 
-                # Veritabanındaki numaradan sadece rakamı al (JSON "Geçici 1" olarak kaydetmiş olabilir)
                 rakam_eslesmesi = re.findall(r'\d+', db_madde_no)
                 db_rakam = rakam_eslesmesi[0] if rakam_eslesmesi else db_madde_no
                 
-                # Sadece numaralar eşleşiyorsa tür analizi yap
                 if db_rakam == istenen_sayi:
                     if istenen_tur == "normal":
-                        # Normal isteniyorsa, içinde GEÇİCİ veya EK kelimeleri KESİNLİKLE geçmemeli
                         if "GEÇİCİ" not in db_madde_no and "GEÇİCİ" not in metin_baslik and "EK MADDE" not in metin_baslik:
                             bulunan_metin = metin
                             break
-                            
                     elif istenen_tur == "gecici":
-                        # Geçici isteniyorsa, metnin başında veya numarasında mutlaka GEÇİCİ yazmalı
                         if "GEÇİCİ" in db_madde_no or "GECİCİ" in db_madde_no or "GEÇİCİ" in metin_baslik:
                             bulunan_metin = metin
                             break
-                            
                     elif istenen_tur == "ek":
-                        # Ek Madde isteniyorsa EK yazmalı
                         if "EK" in db_madde_no or "EK MADDE" in metin_baslik:
                             bulunan_metin = metin
                             break
 
-            # Katı filtre bulamazsa (çok bozuk bir JSON ise) direkt eşleşmeye dön (Fallback)
+            # Fallback mantığı
             if not bulunan_metin:
                 for metin, meta in zip(sonuclar['documents'], sonuclar['metadatas']):
                     if str(meta.get("madde", "")) == str(madde_no_tam):
@@ -87,7 +97,7 @@ class MevzuatBulutEngine:
                 st.caption(YASAL_UYARI)
                 return bulunan_metin
             else:
-                st.warning(f"⚠️ {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')} bulunamadı. JSON dosyanızda bu madde eksik olabilir.")
+                st.warning(f"⚠️ {kanun_kisa_ad} Madde {str(madde_no_tam).replace('_', ' ')} bulunamadı. Lütfen yerel veritabanınızı kontrol edin.")
                 return None
                 
         except Exception as e:
