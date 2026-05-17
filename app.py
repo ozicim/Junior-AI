@@ -4,7 +4,7 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from akademik_engine import AkademikEngine
-from mevzuat_engine import MevzuatBulutEngine
+from mevzuat_engine import MevzuatBulutEngine, YASAL_UYARI
 from dilekce_engine import DilekceEngine
 from akademik_sinav_modu import AkademikSinavEngine
 from ictihat_engine import IctihatEngine
