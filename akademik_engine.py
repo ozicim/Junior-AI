@@ -5,6 +5,8 @@ import io
 import json
 import requests
 import streamlit as st
+import os
+import zipfile
 from firebase_admin import credentials, firestore
 
 class AkademikEngine:
@@ -195,46 +197,65 @@ class AkademikEngine:
         except Exception as e:
             return f"Hoca notları okuyamadı: {str(e)}"
 
+    # ============================================================
+    # [YENİ EKLENDİ] - ZIP'TEN MÜFREDAT NOTU BULMA MOTORU
+    # ============================================================
+    @classmethod
+    def zip_arsivinden_not_bul(cls, konu):
+        """Colab ile hazırlanan akademi_notlari.zip dosyasından içeriği okur."""
+        zip_dosya_adi = "akademi_notlari.zip"
+        ic_dosya_adi = "akademi_notlari.json"
+        
+        if not os.path.exists(zip_dosya_adi):
+            return "⚠️ Junilex Akademi Arşivi (akademi_notlari.zip) bulunamadı! Lütfen GitHub reponuza yükleyin."
+            
+        try:
+            with zipfile.ZipFile(zip_dosya_adi, 'r') as z:
+                with z.open(ic_dosya_adi) as f:
+                    tum_notlar = json.loads(f.read().decode('utf-8'))
+                    
+            aranan_konu = konu.lower().strip()
+            
+            for not_item in tum_notlar:
+                db_konu = not_item.get("konu_basligi", "").lower()
+                if aranan_konu in db_konu or db_konu in aranan_konu:
+                    return not_item.get("ders_notu", "")
+                    
+            return "⚠️ Bu konuya ait arşivlenmiş ders notu bulunamadı. Lütfen not havuzunu güncelleyin."
+        except Exception as e:
+            return f"⚠️ Arşiv okuma hatası: {str(e)}"
+
     @classmethod
     def mufredat_hoca_anlat(cls, gemini_key, serper_key, ders, konu, ek_not=""):
-        """Müfredat konularını bir Profesör edasıyla, doktrin ağırlıklı anlatan motor."""
+        """Müfredat konularını internetten değil, doğrudan yüklenen ZIP dosyasından okuyarak anlatan motor."""
         try:
-            # 1. SERPER İLE AKADEMİK KAYNAK TARAMASI
-            url = "https://google.serper.dev/search"
-            payload = json.dumps({
-                "q": f"{ders} {konu} hukuku ders notları doktrin tartışmaları",
-                "gl": "tr", "hl": "tr"
-            })
-            headers = {'X-API-KEY': serper_key, 'Content-Type': 'application/json'}
-            search_response = requests.request("POST", url, headers=headers, data=payload)
-            search_results = search_response.json()
-
-            context = ""
-            for result in search_results.get('organic', []):
-                context += f"\nKaynak: {result.get('title')}\nÖzet: {result.get('snippet')}\n"
+            # 1. SERPER YERİNE ZIP DOSYASINDAN BİLGİ ÇEKİYORUZ
+            arsiv_notu = cls.zip_arsivinden_not_bul(konu)
 
             # 2. GEMINI YAPILANDIRMASI
             model = cls._modeli_hazirla(gemini_key)
 
-            # 3. PROFESÖR PROMPTU
+            # 3. PROFESÖR PROMPTU (Sadece Arşive Sadık Kalacak Şekilde Düzenlendi)
             prompt = f"""
             SEN KIDEMLİ BİR HUKUK PROFESÖRÜSÜN. Kürsüdesin ve karşında hukuk öğrencileri var.
             Ders: {ders} | Konu: {konu}
             
+            ELİNDEKİ JUNILEX DERS ARŞİVİ (Bu dersi aşağıdaki notlara göre anlatacaksın):
+            {arsiv_notu}
+            
             GÖREVİN:
-            Bu konuyu bir 'İçtihat Arama Motoru' gibi değil, bir AKADEMİSYEN gibi anlat. 
+            Bu konuyu, İNTERNETTEN BİLGİ UYDURMADAN sadece elindeki 'Junilex Ders Arşivi'ni temel alarak bir AKADEMİSYEN gibi anlat. 
             Yargıtay kararlarından ziyade kanunun ruhuna, doktrindeki tartışmalara ve teorik temellere odaklan.
 
             ANLATIM TARZI:
             - "Hukuki niteliği şudur...", "Doktrinde baskın görüş...", "Kanun koyucunun amacı..." gibi akademik kalıplar kullan.
             - Konuyu öğrencinin anlayacağı şekilde derinleştir ama ciddiyeti bozma.
             - Varsa öğrencinin özel notunu dikkate al: {ek_not}
-            - Şu akademik verileri sentezle: {context}
 
             FORMAT (Sadece bu başlıkları kullan):
             ### 🏛️ {konu.upper()} - KÜRSÜ NOTLARI
             **1. Konunun Teorik Temeli:** Bu kurumun hukuk sistemindeki yeri ve mantığı nedir?
-            **2. Doktrindeki Tartışmalar:** Yazarlar ve hocalar bu konuda hangi noktalarda ayrılıyor?
+            **2. Doktrindeki Tartışmalar:** Arşiv notunda geçen veya bu konudaki akademik ayrışmalar nelerdir?
             **3. Kanunun Ruhu ve Analiz:** Maddenin lafzı ne der, ruhu neyi amaçlar?
             **💡 Hocanın Notu (Sınav Tüyosu):** Öğrenci bu konunun en çok neresine dikkat etmeli? Sınavda nereden vururlar?
             **📚 İleri Okuma Önerisi:** Hangi hocanın kitabına veya hangi kavramlara bakılmalı?
