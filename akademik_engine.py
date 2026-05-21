@@ -261,15 +261,14 @@ class AkademikEngine:
             **📚 İleri Okuma Önerisi:** Hangi hocanın kitabına veya hangi kavramlara bakılmalı?
             """
             
-            response = model.generate_content(prompt)
+            # 🔥 İŞTE SİHİR BURADA: Metni tek blok halinde değil, kelime kelime (stream=True) istiyoruz!
+            response = model.generate_content(prompt, stream=True)
             
-            if response and hasattr(response, 'candidates') and len(response.candidates) > 0:
-                try:
-                    return response.text
-                except (ValueError, AttributeError):
-                    return "⚠️ Hoca bugün biraz yorgun, akademik içerik oluşturulamadı."
-            else:
-                return "⚠️ Kürsü boş kaldı, model yanıt üretemedi."
+            # Gelen kelimeleri sırayla app.py'ye fırlatıyoruz (Generator yapısı)
+            return (chunk.text for chunk in response if chunk.text)
 
         except Exception as e:
-            return f"Hoca odasında bulunamadı (Teknik Hata): {str(e)}"
+            # Hata durumunda da akışın çökmemesi için sahte bir akış döndürüyoruz
+            def hata_generator():
+                yield f"⚠️ Hoca odasında bulunamadı (Teknik Hata): {str(e)}"
+            return hata_generator()
