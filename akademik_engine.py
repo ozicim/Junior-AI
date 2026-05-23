@@ -201,74 +201,65 @@ class AkademikEngine:
     # [YENİ EKLENDİ] - ZIP'TEN MÜFREDAT NOTU BULMA MOTORU
     # ============================================================
     @classmethod
-    def zip_arsivinden_not_bul(cls, konu):
-        """Colab ile hazırlanan akademi_notlari.zip dosyasından içeriği okur."""
+    def zip_arsivinden_not_bul(cls, ders_adi):
+        """Seçilen derse ait notları arşivden çeker ve token sınırını korur."""
         zip_dosya_adi = "akademi_notlari.zip"
         ic_dosya_adi = "akademi_notlari.json"
         
         if not os.path.exists(zip_dosya_adi):
-            return "⚠️ Junilex Akademi Arşivi (akademi_notlari.zip) bulunamadı! Lütfen GitHub reponuza yükleyin."
+            return "⚠️ Junilex Akademi Arşivi (akademi_notlari.zip) bulunamadı!"
             
         try:
             with zipfile.ZipFile(zip_dosya_adi, 'r') as z:
                 with z.open(ic_dosya_adi) as f:
                     tum_notlar = json.loads(f.read().decode('utf-8'))
                     
-            aranan_konu = konu.lower().strip()
+            aranan_ders = ders_adi.lower().strip()
+            bulunan_notlar = []
             
             for not_item in tum_notlar:
-                db_konu = not_item.get("konu_basligi", "").lower()
-                if aranan_konu in db_konu or db_konu in aranan_konu:
-                    return not_item.get("ders_notu", "")
+                db_ders = not_item.get("ders_adi", "").lower()
+                if aranan_ders in db_ders or db_ders in aranan_ders:
+                    bulunan_notlar.append(not_item.get("ders_notu", ""))
                     
-            return "⚠️ Bu konuya ait arşivlenmiş ders notu bulunamadı. Lütfen not havuzunu güncelleyin."
+            if bulunan_notlar:
+                # Kotayı patlatmamak için notları birleştirip maksimum 25.000 karakterini alıyoruz
+                birlesik_not = "\n\n--- BAŞKA BİR NOT ---\n\n".join(bulunan_notlar)
+                return birlesik_not[:25000]
+                
+            return "⚠️ Bu derse ait arşivlenmiş ders notu bulunamadı."
         except Exception as e:
             return f"⚠️ Arşiv okuma hatası: {str(e)}"
 
     @classmethod
-    def mufredat_hoca_anlat(cls, gemini_key, serper_key, ders, konu, ek_not=""):
-        """Müfredat konularını internetten değil, doğrudan yüklenen ZIP dosyasından okuyarak anlatan motor."""
+    def mufredat_hoca_anlat(cls, gemini_key, serper_key, ders, soru):
+        """Ders notlarını baz alarak öğrencinin sorusunu yanıtlar."""
         try:
-            # 1. SERPER YERİNE ZIP DOSYASINDAN BİLGİ ÇEKİYORUZ
-            arsiv_notu = cls.zip_arsivinden_not_bul(konu)
-
-            # 2. GEMINI YAPILANDIRMASI
+            arsiv_notu = cls.zip_arsivinden_not_bul(ders)
             model = cls._modeli_hazirla(gemini_key)
 
-            # 3. PROFESÖR PROMPTU (Sadece Arşive Sadık Kalacak Şekilde Düzenlendi)
             prompt = f"""
-            SEN KIDEMLİ BİR HUKUK PROFESÖRÜSÜN. Kürsüdesin ve karşında hukuk öğrencileri var.
-            Ders: {ders} | Konu: {konu}
+            SEN KIDEMLİ BİR HUKUK PROFESÖRÜSÜN.
+            Ders: {ders}
             
-            ELİNDEKİ JUNILEX DERS ARŞİVİ (Bu dersi aşağıdaki notlara göre anlatacaksın):
+            ÖĞRENCİNİN SORUSU / TALEBİ:
+            {soru}
+            
+            ELİNDEKİ JUNILEX DERS ARŞİVİ (Sadece bu bilgileri kullanarak yanıtla):
             {arsiv_notu}
             
             GÖREVİN:
-            Bu konuyu, İNTERNETTEN BİLGİ UYDURMADAN sadece elindeki 'Junilex Ders Arşivi'ni temel alarak bir AKADEMİSYEN gibi anlat. 
-            Yargıtay kararlarından ziyade kanunun ruhuna, doktrindeki tartışmalara ve teorik temellere odaklan.
+            Öğrencinin sorusunu, İNTERNETTEN BİLGİ UYDURMADAN sadece elindeki 'Junilex Ders Arşivi'ni temel alarak bir AKADEMİSYEN gibi yanıtla. 
+            Arşivde soruyla ilgili bilgi yoksa "Arşivimde bu konuya dair not bulunmuyor" diyerek dürüst ol.
 
-            ANLATIM TARZI:
-            - "Hukuki niteliği şudur...", "Doktrinde baskın görüş...", "Kanun koyucunun amacı..." gibi akademik kalıplar kullan.
-            - Konuyu öğrencinin anlayacağı şekilde derinleştir ama ciddiyeti bozma.
-            - Varsa öğrencinin özel notunu dikkate al: {ek_not}
-
-            FORMAT (Sadece bu başlıkları kullan):
-            ### 🏛️ {konu.upper()} - KÜRSÜ NOTLARI
-            **1. Konunun Teorik Temeli:** Bu kurumun hukuk sistemindeki yeri ve mantığı nedir?
-            **2. Doktrindeki Tartışmalar:** Arşiv notunda geçen veya bu konudaki akademik ayrışmalar nelerdir?
-            **3. Kanunun Ruhu ve Analiz:** Maddenin lafzı ne der, ruhu neyi amaçlar?
-            **💡 Hocanın Notu (Sınav Tüyosu):** Öğrenci bu konunun en çok neresine dikkat etmeli? Sınavda nereden vururlar?
-            **📚 İleri Okuma Önerisi:** Hangi hocanın kitabına veya hangi kavramlara bakılmalı?
+            FORMAT:
+            Öğrencinin sorusuna doğrudan ve akademik bir dille cevap ver. Gereksiz şablon başlıkları kullanma, doğrudan yanıtı yapılandır.
             """
             
-            # 🔥 İŞTE SİHİR BURADA: Metni tek blok halinde değil, kelime kelime (stream=True) istiyoruz!
             response = model.generate_content(prompt, stream=True)
-            
-            # Gelen kelimeleri sırayla app.py'ye fırlatıyoruz (Generator yapısı)
             return (chunk.text for chunk in response if chunk.text)
 
         except Exception as e:
-            # Hata durumunda da akışın çökmemesi için sahte bir akış döndürüyoruz
             def hata_generator():
                 yield f"⚠️ Hoca odasında bulunamadı (Teknik Hata): {str(e)}"
             return hata_generator()
