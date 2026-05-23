@@ -553,11 +553,6 @@ elif secim == "🎓 Akademi (Ders Notları)":
         # İkon ve isim birleştirerek listeye ekle (Örn: "📜 Hukuk Başlangıcı")
             ders_listesi.append(f"{ders['ikon']} {ders['isim']}")
             
-    konu_listesi = ["Genel Tanımlar", "Hoca Notları", "Özet Analiz"]
-    
-   # ==========================================
-    # 1. SEKME: MÜFREDAT (Ders Listesi)
-    # ==========================================
     # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
@@ -600,7 +595,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
                     sonuc = st.write_stream(cevap_generator)
                         
                     if sonuc and not sonuc.startswith("⚠️"):
-                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
+                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 800)
                         st.session_state.akademi_aktif_sayfa = 0
                         st.success("✅ Hoca yanıtladı! Cevabı aşağıdan okuyabilirsiniz.")
                     else:
