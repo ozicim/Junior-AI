@@ -586,7 +586,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
                     sonuc = st.write_stream(cevap_generator)
                         
                     if sonuc and not sonuc.startswith("⚠️"):
-                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
+                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 800)
                         st.session_state.akademi_aktif_sayfa = 0
                         st.success("✅ Hoca yanıtladı! Cevabı aşağıdan okuyabilirsiniz.")
                     else:
@@ -629,7 +629,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
             st.markdown(f"""
             <div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #2c3e50; font-family: 'Georgia', serif;">
                 <div style="font-size: 12px; color: #2e7d32; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 1px solid #e0dcd0; padding-bottom: 10px;">
-                    🎓 AKADEMİK ANALİZ ŞERHİ - Sayfa {aktif + 1}
+                    🎓 AKADEMİK ANALİZ - Sayfa {aktif + 1}
                 </div>
                 <div style="font-size: 18px; line-height: 1.8; text-align: justify;">
                     {icerik.replace("\n", "<br>")}
