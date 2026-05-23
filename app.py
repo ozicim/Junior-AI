@@ -555,13 +555,13 @@ elif secim == "🎓 Akademi (Ders Notları)":
             
     konu_listesi = ["Genel Tanımlar", "Hoca Notları", "Özet Analiz"]
     
-    # ==========================================
+   # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
-   with tab_mufredat:
+    with tab_mufredat:
         st.subheader("📚 Ders Seçimi ve Soru")
             
-         # Sadece ders seçimi kaldı (Tek sütun)
+        # Sadece ders seçimi kaldı (Tek sütun)
         secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi, key="akademi_ders_v3")
             
         # Soru sorma zorunlu hale geldi
@@ -591,8 +591,9 @@ elif secim == "🎓 Akademi (Ders Notları)":
                         st.success("✅ Hoca yanıtladı! Cevabı aşağıdan okuyabilirsiniz.")
                     else:
                         st.error("AI bir sonuç döndürmedi.")
-                 except Exception as e:
+                except Exception as e:
                     st.error(f"Hoca derse giremedi ustam: {e}")
+
         # --- DİJİTAL KİTAP GÖRÜNÜMÜ (PRESTİGE ŞERH - KESİN ÇÖZÜM) ---
         if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
             import re
@@ -625,7 +626,6 @@ elif secim == "🎓 Akademi (Ders Notları)":
             icerik = icerik.replace("* ", "• ").replace("\n", "<br>")
 
             # 2. HTML GİYDİRME (Gövde metni 15px, tam kitap kıvamı!)
-            # 356. satır civarındaki st.markdown bloğu
             st.markdown(f"""
             <div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #2c3e50; font-family: 'Georgia', serif;">
                 <div style="font-size: 12px; color: #2e7d32; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 1px solid #e0dcd0; padding-bottom: 10px;">
@@ -639,6 +639,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
                 </div>
             </div>
             """, unsafe_allow_html=True)
+            
             col1, col2, col3 = st.columns([1, 2, 1])
     
             with col1:
@@ -656,7 +657,6 @@ elif secim == "🎓 Akademi (Ders Notları)":
                     if st.button("İleri ➡️"):
                         st.session_state.akademi_aktif_sayfa += 1
                         st.rerun()
-
     # ==========================================
     # 2. SEKME: NOTLARIM (Yükleme, Arşiv ve Çöp Kutusu)
     # ==========================================
