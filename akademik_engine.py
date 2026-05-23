@@ -200,7 +200,7 @@ class AkademikEngine:
     # ============================================================
     # [YENİ EKLENDİ] - ZIP'TEN MÜFREDAT NOTU BULMA MOTORU
     # ============================================================
-   @classmethod
+    @classmethod
     def zip_arsivinden_not_bul(cls, ders_adi):
         """Seçilen derse ait notları arşivden çeker, usul ve muhakeme ayrımlarını kesin olarak korur."""
         import os
