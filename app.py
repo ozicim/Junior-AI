@@ -558,11 +558,27 @@ elif secim == "🎓 Akademi (Ders Notları)":
    # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
+    # ==========================================
+    # 1. SEKME: MÜFREDAT (Ders Listesi)
+    # ==========================================
     with tab_mufredat:
         st.subheader("📚 Ders Seçimi ve Soru")
+        
+        # Akademik motoru ve müfredatı en üstte çağırıyoruz
+        from akademik_engine import AkademikEngine
+        mufredat = AkademikEngine.get_akademik_mufredat()
+        sinif_listesi = list(mufredat.keys())
+        
+        # Arayüzü iki sütuna bölerek önce Sınıf, sonra Ders seçtiriyoruz
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            secilen_sinif = st.selectbox("Sınıf Seçiniz", options=sinif_listesi, key="akademi_sinif_v3")
             
-        # Sadece ders seçimi kaldı (Tek sütun)
-        secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi, key="akademi_ders_v3")
+        with col2:
+            # Seçilen sınıfa göre ders isimlerini çekip listeliyoruz
+            secilen_sinifa_ait_dersler = [ders["isim"] for ders in mufredat[secilen_sinif]]
+            secilen_ders = st.selectbox("Ders Seçiniz", options=secilen_sinifa_ait_dersler, key="akademi_ders_v3")
             
         # Soru sorma zorunlu hale geldi
         akademik_input = st.text_area("Bu dersle ilgili sorunuzu veya öğrenmek istediğiniz konuyu yazın:", height=100, key="akademi_text")
@@ -573,9 +589,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
             else:
                 try:
                     st.info(f"🏛️ Profesör {secilen_ders} arşivini tarıyor...")
-                    from akademik_engine import AkademikEngine
-                        
-                    # secilen_konu parametresini sildik, doğrudan soruyu gönderiyoruz
+                    
                     cevap_generator = AkademikEngine.mufredat_hoca_anlat(
                         MY_API_KEY, 
                         SERPER_API_KEY, 
@@ -586,14 +600,15 @@ elif secim == "🎓 Akademi (Ders Notları)":
                     sonuc = st.write_stream(cevap_generator)
                         
                     if sonuc and not sonuc.startswith("⚠️"):
-                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 800)
+                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
                         st.session_state.akademi_aktif_sayfa = 0
                         st.success("✅ Hoca yanıtladı! Cevabı aşağıdan okuyabilirsiniz.")
                     else:
                         st.error("AI bir sonuç döndürmedi.")
                 except Exception as e:
-                    st.error(f"Hoca derse giremedi ustam: {e}")
+                    st.error(f"Hoca derse giremedi: {e}")
 
+        # ... (Kitap görünümü kodları aynı şekilde devam edecek)
         # --- DİJİTAL KİTAP GÖRÜNÜMÜ (PRESTİGE ŞERH - KESİN ÇÖZÜM) ---
         if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
             import re
