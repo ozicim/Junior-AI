@@ -200,9 +200,14 @@ class AkademikEngine:
     # ============================================================
     # [YENİ EKLENDİ] - ZIP'TEN MÜFREDAT NOTU BULMA MOTORU
     # ============================================================
-    @classmethod
+   @classmethod
     def zip_arsivinden_not_bul(cls, ders_adi):
-        """Seçilen derse ait notları arşivden çeker ve token sınırını korur."""
+        """Seçilen derse ait notları arşivden çeker, usul ve muhakeme ayrımlarını kesin olarak korur."""
+        import os
+        import json
+        import zipfile
+        import re
+        
         zip_dosya_adi = "akademi_notlari.zip"
         ic_dosya_adi = "akademi_notlari.json"
         
@@ -214,23 +219,34 @@ class AkademikEngine:
                 with z.open(ic_dosya_adi) as f:
                     tum_notlar = json.loads(f.read().decode('utf-8'))
                     
-            aranan_ders = ders_adi.lower().strip()
+            # Arayüzden gelen "Ceza Hukuku (Genel)" verisini "ceza hukuku"na çeviriyoruz
+            aranan_temiz = re.sub(r'\(.*?\)', '', ders_adi).strip().lower()
+            
             bulunan_notlar = []
             
             for not_item in tum_notlar:
                 db_ders = not_item.get("ders_adi", "").lower()
-                if aranan_ders in db_ders or db_ders in aranan_ders:
+                # Arşivdeki "⚖️ Ceza Hukuku" verisini "ceza hukuku"na çeviriyoruz
+                db_ders_temiz = re.sub(r'[^\w\s]', '', db_ders).strip()
+                
+                # 1. KRİTİK FİLTRE: Muhakeme ve Usul ayrımlarını koru
+                # Biri "muhakeme" içeriyorsa, eşleşmesi için diğerinin de içermesi ŞARTTIR.
+                if ("muhakeme" in aranan_temiz) != ("muhakeme" in db_ders_temiz):
+                    continue
+                if ("usul" in aranan_temiz) != ("usul" in db_ders_temiz):
+                    continue
+                    
+                # 2. EŞLEŞTİRME: Kalan temizlenmiş metinler birbirini kapsıyorsa notu al
+                if aranan_temiz in db_ders_temiz or db_ders_temiz in aranan_temiz:
                     bulunan_notlar.append(not_item.get("ders_notu", ""))
                     
             if bulunan_notlar:
-                # Kotayı patlatmamak için notları birleştirip maksimum 25.000 karakterini alıyoruz
                 birlesik_not = "\n\n--- BAŞKA BİR NOT ---\n\n".join(bulunan_notlar)
                 return birlesik_not[:25000]
                 
             return "⚠️ Bu derse ait arşivlenmiş ders notu bulunamadı."
         except Exception as e:
             return f"⚠️ Arşiv okuma hatası: {str(e)}"
-
     @classmethod
     def mufredat_hoca_anlat(cls, gemini_key, serper_key, ders, soru):
         """Ders notlarını baz alarak öğrencinin sorusunu yanıtlar."""
