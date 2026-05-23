@@ -559,40 +559,40 @@ elif secim == "🎓 Akademi (Ders Notları)":
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
    with tab_mufredat:
-            st.subheader("📚 Ders Seçimi ve Soru")
+        st.subheader("📚 Ders Seçimi ve Soru")
             
-            # Sadece ders seçimi kaldı (Tek sütun)
-            secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi, key="akademi_ders_v3")
+         # Sadece ders seçimi kaldı (Tek sütun)
+        secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi, key="akademi_ders_v3")
             
-            # Soru sorma zorunlu hale geldi
-            akademik_input = st.text_area("Bu dersle ilgili sorunuzu veya öğrenmek istediğiniz konuyu yazın:", height=100, key="akademi_text")
+        # Soru sorma zorunlu hale geldi
+        akademik_input = st.text_area("Bu dersle ilgili sorunuzu veya öğrenmek istediğiniz konuyu yazın:", height=100, key="akademi_text")
 
-            if st.button("📚 Soruyu Yanıtla / Anlat", use_container_width=True):
-                if not akademik_input.strip():
-                    st.warning("Lütfen hocaya yöneltmek için bir soru veya konu girin.")
-                else:
-                    try:
-                        st.info(f"🏛️ Profesör {secilen_ders} arşivini tarıyor...")
-                        from akademik_engine import AkademikEngine
+        if st.button("📚 Soruyu Yanıtla / Anlat", use_container_width=True):
+            if not akademik_input.strip():
+                st.warning("Lütfen hocaya yöneltmek için bir soru veya konu girin.")
+            else:
+                try:
+                    st.info(f"🏛️ Profesör {secilen_ders} arşivini tarıyor...")
+                    from akademik_engine import AkademikEngine
                         
-                        # secilen_konu parametresini sildik, doğrudan soruyu gönderiyoruz
-                        cevap_generator = AkademikEngine.mufredat_hoca_anlat(
-                            MY_API_KEY, 
-                            SERPER_API_KEY, 
-                            secilen_ders, 
-                            akademik_input 
-                        )
+                    # secilen_konu parametresini sildik, doğrudan soruyu gönderiyoruz
+                    cevap_generator = AkademikEngine.mufredat_hoca_anlat(
+                        MY_API_KEY, 
+                        SERPER_API_KEY, 
+                        secilen_ders, 
+                        akademik_input 
+                    )
                         
-                        sonuc = st.write_stream(cevap_generator)
+                    sonuc = st.write_stream(cevap_generator)
                         
-                        if sonuc and not sonuc.startswith("⚠️"):
-                            st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
-                            st.session_state.akademi_aktif_sayfa = 0
-                            st.success("✅ Hoca yanıtladı! Cevabı aşağıdan okuyabilirsiniz.")
-                        else:
-                            st.error("AI bir sonuç döndürmedi.")
-                    except Exception as e:
-                        st.error(f"Hoca derse giremedi ustam: {e}")
+                    if sonuc and not sonuc.startswith("⚠️"):
+                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
+                        st.session_state.akademi_aktif_sayfa = 0
+                        st.success("✅ Hoca yanıtladı! Cevabı aşağıdan okuyabilirsiniz.")
+                    else:
+                        st.error("AI bir sonuç döndürmedi.")
+                 except Exception as e:
+                    st.error(f"Hoca derse giremedi ustam: {e}")
         # --- DİJİTAL KİTAP GÖRÜNÜMÜ (PRESTİGE ŞERH - KESİN ÇÖZÜM) ---
         if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
             import re
