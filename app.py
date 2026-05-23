@@ -558,50 +558,41 @@ elif secim == "🎓 Akademi (Ders Notları)":
     # ==========================================
     # 1. SEKME: MÜFREDAT (Ders Listesi)
     # ==========================================
-    with tab_mufredat:
-        st.subheader("📚 Ders ve Konu Seçimi")
-        col1, col2 = st.columns(2)
-        with col1:
+   with tab_mufredat:
+            st.subheader("📚 Ders Seçimi ve Soru")
+            
+            # Sadece ders seçimi kaldı (Tek sütun)
             secilen_ders = st.selectbox("Ders Seçiniz", options=ders_listesi, key="akademi_ders_v3")
-        with col2:
-            secilen_konu = st.selectbox("Konu Seçiniz", options=konu_listesi, key="akademi_konu_v3")
-        
-        akademik_input = st.text_area("Eklemek istediğiniz ders notları veya sorular (Opsiyonel)", height=100, key="akademi_text")
+            
+            # Soru sorma zorunlu hale geldi
+            akademik_input = st.text_area("Bu dersle ilgili sorunuzu veya öğrenmek istediğiniz konuyu yazın:", height=100, key="akademi_text")
 
-        if st.button("📚 Notları Analiz Et / Özetle", use_container_width=True):
-            try:
-                # Spinner yerine bilgi mesajı veriyoruz, çünkü akışı aşağıda canlı göreceğiz
-                st.info("🏛️ Profesör kürsüye çıkıyor, Junilex arşivi inceleniyor...")
-                
-                # AKADEMİK MOTORU KULLANIYORUZ
-                from akademik_engine import AkademikEngine
-                
-                # Motoru çağır (Bize kelime kelime akacak bir jeneratör döndürüyor)
-                cevap_generator = AkademikEngine.mufredat_hoca_anlat(
-                    MY_API_KEY, 
-                    SERPER_API_KEY, 
-                    secilen_ders, 
-                    secilen_konu, 
-                    akademik_input
-                )
-                
-                # 🌟 İŞTE SİHİR BURADA: st.write_stream yazıyı canlı akıtır ve bitince tam metni sonuc'a atar
-                sonuc = st.write_stream(cevap_generator)
-                
-                # Gelen sonuç bir hata mesajı (⚠️) değilse sayfalama işlemini yap
-                if sonuc and not sonuc.startswith("⚠️"):
-                    # Sonucu sayfalara böl ve hafızaya al
-                    st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
-                    st.session_state.akademi_aktif_sayfa = 0
-                    st.success("✅ Ders notları kitabınıza eklendi! Sayfanın altından okuyabilirsiniz.")
-                    
-                    # NOT: Burada eskiden st.rerun() vardı. Onu kaldırdım. 
-                    # Çünkü sayfa yenilenirse az önce canlı akan yazı anında ekrandan kaybolur. 
-                    # Artık kullanıcı yazının akışını izleyecek, bitince alt taraftaki kitabında da görecek.
+            if st.button("📚 Soruyu Yanıtla / Anlat", use_container_width=True):
+                if not akademik_input.strip():
+                    st.warning("Lütfen hocaya yöneltmek için bir soru veya konu girin.")
                 else:
-                    st.error("AI bir sonuç döndürmedi veya arşivde not bulunamadı.")
-            except Exception as e:
-                st.error(f"Hoca derse giremedi ustam: {e}")
+                    try:
+                        st.info(f"🏛️ Profesör {secilen_ders} arşivini tarıyor...")
+                        from akademik_engine import AkademikEngine
+                        
+                        # secilen_konu parametresini sildik, doğrudan soruyu gönderiyoruz
+                        cevap_generator = AkademikEngine.mufredat_hoca_anlat(
+                            MY_API_KEY, 
+                            SERPER_API_KEY, 
+                            secilen_ders, 
+                            akademik_input 
+                        )
+                        
+                        sonuc = st.write_stream(cevap_generator)
+                        
+                        if sonuc and not sonuc.startswith("⚠️"):
+                            st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 300)
+                            st.session_state.akademi_aktif_sayfa = 0
+                            st.success("✅ Hoca yanıtladı! Cevabı aşağıdan okuyabilirsiniz.")
+                        else:
+                            st.error("AI bir sonuç döndürmedi.")
+                    except Exception as e:
+                        st.error(f"Hoca derse giremedi ustam: {e}")
         # --- DİJİTAL KİTAP GÖRÜNÜMÜ (PRESTİGE ŞERH - KESİN ÇÖZÜM) ---
         if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
             import re
