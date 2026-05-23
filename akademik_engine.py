@@ -202,43 +202,57 @@ class AkademikEngine:
     # ============================================================
     @classmethod
     def zip_arsivinden_not_bul(cls, ders_adi):
-        """Seçilen derse ait notları arşivden çeker, usul ve muhakeme ayrımlarını kesin olarak korur."""
-        import os
-        import json
-        import zipfile
-        import re
+        import os, json, zipfile, re
         
         zip_dosya_adi = "akademi_notlari.zip"
         ic_dosya_adi = "akademi_notlari.json"
         
         if not os.path.exists(zip_dosya_adi):
-            return "⚠️ Junilex Akademi Arşivi (akademi_notlari.zip) bulunamadı!"
+            return "⚠️ Junilex Akademi Arşivi bulunamadı!"
             
         try:
             with zipfile.ZipFile(zip_dosya_adi, 'r') as z:
                 with z.open(ic_dosya_adi) as f:
                     tum_notlar = json.loads(f.read().decode('utf-8'))
                     
-            # Arayüzden gelen "Ceza Hukuku (Genel)" verisini "ceza hukuku"na çeviriyoruz
-            aranan_temiz = re.sub(r'\(.*?\)', '', ders_adi).strip().lower()
+            # Arayüzden gelen ismi küçük harfe çevir (Örn: "borçlar hukuku (genel)")
+            aranan_saf = ders_adi.lower()
+            # Parantezleri SİLMİYORUZ, sadece özel karakterleri temizliyoruz
+            aranan_temiz = re.sub(r'[^\w\s]', '', aranan_saf).strip()
+            
+            # Anahtar kelimeyi bul (Örn: "ceza" veya "borçlar")
+            anahtar = aranan_temiz.split("hukuku")[0].strip() 
             
             bulunan_notlar = []
             
             for not_item in tum_notlar:
                 db_ders = not_item.get("ders_adi", "").lower()
-                # Arşivdeki "⚖️ Ceza Hukuku" verisini "ceza hukuku"na çeviriyoruz
-                db_ders_temiz = re.sub(r'[^\w\s]', '', db_ders).strip()
+                db_konu = not_item.get("konu_basligi", "").lower()
                 
-                # 1. KRİTİK FİLTRE: Muhakeme ve Usul ayrımlarını koru
-                # Biri "muhakeme" içeriyorsa, eşleşmesi için diğerinin de içermesi ŞARTTIR.
-                if ("muhakeme" in aranan_temiz) != ("muhakeme" in db_ders_temiz):
+                db_ders_temiz = re.sub(r'[^\w\s]', '', db_ders).strip()
+                db_konu_temiz = re.sub(r'[^\w\s]', '', db_konu).strip()
+                
+                # 1. TEMEL EŞLEŞME: İkisi de aynı ana dalda mı?
+                if anahtar not in db_ders_temiz:
                     continue
-                if ("usul" in aranan_temiz) != ("usul" in db_ders_temiz):
+                
+                # 2. KRİTİK AYRIM FİLTRESİ (Genel, Özel, Usul, Muhakeme)
+                # Aranan derste "genel" varsa, notun başlığında veya ders adında KESİNLİKLE "genel" olmalı
+                if "genel" in aranan_saf and not ("genel" in db_ders_temiz or "genel" in db_konu_temiz):
+                    continue
+                
+                if "özel" in aranan_saf or "ozel" in aranan_saf:
+                    if not ("özel" in db_ders_temiz or "ozel" in db_ders_temiz or "özel" in db_konu_temiz or "ozel" in db_konu_temiz):
+                        continue
+                        
+                if ("muhakeme" in aranan_saf) != ("muhakeme" in db_ders_temiz or "muhakeme" in db_konu_temiz):
                     continue
                     
-                # 2. EŞLEŞTİRME: Kalan temizlenmiş metinler birbirini kapsıyorsa notu al
-                if aranan_temiz in db_ders_temiz or db_ders_temiz in aranan_temiz:
-                    bulunan_notlar.append(not_item.get("ders_notu", ""))
+                if ("usul" in aranan_saf) != ("usul" in db_ders_temiz or "usul" in db_konu_temiz):
+                    continue
+                    
+                # Tüm filtreleri geçen notu havuza al
+                bulunan_notlar.append(not_item.get("ders_notu", ""))
                     
             if bulunan_notlar:
                 birlesik_not = "\n\n--- BAŞKA BİR NOT ---\n\n".join(bulunan_notlar)
