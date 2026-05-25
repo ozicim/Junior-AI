@@ -1043,7 +1043,7 @@ elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
         if all(form_verileri.values()):
             with st.spinner("Hukuki taslak oluşturuluyor..."):
                 # Dilekçeyi Engine üzerinden üret
-                taslak_metin = DilekceEngine.dilekce_olustur(MY_API_KEY, tur, form_verileri)
+                taslak_metin = DilekceEngine.dilekce_uret(MY_API_KEY, tur, form_verileri)
                 st.session_state.son_dilekce = taslak_metin
                 
                 st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
