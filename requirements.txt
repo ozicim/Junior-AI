@@ -12,5 +12,7 @@ chromadb
 sentence-transformers
 pydantic
 langchain
-langchain-google-genai
+langchain-community
 faiss-cpu
+sentence-transformers
+langchain-huggingface
