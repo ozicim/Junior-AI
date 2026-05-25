@@ -7,6 +7,8 @@ import requests
 import streamlit as st
 import os
 import zipfile
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_community.vectorstores import FAISS
 from firebase_admin import credentials, firestore
 
 class AkademikEngine:
