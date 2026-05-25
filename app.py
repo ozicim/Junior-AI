@@ -1015,11 +1015,16 @@ elif secim == "🎓 Akademi (Ders Notları)":
                             puan_sonucu = AkademikSinavEngine.sinav_degerlendir(MY_API_KEY, soru_data['soru'], cevap, soru_data['analiz'])
                             st.metric("Puan", f"{puan_sonucu['puan']}/100")
                             st.write(f"**Hoca'nın Yorumu:** {puan_sonucu['gercekce']}")
-# 3. BÖLÜM: DİLEKÇE (GÜNCELLENMİŞ MARKET SİSTEMİ)
 elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
     st.header("⚖️ Dilekçe Marketi")
     
-    # 1. Kategori ve Tür Seçimi
+    # Görsel düzenleme (CSS)
+    st.markdown("""
+        <style>
+        div[data-testid="stForm"] { background-color: #161616; padding: 25px; border-radius: 12px; border: 1px solid #333; }
+        </style>
+    """, unsafe_allow_html=True)
+    
     col_a, col_b = st.columns(2)
     with col_a:
         kategori = st.selectbox("Kategori Seçin:", list(DilekceEngine.DILEKCE_KATALOGU.keys()))
@@ -1028,34 +1033,46 @@ elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
     
     st.markdown("---")
     
-    # 2. Dinamik Form Oluşturma
     gerekli_alanlar = DilekceEngine.DILEKCE_KATALOGU[kategori][tur]
     form_verileri = {}
     
     with st.form("arzuhal_form"):
-        # Katalogdaki gerekli alanları dinamik basıyoruz
-        for alan in gerekli_alanlar:
-            form_verileri[alan] = st.text_area(f"{alan}:")
+        st.subheader(f"📋 {tur} Detayları")
         
-        submitted = st.form_submit_button("📝 Dilekçeyi Hazırla")
+        # İkili sütun yapısı
+        cols = st.columns(2)
+        
+        for i, alan in enumerate(gerekli_alanlar):
+            col = cols[i % 2]
+            with col:
+                # Akıllı widget seçimi
+                if "Tarihi" in alan:
+                    form_verileri[alan] = str(st.date_input(f"{alan}"))
+                elif "Sayısı" in alan or "Miktarı" in alan:
+                    form_verileri[alan] = str(st.number_input(f"{alan}", min_value=0, step=1))
+                elif "Detay" in alan or "Özeti" in alan or "Gerekçe" in alan:
+                    form_verileri[alan] = st.text_area(f"{alan}:", height=120)
+                else:
+                    form_verileri[alan] = st.text_input(f"{alan}:")
+        
+        submitted = st.form_submit_button("🚀 Dilekçeyi Hazırla", use_container_width=True)
     
     if submitted:
         if all(form_verileri.values()):
             with st.spinner("Hukuki taslak oluşturuluyor..."):
-                # Dilekçeyi Engine üzerinden üret
                 taslak_metin = DilekceEngine.dilekce_uret(MY_API_KEY, tur, form_verileri)
                 st.session_state.son_dilekce = taslak_metin
                 
                 st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
-                st.write(taslak_metin)
+                st.text_area("Taslak Metin", value=taslak_metin, height=400)
                 
-                # Word İndirme
                 word_data = DilekceEngine.word_dosyasi_yap(taslak_metin)
                 st.download_button(
                     label="📥 Word Dosyası Olarak Kaydet",
                     data=word_data,
                     file_name=f"{tur}_taslak.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True
                 )
         else:
             st.warning("Lütfen tüm alanları doldurunuz ustam!")
