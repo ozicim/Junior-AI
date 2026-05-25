@@ -6,7 +6,7 @@ from email.mime.text import MIMEText
 from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine, YASAL_UYARI
 from dilekce_engine import DilekceEngine
-from akademik_sinav_modu import AkademikSinavEngine
+from akademik_sinav_engine import AkademikSinavEngine
 from ictihat_engine import IctihatEngine
 from chat_engine import ChatEngine
 from fpdf import FPDF
