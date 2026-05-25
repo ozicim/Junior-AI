@@ -1015,6 +1015,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
                             puan_sonucu = AkademikSinavEngine.sinav_degerlendir(MY_API_KEY, soru_data['soru'], cevap, soru_data['analiz'])
                             st.metric("Puan", f"{puan_sonucu['puan']}/100")
                             st.write(f"**Hoca'nın Yorumu:** {puan_sonucu['gercekce']}")
+                            
 elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
     st.header("⚖️ Dilekçe Marketi")
     
@@ -1200,9 +1201,8 @@ elif secim == "⚖️ İçtihat Sorgulama":
                         st.session_state.aktif_sayfa += 1
                         st.rerun()
 # ... diğer elif (Akademi, Adliye vb.) bloklarından sonra ekle:
-
 elif secim == "💬 JUNILEX Chat":
-    st.header("💬 JUNILEX Chat")
+st.header("💬 JUNILEX Chat")
     
     # 1. Hafıza ve Mod Başlatma
     if 'chat_mode' not in st.session_state:
