@@ -1189,14 +1189,16 @@ elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
 elif secim == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
     
-    if 'chat_mode' not in st.session_state: st.session_state.chat_mode = "Özet"
-    if "chat_messages" not in st.session_state: st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi aydınlatalım?"}]
+    # 1. Hafıza ve Mod Başlatma
+    if 'chat_mode' not in st.session_state: 
+        st.session_state.chat_mode = "Özet"
+    if "chat_messages" not in st.session_state: 
+        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi aydınlatalım?"}]
 
     col_chat, col_context = st.columns([3, 1])
 
     with col_context:
         st.markdown("### 🔍 Bağlam")
-        # aktif_dosya session'da var mı kontrol et
         aktif_belge = st.session_state.get('aktif_dosya', 'Belge seçilmedi')
         st.info(f"**Aktif Belge:**\n{aktif_belge}")
         if st.button("Belgeyi Temizle"):
@@ -1205,6 +1207,7 @@ elif secim == "💬 JUNILEX Chat":
             st.rerun()
 
     with col_chat:
+        # Mesajları göster
         for message in st.session_state.chat_messages:
             simge = "https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent" if message["role"] == "user" else "https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"
             with st.chat_message(message["role"], avatar=simge):
@@ -1217,29 +1220,31 @@ elif secim == "💬 JUNILEX Chat":
                 st.session_state.chat_mode = secilen_mod
                 st.rerun()
 
+        # Chat Girişi
         if prompt := st.chat_input("Mesajınızı yazın..."):
             st.session_state.chat_messages.append({"role": "user", "content": prompt})
-            
             with st.chat_message("user"): st.markdown(prompt)
             
             with st.chat_message("assistant", avatar="https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"):
                 message_placeholder = st.empty()
                 full_response = ""
                 
-                # --- BAĞLAMI GÖNDERME ---
-                response = ChatEngine.yanit_uret(
-                    MY_API_KEY, 
-                    st.session_state.chat_messages[:-1], 
-                    prompt, 
-                    mod=st.session_state.chat_mode,
-                    aktif_belge_metni=st.session_state.get('islenmis_not', None)
-                )
-                
-                for chunk in response:
-                    if chunk.text:
-                        full_response += chunk.text
-                        message_placeholder.markdown(full_response + " ▌")
-                message_placeholder.markdown(full_response)
-                
-            st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-            st.rerun()
+                try:
+                    # ChatEngine'i burada değil, en üstte import etmiştik, doğrudan kullanıyoruz
+                    response = ChatEngine.yanit_uret(
+                        MY_API_KEY, 
+                        st.session_state.chat_messages[:-1], 
+                        prompt, 
+                        mod=st.session_state.chat_mode,
+                        aktif_belge_metni=st.session_state.get('islenmis_not', None)
+                    )
+                    
+                    for chunk in response:
+                        if chunk.text:
+                            full_response += chunk.text
+                            message_placeholder.markdown(full_response + " ▌")
+                    message_placeholder.markdown(full_response)
+                    
+                    st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
+                except Exception as e:
+                    st.error(f"Sistem Hatası: {e}")
