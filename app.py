@@ -980,26 +980,32 @@ elif secim == "🎓 Akademi (Ders Notları)":
             if st.button("🔥 AI Kütüphanesinden Sınavı Başlat", use_container_width=True):
                 baslat_tiklandi = True
 
+        # 2. SEÇENEK: KULLANICININ KENDİ NOTLARI (GÜNCEL VERSİYON)
         else:
             st.markdown("**Kişisel Notlarınızdan Sınav**")
             
-            islenmis = st.session_state.get('islenmis_not', "")
+            # Notların kayıtlı olduğu session_state anahtarını senin sistemine göre yazdım. 
+            # (Eğer anahtarın farklıysa burayı güncelle: örn: st.session_state.butun_notlar)
+            notlar_listesi = st.session_state.get('yuklenen_notlar', [])
             
-            if not islenmis:
-                st.warning("⚠️ Henüz sisteme bir not yüklemediniz. Lütfen önce 'Notlarım' sekmesinden bir PDF veya metin yükleyin.")
+            if not notlar_listesi:
+                st.warning("⚠️ Henüz hiç not yüklemediniz. Lütfen 'Notlarım' sekmesinden dosya yükleyin.")
             else:
-                st.success("✅ Yüklediğiniz not sistemde hazır. AI sadece bu nottaki bilgileri kullanacak.")
-                aktif_konu = st.text_input("Sınav Konusu (İsteğe Bağlı Daraltabilirsiniz)", placeholder="Örn: Sadece 3. Bölüm veya Kusurluluk halleri...")
+                # Kullanıcıya notların isimlerini gösteriyoruz
+                # (Not objelerinin 'isim' veya 'dosya_adi' key'ine sahip olduğunu varsayıyorum)
+                secilen_not_adi = st.selectbox(
+                    "Sınav hazırlanacak notu seçiniz:", 
+                    options=[n['isim'] for n in notlar_listesi]
+                )
                 
-                # Kullanıcı konu girmezse genel başlık atıyoruz
-                if not aktif_konu.strip():
-                    aktif_konu = "Yüklenen Notun Genel İçeriği"
+                # Seçilen notun içeriğini buluyoruz
+                secilen_not_objesi = next(n for n in notlar_listesi if n['isim'] == secilen_not_adi)
+                aktif_not = secilen_not_objesi['icerik'] # Notun içeriğini değişkene atadık
                 
-                aktif_not = islenmis
-
+                aktif_konu = st.text_input("Sınav Konusu (İsteğe Bağlı):", placeholder="Örn: Kusurluluk halleri...")
+                
                 if st.button("🔥 Kendi Notumdan Sınavı Başlat", use_container_width=True):
                     baslat_tiklandi = True
-
 
         # ==========================================
         # 3. KISIM: SINAVI OLUŞTURMA (Tetikleyici)
