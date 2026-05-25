@@ -1015,68 +1015,6 @@ elif secim == "🎓 Akademi (Ders Notları)":
                             puan_sonucu = AkademikSinavEngine.sinav_degerlendir(MY_API_KEY, soru_data['soru'], cevap, soru_data['analiz'])
                             st.metric("Puan", f"{puan_sonucu['puan']}/100")
                             st.write(f"**Hoca'nın Yorumu:** {puan_sonucu['gercekce']}")
-                            
-elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
-    st.header("⚖️ Dilekçe Marketi")
-    
-    # Görsel düzenleme (CSS)
-    st.markdown("""
-        <style>
-        div[data-testid="stForm"] { background-color: #161616; padding: 25px; border-radius: 12px; border: 1px solid #333; }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    col_a, col_b = st.columns(2)
-    with col_a:
-        kategori = st.selectbox("Kategori Seçin:", list(DilekceEngine.DILEKCE_KATALOGU.keys()))
-    with col_b:
-        tur = st.selectbox("Dilekçe Türü:", list(DilekceEngine.DILEKCE_KATALOGU[kategori].keys()))
-    
-    st.markdown("---")
-    
-    gerekli_alanlar = DilekceEngine.DILEKCE_KATALOGU[kategori][tur]
-    form_verileri = {}
-    
-    with st.form("arzuhal_form"):
-        st.subheader(f"📋 {tur} Detayları")
-        
-        # İkili sütun yapısı
-        cols = st.columns(2)
-        
-        for i, alan in enumerate(gerekli_alanlar):
-            col = cols[i % 2]
-            with col:
-                # Akıllı widget seçimi
-                if "Tarihi" in alan:
-                    form_verileri[alan] = str(st.date_input(f"{alan}"))
-                elif "Sayısı" in alan or "Miktarı" in alan:
-                    form_verileri[alan] = str(st.number_input(f"{alan}", min_value=0, step=1))
-                elif "Detay" in alan or "Özeti" in alan or "Gerekçe" in alan:
-                    form_verileri[alan] = st.text_area(f"{alan}:", height=120)
-                else:
-                    form_verileri[alan] = st.text_input(f"{alan}:")
-        
-        submitted = st.form_submit_button("🚀 Dilekçeyi Hazırla", use_container_width=True)
-    
-    if submitted:
-        if all(form_verileri.values()):
-            with st.spinner("Hukuki taslak oluşturuluyor..."):
-                taslak_metin = DilekceEngine.dilekce_uret(MY_API_KEY, tur, form_verileri)
-                st.session_state.son_dilekce = taslak_metin
-                
-                st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
-                st.text_area("Taslak Metin", value=taslak_metin, height=400)
-                
-                word_data = DilekceEngine.word_dosyasi_yap(taslak_metin)
-                st.download_button(
-                    label="📥 Word Dosyası Olarak Kaydet",
-                    data=word_data,
-                    file_name=f"{tur}_taslak.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    use_container_width=True
-                )
-        else:
-            st.warning("Lütfen tüm alanları doldurunuz ustam!")
 
 # --- MOD 4: İÇTİHAT SORGULAMA (Tamamen Düzeltilmiş) ---
 elif secim == "⚖️ İçtihat Sorgulama":
@@ -1201,6 +1139,53 @@ elif secim == "⚖️ İçtihat Sorgulama":
                         st.session_state.aktif_sayfa += 1
                         st.rerun()
 # ... diğer elif (Akademi, Adliye vb.) bloklarından sonra ekle:
+elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
+    st.header("⚖️ Dilekçe Marketi")
+    st.markdown("""
+        <style>
+        div[data-testid="stForm"] { background-color: #161616; padding: 25px; border-radius: 12px; border: 1px solid #333; }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        kategori = st.selectbox("Kategori Seçin:", list(DilekceEngine.DILEKCE_KATALOGU.keys()))
+    with col_b:
+        tur = st.selectbox("Dilekçe Türü:", list(DilekceEngine.DILEKCE_KATALOGU[kategori].keys()))
+    
+    st.markdown("---")
+    
+    gerekli_alanlar = DilekceEngine.DILEKCE_KATALOGU[kategori][tur]
+    form_verileri = {}
+    
+    with st.form("arzuhal_form"):
+        st.subheader(f"📋 {tur} Detayları")
+        cols = st.columns(2)
+        for i, alan in enumerate(gerekli_alanlar):
+            col = cols[i % 2]
+            with col:
+                if "Tarihi" in alan:
+                    form_verileri[alan] = str(st.date_input(f"{alan}"))
+                elif "Sayısı" in alan or "Miktarı" in alan:
+                    form_verileri[alan] = str(st.number_input(f"{alan}", min_value=0, step=1))
+                elif "Detay" in alan or "Özeti" in alan or "Gerekçe" in alan:
+                    form_verileri[alan] = st.text_area(f"{alan}:", height=120)
+                else:
+                    form_verileri[alan] = st.text_input(f"{alan}:")
+        
+        submitted = st.form_submit_button("🚀 Dilekçeyi Hazırla", use_container_width=True)
+    
+    if submitted:
+        if all(form_verileri.values()):
+            with st.spinner("Hukuki taslak oluşturuluyor..."):
+                taslak_metin = DilekceEngine.dilekce_uret(MY_API_KEY, tur, form_verileri)
+                st.session_state.son_dilekce = taslak_metin
+                st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
+                st.text_area("Taslak Metin", value=taslak_metin, height=400)
+                word_data = DilekceEngine.word_dosyasi_yap(taslak_metin)
+                st.download_button("📥 Word Dosyası Olarak Kaydet", data=word_data, file_name=f"{tur}_taslak.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
+        else:
+            st.warning("Lütfen tüm alanları doldurunuz ustam!")
 elif secim == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
     
@@ -1210,12 +1195,11 @@ elif secim == "💬 JUNILEX Chat":
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi aydınlatalım?"}]
 
-    # --- YENİ: BAĞLAM PANELİ VE SOHBET AYRIMI ---
+    # Bağlam Paneli ve Sohbet Ayrımı
     col_chat, col_context = st.columns([3, 1])
 
     with col_context:
         st.markdown("### 🔍 Bağlam")
-        # Aktif dosya veya sınav var mı kontrol edelim
         aktif_belge = st.session_state.get('aktif_dosya', 'Belge seçilmedi')
         st.info(f"**Aktif Belge:**\n{aktif_belge}")
         if st.button("Belgeyi Temizle"):
@@ -1229,19 +1213,14 @@ elif secim == "💬 JUNILEX Chat":
             with st.chat_message(message["role"], avatar=simge):
                 st.markdown(message["content"])
 
-        # --- ALT KUMANDA PANELİ ---
+        # 3. Alt Kumanda ve Input
         st.markdown("---")
-        col_devam, col_mod = st.columns([1, 1])
+        with st.popover(f"🧠 Mod: {st.session_state.chat_mode}", use_container_width=True):
+            secilen_mod = st.radio("Zeka Yapılandırması:", ["Özet", "⚖️ Detaylı Analiz"], index=0 if "Özet" in st.session_state.chat_mode else 1)
+            if secilen_mod != st.session_state.chat_mode:
+                st.session_state.chat_mode = secilen_mod
+                st.rerun()
 
-        with col_mod:
-            with st.popover(f"🧠 Mod: {st.session_state.chat_mode}", use_container_width=True):
-                secilen_mod = st.radio("Zeka Yapılandırması:", ["Özet", "⚖️ Detaylı Analiz"], index=0 if "Özet" in st.session_state.chat_mode else 1)
-                if secilen_mod != st.session_state.chat_mode:
-                    st.session_state.chat_mode = secilen_mod
-                    st.rerun()
-
-        # 5. Ana Soru Girişi (Chat Engine entegrasyonu korunarak)
         if prompt := st.chat_input("Mesajınızı yazın..."):
             st.session_state.chat_messages.append({"role": "user", "content": prompt})
-            st.rerun() # Dinamik güncellemeyi kolaylaştırmak için rerunning kullanıldı
-        st.rerun()
+            st.rerun()
