@@ -3,52 +3,72 @@ from docx import Document
 import io
 
 class DilekceEngine:
-    # ✅ Model cache'leniyor
     _model = None
     _configured_key = None
 
+    # 20 Dilekçe Tipi Katalogu
+    DILEKCE_KATALOGU = {
+        "Aile Hukuku": {
+            "Anlaşmalı Boşanma": ["Evlilik Tarihi", "Çocuk Sayısı", "Anlaşma Detayları"],
+            "Çekişmeli Boşanma": ["Boşanma Sebebi", "Kusur İddiaları", "Tazminat Talebi"],
+            "Nafaka Artırım": ["Mevcut Nafaka", "Gelir Değişimi", "Gerekçe"],
+            "Velayet Davası": ["Çocuk Bilgisi", "Velayet Gerekçesi", "Yaşam Koşulları"],
+            "İştirak Nafakası": ["Çocuk Giderleri", "Gelir Durumu"]
+        },
+        "Ceza Hukuku": {
+            "Hakaret Şikayeti": ["Şüpheli", "Olay Tarihi", "Hakaret İçeriği"],
+            "Tehdit Şikayeti": ["Tehdit Şekli", "Olayın Gelişimi", "Tanıklar"],
+            "Basit Yaralama Şikayeti": ["Darp Raporu Detayı", "Olay Yeri", "Fail"],
+            "Suç Duyurusu (Genel)": ["Suç Türü", "Olay Özeti", "Deliller"],
+            "Şikayetten Vazgeçme": ["Soruşturma/Dosya No", "Vazgeçme Gerekçesi"]
+        },
+        "İcra ve Borçlar": {
+            "İcra Takibine İtiraz": ["Takip Dosya No", "İtiraz Gerekçesi", "Borç Miktarı"],
+            "Kira Tahliye İhtarnamesi": ["Kira Sözleşme Tarihi", "Tahliye Nedeni", "Süre"],
+            "Alacak İhtarnamesi": ["Alacak Miktarı", "Borç Nedeni", "Ödeme Tarihi"],
+            "İşçi İstifa Dilekçesi": ["İşe Giriş Tarihi", "İstifa Nedeni", "İhbar Süresi"],
+            "Ödeme Emrine İtiraz": ["Dosya No", "İtiraz Nedeni"]
+        },
+        "İdari ve Diğer": {
+            "İdari Başvuru": ["Kurum Adı", "Talep Konusu", "Dayanak"],
+            "Dava Cevap Dilekçesi": ["Dosya No", "Cevap Gerekçeleri", "Red Talebi"],
+            "Tanık Listesi": ["Dosya No", "Tanık İsimleri", "Tanıklık Konusu"],
+            "İhtiyati Tedbir Talebi": ["Dava Konusu", "Tedbir Nedeni", "Aciliyet"],
+            "Duruşma Günü Talebi": ["Dosya No", "Gerekçe"]
+        }
+    }
+
     @classmethod
     def _modeli_hazirla(cls, api_key):
-        """Modeli ilk kullanımda oluşturur, sonraki çağrılarda cache'den döner."""
         if cls._configured_key != api_key:
             genai.configure(api_key=api_key)
             cls._configured_key = api_key
             cls._model = None
-
         if cls._model is None:
-            cls._model = genai.GenerativeModel('models/gemini-2.5-flash')
-
+            cls._model = genai.GenerativeModel('models/gemini-2.0-flash')
         return cls._model
 
     @classmethod
-    def dilekce_olustur(cls, api_key, konu, taraflar, olay_ozeti, talepler):
+    def dilekce_olustur(cls, api_key, tur, veriler):
         model = cls._modeli_hazirla(api_key)
-        
         prompt = f"""
-        Sen profesyonel bir avukatsın. Aşağıdaki bilgilere dayanarak resmi, ağırbaşlı ve 
-        hukuki terminolojiye uygun bir dilekçe taslağı hazırla.
-        
-        Dilekçe Konusu: {konu}
-        Taraflar (Davacı/Davalı/Müşteki vb.): {taraflar}
-        Olay Özeti: {olay_ozeti}
-        Netice-i Talep: {talepler}
+        Sen profesyonel bir avukatsın. {tur} türünde, hukuki terminolojiye (HMK/CMK) uygun, 
+        resmi bir dilekçe hazırla. 
+        Verilen bilgiler: {veriler}
         
         Kurallar:
-        1. Dilekçe başlığını (İlgili Makama) uygun şekilde yaz.
-        2. 'Açıklamalar' ve 'Hukuki Deliller' kısımlarını ekle.
-        3. Türk hukuk sistemine uygun terminoloji kullan (Örn: 'müvekkil', 'haksız fiil', 'mesnetsiz').
+        1. İlgili mahkemeye hitaplı başlık.
+        2. Açıklamalar, Hukuki Nedenler, Deliller, Netice-i Talep.
+        3. Hukuki Risk Kontrolü: Süre aşımı veya usul hatası riski varsa not düş.
         4. Sadece dilekçe metnini döndür.
         """
-        response = model.generate_content(prompt, stream=True)
-        return response
+        return model.generate_content(prompt).text
 
     @classmethod
     def word_dosyasi_yap(cls, metin):
-        """Yazılan metni Word dosyasına çevirir"""
         doc = Document()
         for line in metin.split('\n'):
             doc.add_paragraph(line)
-        
         bio = io.BytesIO()
         doc.save(bio)
         return bio.getvalue()
