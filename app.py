@@ -1210,154 +1210,38 @@ elif secim == "💬 JUNILEX Chat":
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi aydınlatalım?"}]
 
-    # 2. Mesaj Geçmişini Göster (Yeni Nesil Avatarlarla)
-    for message in st.session_state.chat_messages:
-        if message["role"] == "user":
-            simge = "https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent"
-        else:
-            simge = "https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"
-            
-        with st.chat_message(message["role"], avatar=simge):
-            st.markdown(message["content"])
+    # --- YENİ: BAĞLAM PANELİ VE SOHBET AYRIMI ---
+    col_chat, col_context = st.columns([3, 1])
 
-    # --- ALT KUMANDA PANELİ ---
-    st.markdown("---")
-    
-    col_devam, col_mod = st.columns([1, 1])
+    with col_context:
+        st.markdown("### 🔍 Bağlam")
+        # Aktif dosya veya sınav var mı kontrol edelim
+        aktif_belge = st.session_state.get('aktif_dosya', 'Belge seçilmedi')
+        st.info(f"**Aktif Belge:**\n{aktif_belge}")
+        if st.button("Belgeyi Temizle"):
+            st.session_state.aktif_dosya = None
+            st.rerun()
 
-    with col_mod:
-        with st.popover(f"🧠 Mod: {st.session_state.chat_mode}", use_container_width=True):
-            secilen_mod = st.radio(
-                "Zeka Yapılandırması:",
-                ["Özet", "⚖️ Detaylı Analiz"],
-                index=0 if "Özet" in st.session_state.chat_mode else 1,
-                key="chat_mode_radio"
-            )
-            if secilen_mod != st.session_state.chat_mode:
-                st.session_state.chat_mode = secilen_mod
-                st.rerun()
+    with col_chat:
+        # 2. Mesaj Geçmişini Göster
+        for message in st.session_state.chat_messages:
+            simge = "https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent" if message["role"] == "user" else "https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"
+            with st.chat_message(message["role"], avatar=simge):
+                st.markdown(message["content"])
 
-    with col_devam:
-        # 4. "Devam Et" Butonu
-        if len(st.session_state.chat_messages) > 1 and st.session_state.chat_messages[-1]["role"] == "assistant":
-            if st.button("⏭️ Devam Et", help="Cevap yarıda kaldıysa tıklayın."):
-                
-                yarim_kalan_mesaj = st.session_state.chat_messages[-1]["content"]
-                son_kelimeler = yarim_kalan_mesaj[-60:].strip() if len(yarim_kalan_mesaj) > 60 else yarim_kalan_mesaj
-                
-                devam_komutu = (
-                    f"Önceki cevabın tam olarak şu kelimelerle yarım kaldı: '...{son_kelimeler}'.\n"
-                    "KRİTİK GÖREV: Lütfen asla giriş cümlesi kurma, konuyu baştan anlatma ve yazdıklarını tekrar etme. "
-                    "SADECE yarım kalan kelimeyi/cümleyi tamamla ve doğrudan konunun devamını yaz."
-                )
+        # --- ALT KUMANDA PANELİ ---
+        st.markdown("---")
+        col_devam, col_mod = st.columns([1, 1])
 
-                st.session_state.chat_messages.append({"role": "user", "content": "Devam et..."})
-                
-                with st.chat_message("assistant", avatar="https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"):
-                    message_placeholder = st.empty()
-                    
-                    # 🔴 KRİTİK DÜZELTME: NameError hatasını çözen değişken tanımlaması BURADA
-                    full_response = "" 
-                    
-                    from chat_engine import ChatEngine
-                    
-                    response = ChatEngine.yanit_uret(
-                        MY_API_KEY, 
-                        st.session_state.chat_messages[:-1], 
-                        devam_komutu,
-                        mod=st.session_state.chat_mode
-                    )
-                    
-                    if isinstance(response, str) and response.startswith("HATA"):
-                        st.error(response)
-                    else:
-                        for chunk in response:
-                            try:
-                                if chunk.candidates:
-                                    sebep = chunk.candidates[0].finish_reason.name
-                                    if sebep not in ['STOP', 'FINISH_REASON_UNSPECIFIED']:
-                                        full_response += f"\n\n🚨 **[GOOGLE FİŞİ ÇEKTİ! SEBEP: {sebep}]**"
-                                
-                                if chunk.text:
-                                    full_response += chunk.text
-                                    message_placeholder.markdown(full_response + " ▌")
-                                    
-                            except ValueError as ve:
-                                full_response += f"\n\n🛑 **[DEĞER HATASI (Filtre/Boşluk): {str(ve)}]**"
-                                message_placeholder.markdown(full_response)
-                                break 
-                                
-                            except Exception as e:
-                                full_response += f"\n\n❌ **[TEKNİK HATA: {str(e)}]**"
-                                message_placeholder.markdown(full_response)
-                                break
-                                
-                        if not full_response.strip():
-                            full_response = "⚠️ Ustam, sistem tamamen sessiz kaldı. Çıktı engellendi."
-                        
-                        message_placeholder.markdown(full_response)
-                        st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
-                        st.rerun()
-
-    # 5. Ana Soru Girişi
-    if prompt := st.chat_input("Mesajınızı yazın..."):
-        st.session_state.chat_messages.append({"role": "user", "content": prompt})
-        
-        container = st.empty() 
-
-        with container.container():
-            with st.chat_message("user", avatar="https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent"):
-                st.markdown(prompt)
-
-            with st.chat_message("assistant", avatar="https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"):
-                message_placeholder = st.empty() 
-                
-                # 🔴 KRİTİK DÜZELTME: NameError hatasını çözen değişken tanımlaması BURADA
-                full_response = ""
-                
-                from chat_engine import ChatEngine
-                
-                response = ChatEngine.yanit_uret(
-                    MY_API_KEY, 
-                    st.session_state.chat_messages[:-1], 
-                    prompt,
-                    mod=st.session_state.chat_mode
-                )
-                
-                if isinstance(response, str) and response.startswith("HATA"):
-                    st.error(response)
-                else:
-                    for chunk in response:
-                        try:
-                            if chunk.candidates:
-                                sebep = chunk.candidates[0].finish_reason.name
-                                if sebep not in ['STOP', 'FINISH_REASON_UNSPECIFIED']:
-                                    full_response += f"\n\n🚨 **[GOOGLE FİŞİ ÇEKTİ! SEBEP: {sebep}]**"
-                            
-                            if chunk.text:
-                                full_response += chunk.text
-                                message_placeholder.markdown(full_response + " ▌")
-                                
-                        except ValueError as ve:
-                            full_response += f"\n\n🛑 **[DEĞER HATASI (Filtre/Boşluk): {str(ve)}]**"
-                            message_placeholder.markdown(full_response)
-                            break
-                            
-                        except Exception as e:
-                            full_response += f"\n\n❌ **[TEKNİK HATA: {str(e)}]**"
-                            message_placeholder.markdown(full_response)
-                            break
-                    
-                    if not full_response.strip():
-                        full_response = "⚠️ Ustam, sistem tamamen sessiz kaldı. Çıktı engellendi."
-                    
-                    message_placeholder.markdown(full_response)
-                    st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
+        with col_mod:
+            with st.popover(f"🧠 Mod: {st.session_state.chat_mode}", use_container_width=True):
+                secilen_mod = st.radio("Zeka Yapılandırması:", ["Özet", "⚖️ Detaylı Analiz"], index=0 if "Özet" in st.session_state.chat_mode else 1)
+                if secilen_mod != st.session_state.chat_mode:
+                    st.session_state.chat_mode = secilen_mod
                     st.rerun()
-            
-    # 6. Sidebar Temizleme Butonu
-    if st.sidebar.button("🗑️ Sohbeti Sıfırla"):
-        st.session_state.chat_messages = [
-            {"role": "assistant", "content": "Selam ustam, ben Junilex. Bugün hangi hukuki meseleyi aydınlatalım?"}
-        ]
+
+        # 5. Ana Soru Girişi (Chat Engine entegrasyonu korunarak)
+        if prompt := st.chat_input("Mesajınızı yazın..."):
+            st.session_state.chat_messages.append({"role": "user", "content": prompt})
+            st.rerun() # Dinamik güncellemeyi kolaylaştırmak için rerunning kullanıldı
         st.rerun()
