@@ -7,8 +7,9 @@ import requests
 import streamlit as st
 import os
 import zipfile
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+# ... diğer importların (google.generativeai, streamlit vb. kalabilir)
 from firebase_admin import credentials, firestore
 
 class AkademikEngine:
