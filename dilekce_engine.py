@@ -49,20 +49,25 @@ class DilekceEngine:
         return cls._model
 
     @classmethod
-    def dilekce_olustur(cls, api_key, tur, veriler):
+    def dilekce_uret(cls, api_key, tur, veriler): # 3 argüman olacak şekilde güncelledik
         model = cls._modeli_hazirla(api_key)
+        
+        # 'veriler' sözlüğünü metne çeviriyoruz
+        veri_metni = "\n".join([f"{k}: {v}" for k, v in veriler.items()])
+        
         prompt = f"""
-        Sen profesyonel bir avukatsın. {tur} türünde, hukuki terminolojiye (HMK/CMK) uygun, 
-        resmi bir dilekçe hazırla. 
-        Verilen bilgiler: {veriler}
+        Sen profesyonel bir avukatsın. {tur} türünde, hukuki terminolojiye uygun resmi bir dilekçe hazırla.
+        
+        Verilen Bilgiler:
+        {veri_metni}
         
         Kurallar:
-        1. İlgili mahkemeye hitaplı başlık.
-        2. Açıklamalar, Hukuki Nedenler, Deliller, Netice-i Talep.
-        3. Hukuki Risk Kontrolü: Süre aşımı veya usul hatası riski varsa not düş.
-        4. Sadece dilekçe metnini döndür.
+        1. Başlığı ve ilgili makamı doğru yaz.
+        2. Açıklamalar ve Hukuki Nedenler bölümlerini ekle.
+        3. Hukuki Risk Kontrolü bölümü ekle.
         """
-        return model.generate_content(prompt).text
+        response = model.generate_content(prompt)
+        return response.text
 
     @classmethod
     def word_dosyasi_yap(cls, metin):
