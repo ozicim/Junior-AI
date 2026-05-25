@@ -89,7 +89,7 @@ class ChatEngine:
             )
             
             model = genai.GenerativeModel(
-                model_name='gemini-2.0-flash', # Model versiyonunu güncelledim
+                model_name='gemini-2.5-flash', # Model versiyonunu güncelledim
                 system_instruction=sistem_talimati,
                 generation_config=yapilandirma,
                 safety_settings=guvenlik_ayarlari
