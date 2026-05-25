@@ -265,33 +265,58 @@ class AkademikEngine:
             return f"⚠️ Arşiv okuma hatası: {str(e)}"
     @classmethod
     def mufredat_hoca_anlat(cls, gemini_key, serper_key, ders, soru):
-        """Ders notlarını baz alarak öğrencinin sorusunu yanıtlar."""
+        """RAG (Vektör Veritabanı) Mimarisini kullanarak en alakalı paragrafları bulur ve yanıtlar."""
         try:
-            arsiv_notu = cls.zip_arsivinden_not_bul(ders)
-            model = cls._modeli_hazirla(gemini_key)
+            # 1. API Key'i ortama tanıtıyoruz (Langchain'in kullanabilmesi için)
+            os.environ["GOOGLE_API_KEY"] = gemini_key
+            
+            # 2. Eğer faiss_index klasörü yoksa, ZIP'ten çıkar
+            if not os.path.exists("faiss_index") and os.path.exists("faiss_index.zip"):
+                with zipfile.ZipFile("faiss_index.zip", 'r') as zip_ref:
+                    zip_ref.extractall("faiss_index")
+                    
+            if not os.path.exists("faiss_index"):
+                def hata_generator(): yield "⚠️ Vektör veritabanı (faiss_index.zip) bulunamadı!"
+                return hata_generator()
 
+            # 3. Akıllı Fihristi (Veritabanını) Yükle
+            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+            vector_store = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+
+            # 4. RAG ARAMASI: Öğrencinin sorusuyla MATEMATİKSEL olarak en çok eşleşen 4 paragrafı bul!
+            # Aramayı güçlendirmek için ders adını da sorguya katıyoruz
+            arama_metni = f"Ders: {ders}. Soru: {soru}"
+            
+            # k=4 demek, koca arşivden en alakalı 4 paragrafı (yaklaşık 4000 kelime) çek demek.
+            en_iyi_eslesmeler = vector_store.similarity_search(arama_metni, k=4) 
+            
+            # Bulunan belgeleri tek bir metinde birleştir
+            context = "\n\n--- İLGİLİ ARŞİV BÖLÜMÜ ---\n\n".join([doc.page_content for doc in en_iyi_eslesmeler])
+
+            # 5. Profesöre Sadece Bu Bulunan Özeti Gönderiyoruz (Kota Aşımı İmkansızlaştı!)
+            model = cls._modeli_hazirla(gemini_key)
             prompt = f"""
             SEN KIDEMLİ BİR HUKUK PROFESÖRÜSÜN.
             Ders: {ders}
             
-            ÖĞRENCİNİN SORUSU / TALEBİ:
+            ÖĞRENCİNİN SORUSU:
             {soru}
             
-            ELİNDEKİ JUNILEX DERS ARŞİVİ (Sadece bu bilgileri kullanarak yanıtla):
-            {arsiv_notu}
+            ELİNDEKİ JUNILEX AKILLI FİHRİST NOTLARI (Bu bilgiler soruyu cevaplamak için özel olarak getirildi):
+            {context}
             
             GÖREVİN:
-            Öğrencinin sorusunu, İNTERNETTEN BİLGİ UYDURMADAN sadece elindeki 'Junilex Ders Arşivi'ni temel alarak bir AKADEMİSYEN gibi yanıtla. 
-            Arşivde soruyla ilgili bilgi yoksa "Arşivimde bu konuya dair not bulunmuyor" diyerek dürüst ol.
-
+            İnternetten veya kendi hafızandan bilgi uydurma (Halüsinasyon yapma). Sadece yukarıdaki "Fihrist Notları"nı kullanarak akademik bir dille öğrencinin sorusunu yanıtla. Eğer notlarda soruyla ilgili hiçbir bilgi yoksa, "Bu spesifik konu mevcut arşivimde yer almıyor" diyerek dürüst ol.
+            
             FORMAT:
-            Öğrencinin sorusuna doğrudan ve akademik bir dille cevap ver. Gereksiz şablon başlıkları kullanma, doğrudan yanıtı yapılandır.
+            Gereksiz şablon başlıkları kullanma, doğrudan ve akıcı bir şekilde yanıtı ver.
             """
             
+            # Canlı Akış (Streaming)
             response = model.generate_content(prompt, stream=True)
             return (chunk.text for chunk in response if chunk.text)
 
         except Exception as e:
             def hata_generator():
-                yield f"⚠️ Hoca odasında bulunamadı (Teknik Hata): {str(e)}"
+                yield f"⚠️ Profesör veritabanına bağlanamadı (Teknik Hata): {str(e)}"
             return hata_generator()
