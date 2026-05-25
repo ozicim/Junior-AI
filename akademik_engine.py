@@ -317,6 +317,10 @@ class AkademikEngine:
             return (chunk.text for chunk in response if chunk.text)
 
         except Exception as e:
+            # Python 'e' değişkenini sildiği için, onu önce güvenli bir değişkene alıyoruz
+            hata_mesaji = str(e)
+            
+            # Şimdi o güvenli değişkeni kullanarak akışı sağlıyoruz
             def hata_generator():
-                yield f"⚠️ Profesör veritabanına bağlanamadı (Teknik Hata): {str(e)}"
+                yield f"⚠️ Profesör veritabanına bağlanamadı (Teknik Hata): {hata_mesaji}"
             return hata_generator()
