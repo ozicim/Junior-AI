@@ -941,10 +941,12 @@ elif secim == "🎓 Akademi (Ders Notları)":
     # ==========================================
     # 3. SEKME: SINAV MODU
     # ==========================================
+    # ==========================================
+    # 3. SEKME: SINAV MODU
+    # ==========================================
     with tab_sinav:
         st.markdown("#### 📝 Pratik Çalışma ve Sınav")
         
-        # 1. KISIM: SINAV KAYNAĞI SEÇİMİ (Radyo Buton)
         sinav_kaynagi = st.radio(
             "Sınav Kaynağını Seçiniz:",
             ["📚 AI Kütüphaneden Sınav Hazırla", "📂 Notlarımdan Sınav Hazırla"],
@@ -953,100 +955,49 @@ elif secim == "🎓 Akademi (Ders Notları)":
 
         st.markdown("---")
 
-        # Butona basıldığını ve hangi konu/notun kullanılacağını takip edeceğimiz değişkenler
         baslat_tiklandi = False
         aktif_konu = ""
         aktif_not = ""
 
-        # 2. KISIM: ARAYÜZ KOŞULLARI
+        # 1. AI KÜTÜPHANESİ
         if sinav_kaynagi == "📚 AI Kütüphaneden Sınav Hazırla":
-            st.markdown("**Akademik Arşivden Ders Seçimi**")
-            
-            # Müfredat listesini çağırıyoruz
             from akademik_engine import AkademikEngine
             mufredat = AkademikEngine.get_akademik_mufredat()
-            sinif_listesi = list(mufredat.keys())
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                secilen_sinif = st.selectbox("Sınıf Seçiniz", options=sinif_listesi, key="sinav_sinif")
-            with col2:
-                secilen_sinifa_ait_dersler = [ders["isim"] for ders in mufredat[secilen_sinif]]
-                secilen_ders = st.selectbox("Ders Seçiniz", options=secilen_sinifa_ait_dersler, key="sinav_ders")
+            secilen_sinif = st.selectbox("Sınıf", list(mufredat.keys()), key="sinav_s")
+            secilen_ders = st.selectbox("Ders", [d['isim'] for d in mufredat[secilen_sinif]], key="sinav_d")
             
             aktif_konu = secilen_ders
-            aktif_not = "" # Yapay zeka kendi genel geçer hafızasından veya FAISS'ten beslenecek
-
             if st.button("🔥 AI Kütüphanesinden Sınavı Başlat", use_container_width=True):
                 baslat_tiklandi = True
 
-        # 2. SEÇENEK: KULLANICININ KENDİ NOTLARI (GÜNCEL VERSİYON)
+        # 2. KİŞİSEL NOTLARIM
         else:
             st.markdown("**Kişisel Notlarınızdan Sınav**")
             
-            # Notların kayıtlı olduğu session_state anahtarını senin sistemine göre yazdım. 
-            # (Eğer anahtarın farklıysa burayı güncelle: örn: st.session_state.butun_notlar)
-            not_listesi = st.session_state.get('not_listesi', [])
+            # Notları Firebase'den çektiğin fonksiyonu çağırıyoruz (Senin Notlarım sekmesinde kullandığın fonksiyon)
+            mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
             
-            if not not_listesi:
-                st.warning("⚠️ Henüz hiç not yüklemediniz. Lütfen 'Notlarım' sekmesinden dosya yükleyin.")
+            if not mevcut_notlar:
+                st.warning("⚠️ Arşivde kayıtlı notunuz yok. Lütfen 'Notlarım' sekmesinden PDF yükleyin.")
             else:
-                # Kullanıcıya notların isimlerini gösteriyoruz
-                # (Not objelerinin 'isim' veya 'dosya_adi' key'ine sahip olduğunu varsayıyorum)
-                secilen_not_adi = st.selectbox(
-                    "Sınav hazırlanacak notu seçiniz:", 
-                    options=[n['isim'] for n in notlar_listesi]
-                )
-                
-                # Seçilen notun içeriğini buluyoruz
-                secilen_not_objesi = next(n for n in notlar_listesi if n['isim'] == secilen_not_adi)
-                aktif_not = secilen_not_objesi['icerik'] # Notun içeriğini değişkene atadık
-                
+                secilen_not_adi = st.selectbox("Sınav hazırlanacak notu seçiniz:", options=mevcut_notlar)
                 aktif_konu = st.text_input("Sınav Konusu (İsteğe Bağlı):", placeholder="Örn: Kusurluluk halleri...")
                 
                 if st.button("🔥 Kendi Notumdan Sınavı Başlat", use_container_width=True):
+                    # Notun içeriğini veritabanından çekiyoruz
+                    aktif_not = AkademikEngine.not_icerigi_getir(secilen_not_adi)
                     baslat_tiklandi = True
 
-        # ==========================================
-        # 3. KISIM: SINAVI OLUŞTURMA (Tetikleyici)
-        # ==========================================
+        # SINAV OLUŞTURMA
         if baslat_tiklandi:
-            with st.spinner("Sınav hazırlanıyor... Bu işlem 10-15 saniye sürebilir."):
+            with st.spinner("Sınav hazırlanıyor..."):
+                # Aktif not boşsa kütüphane bazlı, doluysa not bazlı çalışır
                 sonuc = AkademikSinavEngine.pratik_calisma_uret(MY_API_KEY, aktif_konu, aktif_not)
-                
                 if "hata" in sonuc:
                     st.error(f"Sınav üretilemedi: {sonuc['hata']}")
                 else:
                     st.session_state.su_anki_sinav = sonuc
-
-
-        # ==========================================
-        # 4. KISIM: SINAVI EKRANA BASMA VE KONTROL (Mevcut Mantığın)
-        # ==========================================
-        if st.session_state.get('su_anki_sinav'):
-            sinav = st.session_state.su_anki_sinav
-            
-            if "olay_kurgusu" in sinav:
-                st.info(f"📖 OLAY: {sinav['olay_kurgusu']}")
-                
-                for i, soru_data in enumerate(sinav.get('sorular', [])):
-                    st.markdown("---")
-                    st.markdown(f"**Soru {i+1}:** {soru_data['soru']}")
-                    
-                    secim = st.radio(
-                        f"Seçenekler ({i+1})", 
-                        soru_data['secenekler'], 
-                        key=f"q_{i}"
-                    )
-                    
-                    if st.button(f"Kontrol Et ({i+1})", key=f"b_{i}"):
-                        if secim.strip().lower() == soru_data['cevap'].strip().lower():
-                            st.success(f"✅ DOĞRU! \n\n **Analiz:** {soru_data['analiz']}")
-                        else:
-                            st.error(f"❌ YANLIŞ! \n\n **Doğru Cevap:** {soru_data['cevap']}")
-                            st.warning(f"**Gerekçe:** {soru_data['analiz']}")
-            else:
-                st.error("Sınav formatı bozuk. Lütfen sayfayı yenileyip tekrar başlatın.")
+                    st.rerun() # Sınavı ekrana getirmek için sayfayı yeniliyoruz
 # 3. BÖLÜM: DİLEKÇE (YENİ YERİ)
 elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
     st.header("📝 Dilekçe Taslağı Oluştur")
