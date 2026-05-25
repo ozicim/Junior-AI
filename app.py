@@ -944,14 +944,19 @@ elif secim == "🎓 Akademi (Ders Notları)":
     # ==========================================
     # 3. SEKME: SINAV MODU
     # ==========================================
+    # ==========================================
+    # 3. SEKME: SINAV MODU (GÜNCELLENMİŞ)
+    # ==========================================
     with tab_sinav:
         st.markdown("#### 📝 Pratik Çalışma ve Sınav")
         
-        sinav_kaynagi = st.radio(
-            "Sınav Kaynağını Seçiniz:",
-            ["📚 AI Kütüphaneden Sınav Hazırla", "📂 Notlarımdan Sınav Hazırla"],
-            horizontal=True
-        )
+        # 1. AYARLAR PANELI
+        col_r1, col_r2 = st.columns([2, 1])
+        with col_r1:
+            sinav_kaynagi = st.radio("Sınav Kaynağı:", ["📚 AI Kütüphane", "📂 Kişisel Notlarım"], horizontal=True)
+        with col_r2:
+            sinav_tipi = st.selectbox("Sınav Tipi", ["Çoktan Seçmeli", "Klasik (Açık Uçlu)"])
+            soru_sayisi = st.slider("Soru Sayısı", 1, 10, 3)
 
         st.markdown("---")
 
@@ -959,45 +964,63 @@ elif secim == "🎓 Akademi (Ders Notları)":
         aktif_konu = ""
         aktif_not = ""
 
-        # 1. AI KÜTÜPHANESİ
-        if sinav_kaynagi == "📚 AI Kütüphaneden Sınav Hazırla":
+        # 2. KAYNAK SEÇİMİ
+        if sinav_kaynagi == "📚 AI Kütüphane":
             from akademik_engine import AkademikEngine
             mufredat = AkademikEngine.get_akademik_mufredat()
-            secilen_sinif = st.selectbox("Sınıf", list(mufredat.keys()), key="sinav_s")
-            secilen_ders = st.selectbox("Ders", [d['isim'] for d in mufredat[secilen_sinif]], key="sinav_d")
-            
+            col1, col2 = st.columns(2)
+            with col1:
+                secilen_sinif = st.selectbox("Sınıf", list(mufredat.keys()), key="s_sinif")
+            with col2:
+                secilen_ders = st.selectbox("Ders", [d['isim'] for d in mufredat[secilen_sinif]], key="s_ders")
             aktif_konu = secilen_ders
-            if st.button("🔥 AI Kütüphanesinden Sınavı Başlat", use_container_width=True):
+            if st.button("🔥 Sınavı Başlat", use_container_width=True):
                 baslat_tiklandi = True
-
-        # 2. KİŞİSEL NOTLARIM
         else:
-            st.markdown("**Kişisel Notlarınızdan Sınav**")
-            
-            # Notları Firebase'den çektiğin fonksiyonu çağırıyoruz (Senin Notlarım sekmesinde kullandığın fonksiyon)
             mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
-            
             if not mevcut_notlar:
-                st.warning("⚠️ Arşivde kayıtlı notunuz yok. Lütfen 'Notlarım' sekmesinden PDF yükleyin.")
+                st.warning("⚠️ Not bulunamadı.")
             else:
-                secilen_not_adi = st.selectbox("Sınav hazırlanacak notu seçiniz:", options=mevcut_notlar)
-                aktif_konu = st.text_input("Sınav Konusu (İsteğe Bağlı):", placeholder="Örn: Kusurluluk halleri...")
-                
-                if st.button("🔥 Kendi Notumdan Sınavı Başlat", use_container_width=True):
-                    # Notun içeriğini veritabanından çekiyoruz
+                secilen_not_adi = st.selectbox("Not Seçiniz:", options=mevcut_notlar)
+                aktif_konu = st.text_input("Konu (İsteğe Bağlı):", placeholder="Örn: Kusurluluk")
+                if st.button("🔥 Sınavı Başlat", use_container_width=True):
                     aktif_not = AkademikEngine.not_icerigi_getir(secilen_not_adi)
                     baslat_tiklandi = True
 
-        # SINAV OLUŞTURMA
+        # 3. SINAV OLUŞTURMA
         if baslat_tiklandi:
-            with st.spinner("Sınav hazırlanıyor..."):
-                # Aktif not boşsa kütüphane bazlı, doluysa not bazlı çalışır
-                sonuc = AkademikSinavEngine.pratik_calisma_uret(MY_API_KEY, aktif_konu, aktif_not)
+            with st.spinner("Hoca sınavı hazırlıyor..."):
+                # Yeni parametreleri (sinav_tipi, soru_sayisi) engine'e gönderiyoruz
+                sonuc = AkademikSinavEngine.pratik_calisma_uret(MY_API_KEY, aktif_konu, aktif_not, sinav_tipi, soru_sayisi)
                 if "hata" in sonuc:
-                    st.error(f"Sınav üretilemedi: {sonuc['hata']}")
+                    st.error(f"Hata: {sonuc['hata']}")
                 else:
                     st.session_state.su_anki_sinav = sonuc
-                    st.rerun() # Sınavı ekrana getirmek için sayfayı yeniliyoruz
+                    st.rerun()
+
+        # 4. EKRANA BASMA
+        if st.session_state.get('su_anki_sinav'):
+            sinav = st.session_state.su_anki_sinav
+            st.info(f"📖 OLAY: {sinav['olay_kurgusu']}")
+            
+            for i, soru_data in enumerate(sinav.get('sorular', [])):
+                st.markdown(f"**Soru {i+1}:** {soru_data['soru']}")
+                
+                if sinav_tipi == "Çoktan Seçmeli":
+                    secim = st.radio("Seçenekler:", soru_data['secenekler'], key=f"q_{i}")
+                    if st.button(f"Kontrol Et {i+1}", key=f"b_{i}"):
+                        if secim == soru_data['cevap']:
+                            st.success("✅ Doğru!")
+                        else:
+                            st.error(f"❌ Yanlış! Doğrusu: {soru_data['cevap']}")
+                else:
+                    # KLASİK SINAV DEĞERLENDİRME
+                    cevap = st.text_area("Cevabını yaz:", key=f"ans_{i}")
+                    if st.button("Hoca Puanlasın!", key=f"puan_{i}"):
+                        with st.spinner("Hoca kağıdı okuyor..."):
+                            puan_sonucu = AkademikSinavEngine.sinav_degerlendir(MY_API_KEY, soru_data['soru'], cevap, soru_data['analiz'])
+                            st.metric("Puan", f"{puan_sonucu['puan']}/100")
+                            st.write(f"**Hoca'nın Yorumu:** {puan_sonucu['gercekce']}")
 # 3. BÖLÜM: DİLEKÇE (YENİ YERİ)
 elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
     st.header("📝 Dilekçe Taslağı Oluştur")
