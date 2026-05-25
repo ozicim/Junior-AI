@@ -11,3 +11,6 @@ fpdf2
 chromadb
 sentence-transformers
 pydantic
+langchain
+langchain-google-genai
+faiss-cpu
