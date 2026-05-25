@@ -986,9 +986,9 @@ elif secim == "🎓 Akademi (Ders Notları)":
             
             # Notların kayıtlı olduğu session_state anahtarını senin sistemine göre yazdım. 
             # (Eğer anahtarın farklıysa burayı güncelle: örn: st.session_state.butun_notlar)
-            aktif_notlar = st.session_state.get('aktif_notlar', [])
+            not_listesi = st.session_state.get('not_listesi', [])
             
-            if not aktif_notlar:
+            if not not_listesi:
                 st.warning("⚠️ Henüz hiç not yüklemediniz. Lütfen 'Notlarım' sekmesinden dosya yükleyin.")
             else:
                 # Kullanıcıya notların isimlerini gösteriyoruz
