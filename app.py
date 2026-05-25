@@ -1202,7 +1202,7 @@ elif secim == "⚖️ İçtihat Sorgulama":
                         st.rerun()
 # ... diğer elif (Akademi, Adliye vb.) bloklarından sonra ekle:
 elif secim == "💬 JUNILEX Chat":
-st.header("💬 JUNILEX Chat")
+    st.header("💬 JUNILEX Chat")
     
     # 1. Hafıza ve Mod Başlatma
     if 'chat_mode' not in st.session_state:
