@@ -1189,38 +1189,57 @@ elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
 elif secim == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
     
-    # 1. Hafıza ve Mod Başlatma
-    if 'chat_mode' not in st.session_state:
-        st.session_state.chat_mode = "Özet"
-    if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi aydınlatalım?"}]
+    if 'chat_mode' not in st.session_state: st.session_state.chat_mode = "Özet"
+    if "chat_messages" not in st.session_state: st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi aydınlatalım?"}]
 
-    # Bağlam Paneli ve Sohbet Ayrımı
     col_chat, col_context = st.columns([3, 1])
 
     with col_context:
         st.markdown("### 🔍 Bağlam")
+        # aktif_dosya session'da var mı kontrol et
         aktif_belge = st.session_state.get('aktif_dosya', 'Belge seçilmedi')
         st.info(f"**Aktif Belge:**\n{aktif_belge}")
         if st.button("Belgeyi Temizle"):
             st.session_state.aktif_dosya = None
+            st.session_state.islenmis_not = None
             st.rerun()
 
     with col_chat:
-        # 2. Mesaj Geçmişini Göster
         for message in st.session_state.chat_messages:
             simge = "https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent" if message["role"] == "user" else "https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"
             with st.chat_message(message["role"], avatar=simge):
                 st.markdown(message["content"])
 
-        # 3. Alt Kumanda ve Input
         st.markdown("---")
         with st.popover(f"🧠 Mod: {st.session_state.chat_mode}", use_container_width=True):
-            secilen_mod = st.radio("Zeka Yapılandırması:", ["Özet", "⚖️ Detaylı Analiz"], index=0 if "Özet" in st.session_state.chat_mode else 1)
+            secilen_mod = st.radio("Zeka Yapılandırması:", ["Özet", "⚖️ Detaylı Analiz"])
             if secilen_mod != st.session_state.chat_mode:
                 st.session_state.chat_mode = secilen_mod
                 st.rerun()
 
         if prompt := st.chat_input("Mesajınızı yazın..."):
             st.session_state.chat_messages.append({"role": "user", "content": prompt})
+            
+            with st.chat_message("user"): st.markdown(prompt)
+            
+            with st.chat_message("assistant", avatar="https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"):
+                message_placeholder = st.empty()
+                full_response = ""
+                
+                # --- BAĞLAMI GÖNDERME ---
+                response = ChatEngine.yanit_uret(
+                    MY_API_KEY, 
+                    st.session_state.chat_messages[:-1], 
+                    prompt, 
+                    mod=st.session_state.chat_mode,
+                    aktif_belge_metni=st.session_state.get('islenmis_not', None)
+                )
+                
+                for chunk in response:
+                    if chunk.text:
+                        full_response += chunk.text
+                        message_placeholder.markdown(full_response + " ▌")
+                message_placeholder.markdown(full_response)
+                
+            st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
             st.rerun()
