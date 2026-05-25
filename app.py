@@ -939,12 +939,6 @@ elif secim == "🎓 Akademi (Ders Notları)":
                         st.session_state.hoca_aktif_sayfa += 1
                         st.rerun()
     # ==========================================
-    # 3. SEKME: SINAV MODU
-    # ==========================================
-    # ==========================================
-    # 3. SEKME: SINAV MODU
-    # ==========================================
-    # ==========================================
     # 3. SEKME: SINAV MODU (GÜNCELLENMİŞ)
     # ==========================================
     with tab_sinav:
@@ -1021,58 +1015,50 @@ elif secim == "🎓 Akademi (Ders Notları)":
                             puan_sonucu = AkademikSinavEngine.sinav_degerlendir(MY_API_KEY, soru_data['soru'], cevap, soru_data['analiz'])
                             st.metric("Puan", f"{puan_sonucu['puan']}/100")
                             st.write(f"**Hoca'nın Yorumu:** {puan_sonucu['gercekce']}")
-# 3. BÖLÜM: DİLEKÇE (YENİ YERİ)
+# 3. BÖLÜM: DİLEKÇE (GÜNCELLENMİŞ MARKET SİSTEMİ)
 elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
-    st.header("📝 Dilekçe Taslağı Oluştur")
-    st.info("Lütfen olayları ve tarafları detaylıca giriniz.")
+    st.header("⚖️ Dilekçe Marketi")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        d_konu = st.text_input("Dilekçe Konusu", placeholder="Örn: Hakaret Suçu Şikayeti")
-        d_taraflar = st.text_area("Taraflar", placeholder="Davacı: ...\nDavalı: ...")
-    with col2:
-        d_olay = st.text_area("Olayın Özeti", placeholder="Olayları buraya özetleyin...")
-        d_talep = st.text_area("Talepler", placeholder="Netice-i talep kısmını buraya yazın...")
-
-    if st.button("📝 Dilekçeyi Yaz ve Hazırla"):
-        if d_konu and d_olay:
-            st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
+    # 1. Kategori ve Tür Seçimi
+    col_a, col_b = st.columns(2)
+    with col_a:
+        kategori = st.selectbox("Kategori Seçin:", list(DilekceEngine.DILEKCE_KATALOGU.keys()))
+    with col_b:
+        tur = st.selectbox("Dilekçe Türü:", list(DilekceEngine.DILEKCE_KATALOGU[kategori].keys()))
+    
+    st.markdown("---")
+    
+    # 2. Dinamik Form Oluşturma
+    gerekli_alanlar = DilekceEngine.DILEKCE_KATALOGU[kategori][tur]
+    form_verileri = {}
+    
+    with st.form("arzuhal_form"):
+        # Katalogdaki gerekli alanları dinamik basıyoruz
+        for alan in gerekli_alanlar:
+            form_verileri[alan] = st.text_area(f"{alan}:")
         
-            # 1. Akışı başlatıyoruz
-            stream = DilekceEngine.dilekce_olustur(MY_API_KEY, d_konu, d_taraflar, d_olay, d_talep)
-        
-            # 2. Süzgeç fonksiyonu
-            def dilekce_suzucu():
-                for parca in stream:
-                    if parca.text:
-                        yield parca.text
-        
-            # 3. Ekrana yazdırıyoruz ve sonucu TAM_METIN içine alıyoruz
-            tam_metin = st.write_stream(dilekce_suzucu)
-        
-            # 4. Session State kaydı (Her iki satırı da tam_metin yapalım)
-            st.session_state.son_dilekce = tam_metin
+        submitted = st.form_submit_button("📝 Dilekçeyi Hazırla")
+    
+    if submitted:
+        if all(form_verileri.values()):
+            with st.spinner("Hukuki taslak oluşturuluyor..."):
+                # Dilekçeyi Engine üzerinden üret
+                taslak_metin = DilekceEngine.dilekce_uret(MY_API_KEY, tur, form_verileri)
+                st.session_state.son_dilekce = taslak_metin
                 
-            # 5. WORD İNDİRME (Hata buradaydı: 'metin' yerine 'tam_metin' yazdık)
-            word_data = DilekceEngine.word_dosyasi_yap(tam_metin) 
+                st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
+                st.write(taslak_metin)
                 
-            st.download_button(
-                label="📥 Word Dosyası Olarak Kaydet",
-                data=word_data,
-                file_name=f"{d_konu}_taslak.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
+                # Word İndirme
+                word_data = DilekceEngine.word_dosyasi_yap(taslak_metin)
+                st.download_button(
+                    label="📥 Word Dosyası Olarak Kaydet",
+                    data=word_data,
+                    file_name=f"{tur}_taslak.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
         else:
-            st.warning("Lütfen konu ve olay özetini doldurunuz ustam!")
-                
-            # Word İndirme
-            word_data = DilekceEngine.word_dosyasi_yap(metin)
-            st.download_button(
-                label="📥 Word Dosyası Olarak Kaydet",
-                data=word_data,
-                file_name=f"{d_konu}_taslak.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
+            st.warning("Lütfen tüm alanları doldurunuz ustam!")
 
 # --- MOD 4: İÇTİHAT SORGULAMA (Tamamen Düzeltilmiş) ---
 elif secim == "⚖️ İçtihat Sorgulama":
