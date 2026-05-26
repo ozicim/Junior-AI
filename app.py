@@ -263,7 +263,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# KENAR ÇUBUĞU (SIDEBAR)
+# ==========================================
+# KENAR ÇUBUĞU (SIDEBAR) - GÜNCELLENDİ
+# ==========================================
 with st.sidebar:
     st.title("⚖️ Junilex AI")
     
@@ -281,10 +283,11 @@ with st.sidebar:
     
     st.divider()
     
-    # İstatistik Paneli
+    # 📊 İstatistik Paneli
     with st.expander("📊 Çalışma Verileri", expanded=False):
         try:
             db = firestore.client()
+            # Sorguları optimize ediyoruz
             arsiv_ref = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).get()
             pdf_ref = db.collection("ders_notlari").get()
 
@@ -297,65 +300,51 @@ with st.sidebar:
     st.divider()
     st.info("Ozan Şahin Sicim | JUNILEX AI v2.2")
 
-# LOGO VE ÜST BAŞLIK (Dashboard'da da görünmesi için sabit)
-st.markdown("""
-    <div class="header-container">
-        <svg class="header-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="45" stroke="#C5A059" stroke-width="2" fill="none"/>
-            <path d="M30 45C30 45 35 60 50 60C65 60 70 45 70 45" stroke="#C5A059" stroke-width="2" fill="none"/>
-            <path d="M50 20V80" stroke="#C5A059" stroke-width="2"/>
-            <path d="M25 35H75" stroke="#1A1A1A" stroke-width="4"/>
-        </svg>
-    </div>
-""", unsafe_allow_html=True)
-
 # ==========================================
-# 🧭 DEPARTMAN KONTROL PANELİ
+# 🧭 DEPARTMAN KONTROL PANELİ - ANA EKRAN ENTEGRE
 # ==========================================
 
 if secim == "🏠 Ana Ekran":
     st.title(f"Selam {st.session_state.aktif_kullanici.split(' ')[0]},")
     st.markdown("Hukuk pratiğini hızlandırmak için hazırız.")
-    st.write("")
-
-    # 1. Hızlı Aksiyonlar (Grid Yapısı)
+    
+    # 1. Hızlı Eylem Butonları
+    st.write("---")
+    st.subheader("🚀 Hızlı Erişim")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        if st.button("🏛️ Mevzuat", use_container_width=True): 
-            # Navigasyon mantığı
-            pass
+        st.markdown("🏛️ **Mevzuat**")
+        st.caption("Kanun maddeleri ve yapay zeka şerhleri.")
     with c2:
-        if st.button("🎓 Akademi", use_container_width=True): pass
+        st.markdown("🎓 **Akademi**")
+        st.caption("Ders notları, PDF ve sınav modu.")
     with c3:
-        if st.button("📝 Dilekçe", use_container_width=True): pass
+        st.markdown("📝 **Dilekçe**")
+        st.caption("Hukuki taslak oluşturma merkezi.")
     with c4:
-        if st.button("⚖️ İçtihat", use_container_width=True): pass
+        st.markdown("⚖️ **İçtihat**")
+        st.caption("Karar analizi ve emsal sorgulama.")
 
     st.write("---")
 
-    # 2. Son Çalışılanlar (Gerçek Kullanım)
-    st.subheader("🕒 Son Çalışılanlar")
-    
-    # Buraya en son kaydedilen 3 belgeyi çek
-    db = firestore.client()
-    recent_docs = db.collection("junilex_arsiv").order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).get()
-
-    if recent_docs:
+    # 2. Son Çalışılanlar (Ölü alanı burayla canlandırıyoruz)
+    st.subheader("🕒 Son 3 İşlem")
+    try:
+        db = firestore.client()
+        recent_docs = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
+        
+        found = False
         for doc in recent_docs:
             d = doc.to_dict()
             with st.container(border=True):
-                col_i, col_b = st.columns([1, 4])
-                col_i.markdown(f"📄")
-                col_b.markdown(f"**{d.get('baslik')}** \n\n*{d.get('kategori')}*")
-    else:
-        st.info("Henüz üzerinde çalıştığın bir belge yok. Bir Mevzuat Analizi veya Dilekçe oluşturmaya başla.")
-
-    # 3. İstatistikler (Sadece gerçekten değer ifade edenler)
-    with st.expander("Gelişmiş İstatistikler"):
-        # Burada mevcut 0 ve 8 gibi metriklerini daha şık bir dille göster
-        c1, c2 = st.columns(2)
-        c1.metric("Toplam Hukuki Analiz", len(list(db.collection("junilex_arsiv").stream())))
-        c2.metric("Kütüphanedeki PDF", len(list(db.collection("ders_notlari").stream())))
+                col_i, col_b = st.columns([1, 6])
+                col_i.markdown("📄")
+                col_b.markdown(f"**{d.get('baslik')}** \n *{d.get('kategori')}*")
+            found = True
+        if not found:
+            st.info("Henüz bir işlem yapmamışsın. Bir modüle gidip çalışmaya başla!")
+    except:
+        st.caption("Kayıtlar getirilemedi.")
 
 elif secim == "🏛️ Adliye (Mevzuat Sorgu)":
     st.title("🏛️ Junilex Akıllı Mevzuat Bankası")
