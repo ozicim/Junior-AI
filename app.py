@@ -261,52 +261,62 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
 # 🏠 DASHBOARD (ANA EKRAN)
 # ==========================================
 if st.session_state.aktif_ekran == "🏠 Ana Ekran":
-    st.markdown("""
-        <div class="header-container">
-            <svg class="header-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="50" r="45" stroke="#C5A059" stroke-width="2" fill="none"/>
-                <path d="M30 45C30 45 35 60 50 60C65 60 70 45 70 45" stroke="#C5A059" stroke-width="2" fill="none"/>
-                <path d="M50 20V80" stroke="#C5A059" stroke-width="2"/>
-                <path d="M25 35H75" stroke="#1A1A1A" stroke-width="4"/>
-            </svg>
-            <h1 class="main-title">JUNILEX AI</h1>
-            <p class="sub-title">LEGAL INTELLIGENCE & ACADEMY</p>
-        </div>
-    """, unsafe_allow_html=True)
+    # Tüm içeriği ortada toplamak için kenarlara boşluk (spacer) bırakıyoruz [1, 2, 1] oranıyla
+    spacer_sol, ana_kolon, spacer_sag = st.columns([1, 2, 1])
     
-    st.title(f"Selam {st.session_state.aktif_kullanici.split(' ')[0]},")
-    st.markdown("Bugün hangi hukuk sahasında derinleşelim?")
-    st.write("---")
-    
-    cols = st.columns(4)
-    if cols[0].button("🏛️ Adliye", use_container_width=True): 
-        st.session_state.aktif_ekran = "🏛️ Adliye (Mevzuat Sorgu)"; st.rerun()
-    if cols[1].button("🎓 Akademi", use_container_width=True): 
-        st.session_state.aktif_ekran = "🎓 Akademi (Ders Notları)"; st.rerun()
-    if cols[2].button("📝 Arzuhal", use_container_width=True): 
-        st.session_state.aktif_ekran = "📝 Arzuhal(Dilekçe Yazım Merkezi)"; st.rerun()
-    if cols[3].button("⚖️ İçtihat", use_container_width=True): 
-        st.session_state.aktif_ekran = "⚖️ İçtihat Sorgulama"; st.rerun()
-    
-    if st.button("💬 JUNILEX Chat'e Başla", use_container_width=True):
-        st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
+    with ana_kolon:
+        st.markdown("""
+            <div class="header-container">
+                <svg class="header-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" stroke="#C5A059" stroke-width="2" fill="none"/>
+                    <path d="M30 45C30 45 35 60 50 60C65 60 70 45 70 45" stroke="#C5A059" stroke-width="2" fill="none"/>
+                    <path d="M50 20V80" stroke="#C5A059" stroke-width="2"/>
+                    <path d="M25 35H75" stroke="#1A1A1A" stroke-width="4"/>
+                </svg>
+                <h1 class="main-title">JUNILEX AI</h1>
+                <p class="sub-title">LEGAL INTELLIGENCE & ACADEMY</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.title(f"Selam {st.session_state.aktif_kullanici.split(' ')[0]},")
+        st.markdown("Bugün hangi hukuk sahasında derinleşelim?")
+        st.write("---")
+        
+        # Butonları basık olmaktan kurtarmak için 2x2 ızgara (grid) yapıyoruz
+        üst_satir_1, üst_satir_2 = st.columns(2)
+        if üst_satir_1.button("🏛️ Adliye", use_container_width=True): 
+            st.session_state.aktif_ekran = "🏛️ Adliye (Mevzuat Sorgu)"; st.rerun()
+        if üst_satir_2.button("🎓 Akademi", use_container_width=True): 
+            st.session_state.aktif_ekran = "🎓 Akademi (Ders Notları)"; st.rerun()
+            
+        alt_satir_1, alt_satir_2 = st.columns(2)
+        if alt_satir_1.button("📝 Arzuhal", use_container_width=True): 
+            st.session_state.aktif_ekran = "📝 Arzuhal(Dilekçe Yazım Merkezi)"; st.rerun()
+        if alt_satir_2.button("⚖️ İçtihat", use_container_width=True): 
+            st.session_state.aktif_ekran = "⚖️ İçtihat Sorgulama"; st.rerun()
+        
+        st.write("<br>", unsafe_allow_html=True)
+        
+        # Chat butonu özel ve belirgin
+        if st.button("💬 JUNILEX Chat'e Başla", use_container_width=True, type="primary"):
+            st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
 
-    st.write("---")
-    st.subheader("🕒 Son 3 İşlem")
-    try:
-        db = get_db()
-        recent = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
-        found = False
-        for doc in recent:
-            d = doc.to_dict()
-            with st.container(border=True):
-                col_i, col_b = st.columns([1, 6])
-                col_i.markdown("📄")
-                col_b.markdown(f"**{d.get('baslik')}** \n *Kategori: {d.get('kategori')}*")
-                found = True
-        if not found: st.info("Henüz geçmiş işlem yok.")
-    except Exception as e:
-        st.error(f"Veri çekilemedi: {e}")
+        st.write("---")
+        st.subheader("🕒 Son 3 İşlem")
+        try:
+            db = get_db()
+            recent = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
+            found = False
+            for doc in recent:
+                d = doc.to_dict()
+                with st.container(border=True):
+                    col_i, col_b = st.columns([1, 8])
+                    col_i.markdown("📄")
+                    col_b.markdown(f"**{d.get('baslik')}** \n *Kategori: {d.get('kategori')}*")
+                    found = True
+            if not found: st.info("Henüz geçmiş işlem yok.")
+        except Exception as e:
+            st.error(f"Veri çekilemedi: {e}")
 
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
