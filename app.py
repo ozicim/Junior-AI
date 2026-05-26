@@ -43,6 +43,23 @@ def veritabani_kaydet(veri):
         json.dump(veri, f, ensure_ascii=False, indent=4)
 
 # ==========================================
+# 💾 ORTAK ARŞİV KAYIT MOTORU (YENİ EKLENDİ)
+# ==========================================
+def junilex_arsive_kaydet(dosya_adi, metin):
+    """Farklı modüllerden gelen metinleri ortak hafızaya (Notlarım) kaydeder."""
+    try:
+        from firebase_admin import firestore
+        db = firestore.client()
+        db.collection("ders_notlari").add({
+            "dosya_adi": dosya_adi,
+            "metin": metin,
+            "tarih": firestore.SERVER_TIMESTAMP
+        })
+        return True, "Başarılı"
+    except Exception as e:
+        return False, str(e)
+
+# ==========================================
 # 📧 E-POSTA GÖNDERME MOTORU
 # ==========================================
 def onay_kodu_gonder(alici_mail, kod):
@@ -388,13 +405,25 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
                     madde_no=madde["madde_no"],
                     soru=ozel_soru
                 )
+                st.session_state.son_madde_analizi = analiz_sonucu
+                st.session_state.son_madde_baslik = f"Mevzuat Analizi: {madde['kanun_adi']} M.{madde['madde_no']}"
+
+        # MEVZUAT ANALİZİNİ KAYDETME BLOĞU EKLENDİ
+        if "son_madde_analizi" in st.session_state:
             st.markdown("### 🧠 JUNILEX Yapay Zeka Analiz Raporu")
             st.markdown(f"""
             <div class="hoca-anlatim-kutusu">
-                {analiz_sonucu.replace(chr(10), '<br>')}
+                {st.session_state.son_madde_analizi.replace(chr(10), '<br>')}
             </div>
             """, unsafe_allow_html=True)
             st.caption("⚠️ Yapay zeka analizi hukuki danışmanlık değildir. Kesin bilgi için avukat veya resmi kaynaklara başvurunuz.")
+            
+            if st.button("💾 Bu Analizi JUNILEX Arşivine Kaydet", key="btn_kaydet_mevzuat"):
+                basarili, mesaj = junilex_arsive_kaydet(st.session_state.son_madde_baslik, st.session_state.son_madde_analizi)
+                if basarili:
+                    st.success("✅ Arşive kaydedildi! Akademi > Notlarım sekmesinden seçip Chat'te üzerinden tartışabilirsin.")
+                else:
+                    st.error(f"Hata: {mesaj}")
 
     # GELİŞTİRİCİ PANELİ
     if st.session_state.get("aktif_kullanici") == "Ozan Şahin Sicim":
@@ -524,7 +553,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
 
         st.markdown("---") 
         st.subheader("📚 Dijital Arşivim")
-        with st.expander("Daha Önce Tarattığın Notları Gör ve Yönet", expanded=True):
+        with st.expander("Daha Önce Tarattığın Veya Kaydettiğin Metinleri Yönet", expanded=True):
             mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
             
             if mevcut_notlar: 
@@ -538,9 +567,9 @@ elif secim == "🎓 Akademi (Ders Notları)":
                             if eski_metin:
                                 st.session_state.islenmis_not = eski_metin
                                 st.session_state.aktif_dosya = not_adi
-                                st.success(f"📌 '{not_adi}' masaya koyuldu, soruları buna soracaksın!")
+                                st.success(f"📌 '{not_adi}' masaya koyuldu, Chat kısmından çalışabilirsin!")
                             else:
-                                st.warning("Bu dosyanın metni yok! (Eski, hatalı yükleme olabilir. Lütfen silip tekrar yükle.)")
+                                st.warning("Bu dosyanın metni yok! (Eski, hatalı yükleme olabilir.)")
                     with col_sil:
                         if st.button("🗑️ Sil", key=f"sil_{not_adi}"):
                             basarili = AkademikEngine.not_sil(not_adi)
@@ -779,6 +808,7 @@ elif secim == "⚖️ İçtihat Sorgulama":
                     else:
                         st.error("Analiz sonucu boş döndü, lütfen tekrar deneyin.")
 
+        # İÇTİHAT ANALİZİNİ KAYDETME BLOĞU EKLENDİ
         if "analiz_sayfalari" in st.session_state and st.session_state.analiz_sayfalari:
             sayfalar = st.session_state.analiz_sayfalari
             aktif = st.session_state.analiz_aktif_sayfa
@@ -803,6 +833,14 @@ elif secim == "⚖️ İçtihat Sorgulama":
                     if st.button("İleri ➡️", key="analiz_ileri_btn"):
                         st.session_state.analiz_aktif_sayfa += 1
                         st.rerun()
+            
+            st.markdown("---")
+            if st.button("💾 Bu Şerhi JUNILEX Arşivine Kaydet", key="btn_kaydet_serh"):
+                tam_metin = "\n".join(st.session_state.analiz_sayfalari)
+                basarili, mesaj = junilex_arsive_kaydet("İçtihat Şerhi (Karar Analizi)", tam_metin)
+                if basarili:
+                    st.success("✅ Arşive kaydedildi! Akademi > Notlarım kısmından seçip JUNILEX Chat'te soru sorabilirsiniz.")
+
     with tab2:
         st.subheader("🔎 Yargıtay Yönelim Analizi")
         
@@ -829,6 +867,7 @@ elif secim == "⚖️ İçtihat Sorgulama":
             else:
                 st.warning("Ustam, önce bir olay anlatman lazım.")
 
+        # EMSAL ANALİZİNİ KAYDETME BLOĞU EKLENDİ
         if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
             st.markdown("---")
             sayfalar_emsal = st.session_state.kitap_sayfalari
@@ -852,6 +891,13 @@ elif secim == "⚖️ İçtihat Sorgulama":
                     if st.button("İleri ➡️", key="emsal_nav_ileri"):
                         st.session_state.aktif_sayfa += 1
                         st.rerun()
+            
+            st.markdown("---")
+            if st.button("💾 Bu Emsal Analizini Arşive Kaydet", key="btn_kaydet_emsal"):
+                tam_metin = "\n".join(st.session_state.kitap_sayfalari)
+                basarili, mesaj = junilex_arsive_kaydet("Emsal Yönelim Analizi", tam_metin)
+                if basarili:
+                    st.success("✅ Arşive kaydedildi! Akademi > Notlarım kısmından seçip JUNILEX Chat'te kullanabilirsiniz.")
 
 elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
     st.header("⚖️ Dilekçe Marketi")
@@ -894,12 +940,31 @@ elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
             with st.spinner("Hukuki taslak oluşturuluyor..."):
                 taslak_metin = DilekceEngine.dilekce_uret(MY_API_KEY, tur, form_verileri)
                 st.session_state.son_dilekce = taslak_metin
-                st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
-                st.text_area("Taslak Metin", value=taslak_metin, height=400)
-                word_data = DilekceEngine.word_dosyasi_yap(taslak_metin)
-                st.download_button("📥 Word Dosyası Olarak Kaydet", data=word_data, file_name=f"{tur}_taslak.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
+                st.session_state.son_dilekce_turu = tur
         else:
             st.warning("Lütfen tüm alanları doldurunuz ustam!")
+
+    # DİLEKÇEYİ KAYDETME BLOĞU EKLENDİ (Form Dışına Çıkarıldı ki Silinmesin)
+    if "son_dilekce" in st.session_state:
+        st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
+        st.text_area("Taslak Metin", value=st.session_state.son_dilekce, height=400)
+        word_data = DilekceEngine.word_dosyasi_yap(st.session_state.son_dilekce)
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            st.download_button(
+                "📥 Word Dosyası Olarak Kaydet", 
+                data=word_data, 
+                file_name=f"{st.session_state.son_dilekce_turu}_taslak.docx", 
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                use_container_width=True
+            )
+        with c2:
+            if st.button("💾 Dilekçeyi Arşive Kaydet", use_container_width=True):
+                dosya_adi = f"Dilekçe: {st.session_state.son_dilekce_turu}"
+                basarili, mesaj = junilex_arsive_kaydet(dosya_adi, st.session_state.son_dilekce)
+                if basarili:
+                    st.success("✅ Dilekçe arşive kaydedildi! Akademi > Notlarım kısmından seçip JUNILEX Chat'te üzerinde çalışmaya devam edebilirsin.")
 
 elif secim == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
