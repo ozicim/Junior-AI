@@ -971,54 +971,61 @@ elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
 elif secim == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
     
-    if 'chat_mode' not in st.session_state: 
-        st.session_state.chat_mode = "Özet"
-    if "chat_messages" not in st.session_state: 
-        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi veya belgeyi aydınlatalım?"}]
+    # ... (chat_mode ve chat_messages başlangıç kontrolleri aynı kalsın) ...
 
     col_chat, col_context = st.columns([3, 1])
 
-    # YENİ EKLENEN ORTAK ÇAĞIRMA (BAĞLAM ARŞİVİ) EKRANI
     with col_context:
         st.markdown("### 🗂️ Bağlam Arşivi")
-        st.caption("Masaya koymak istediğin belgeyi seç:")
         
         db = firestore.client()
-        arsiv_secenekleri = {"Seçiniz...": None}
         
-        try:
-            # 1. PDF'leri Çek (ders_notlari koleksiyonundan)
-            notlar_ref = db.collection("ders_notlari").get()
-            for doc in notlar_ref:
-                d = doc.to_dict()
-                if "dosya_adi" in d and "metin" in d:
-                    arsiv_secenekleri[f"📄 PDF: {d.get('dosya_adi')}"] = d.get('metin')
-                
-            # 2. Üretilmiş Belgeleri Çek (junilex_arsiv koleksiyonundan - Sadece giriş yapan kullanıcınınkiler)
-            if st.session_state.aktif_kullanici:
-                junilex_ref = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).get()
-                for doc in junilex_ref:
-                    d = doc.to_dict()
-                    if "kategori" in d and "baslik" in d and "metin" in d:
-                        arsiv_secenekleri[f"{d.get('kategori')} | {d.get('baslik')}"] = d.get('metin')
-        except Exception as e:
-            st.error(f"Arşiv okunurken hata: {e}")
+        # 1. Kategori Seçimi
+        kategori_secim = st.selectbox("Kategori Seçin:", ["Seçiniz...", "🏛️ Adliye (Mevzuat)", "🎓 Akademi (PDF)", "📝 Dilekçe", "⚖️ İçtihat"])
+        
+        if kategori_secim != "Seçiniz...":
+            arsiv_secenekleri = {}
             
-        secilen_isim = st.selectbox("Belge Listesi", list(arsiv_secenekleri.keys()), label_visibility="collapsed")
-        
-        if st.button("📌 Masaya Koy", use_container_width=True) and secilen_isim != "Seçiniz...":
-            st.session_state.aktif_dosya = secilen_isim
-            st.session_state.islenmis_not = arsiv_secenekleri[secilen_isim]
-            st.rerun()
+            # Veri çekme mantığı (Kategoriye göre)
+            try:
+                if kategori_secim == "🎓 Akademi (PDF)":
+                    notlar_ref = db.collection("ders_notlari").get()
+                    for doc in notlar_ref:
+                        d = doc.to_dict()
+                        arsiv_secenekleri[d.get('dosya_adi', 'Adsız')] = d.get('metin')
+                else:
+                    # Diğerleri junilex_arsiv koleksiyonundan (Kategori filtresi ile)
+                    kategori_map = {"🏛️ Adliye (Mevzuat)": "🏛️ Mevzuat Şerhi", "📝 Dilekçe": "📝 Dilekçe", "⚖️ İçtihat": "⚖️ İçtihat Şerhi"}
+                    filtre = kategori_map.get(kategori_secim)
+                    
+                    if st.session_state.aktif_kullanici:
+                        docs = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).where("kategori", "==", filtre).get()
+                        for doc in docs:
+                            d = doc.to_dict()
+                            arsiv_secenekleri[d.get('baslik', 'Adsız Başlık')] = d.get('metin')
+            except Exception as e:
+                st.error("Arşiv yüklenirken hata.")
+
+            # 2. Belge Seçimi
+            if arsiv_secenekleri:
+                secilen_belge = st.selectbox("Belgeyi Seç:", list(arsiv_secenekleri.keys()))
+                if st.button("📌 Masaya Koy", use_container_width=True):
+                    st.session_state.aktif_dosya = f"{kategori_secim} | {secilen_belge}"
+                    st.session_state.islenmis_not = arsiv_secenekleri[secilen_belge]
+                    st.rerun()
+            else:
+                st.warning("Bu kategoride kayıt bulunamadı.")
             
         if st.session_state.get('aktif_dosya'):
-            st.success(f"**Şu an İncelenen:**\n{st.session_state.aktif_dosya}")
+            st.divider()
+            st.success(f"**Aktif:** {st.session_state.aktif_dosya}")
             if st.button("🗑️ Masayı Temizle", use_container_width=True):
                 st.session_state.aktif_dosya = None
                 st.session_state.islenmis_not = None
                 st.rerun()
 
     with col_chat:
+        # ... (Geri kalan Chat mesaj döngüsü ve input kısmı aynen kalacak) ...
         for message in st.session_state.chat_messages:
             simge = "https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent" if message["role"] == "user" else "https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"
             with st.chat_message(message["role"], avatar=simge):
