@@ -278,7 +278,7 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
         """, unsafe_allow_html=True)
         
         st.title(f"Selam {st.session_state.aktif_kullanici.split(' ')[0]},")
-        st.markdown("Bugün hangi hukuk sahasında derinleşelim?")
+        st.markdown("Bugün sana nasıl yardımcı olabilirim?")
         st.write("---")
         
         üst_satir_1, üst_satir_2 = st.columns(2)
