@@ -270,6 +270,7 @@ with st.sidebar:
     secim = st.radio(
         "Lütfen bir departman seçin:",
         [
+            "🏠 Ana Ekran",
             "🏛️ Adliye (Mevzuat Sorgu)", 
             "🎓 Akademi (Ders Notları)", 
             "📝 Arzuhal(Dilekçe Yazım Merkezi)",
@@ -280,7 +281,7 @@ with st.sidebar:
     
     st.divider()
     
-    # İstatistik Paneli (Toggle özelliği eklendi)
+    # İstatistik Paneli
     with st.expander("📊 Çalışma Verileri", expanded=False):
         try:
             db = firestore.client()
@@ -296,7 +297,7 @@ with st.sidebar:
     st.divider()
     st.info("Ozan Şahin Sicim | JUNILEX AI v2.2")
 
-# LOGO VE ÜST BAŞLIK
+# LOGO VE ÜST BAŞLIK (Dashboard'da da görünmesi için sabit)
 st.markdown("""
     <div class="header-container">
         <svg class="header-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -305,15 +306,39 @@ st.markdown("""
             <path d="M50 20V80" stroke="#C5A059" stroke-width="2"/>
             <path d="M25 35H75" stroke="#1A1A1A" stroke-width="4"/>
         </svg>
-        <h1 class="main-title">JUNILEX AI</h1>
-        <p class="sub-title">LEGAL INTELLIGENCE & ACADEMY</p>
     </div>
 """, unsafe_allow_html=True)
 
 # ==========================================
 # 🧭 DEPARTMAN KONTROL PANELİ
 # ==========================================
-if secim == "🏛️ Adliye (Mevzuat Sorgu)":
+
+if secim == "🏠 Ana Ekran":
+    st.title(f"Hoş geldin, {st.session_state.aktif_kullanici}")
+    st.markdown("### Bugün hangi hukuk sahasında derinleşelim?")
+    
+    st.write("---")
+    
+    # Dashboard Metrikleri
+    try:
+        db = firestore.client()
+        arsiv = list(db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
+        pdf = list(db.collection("ders_notlari").stream())
+        
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Toplam Arşivlenmiş Veri", len(arsiv))
+        c2.metric("Sisteme Yüklenen PDF", len(pdf))
+        c3.metric("Chat Modu", st.session_state.chat_mode)
+    except:
+        st.info("İstatistikler yükleniyor...")
+        
+    st.write("---")
+    st.markdown("Sol taraftaki menüden istediğin modüle giriş yapabilirsin.")
+    
+    # Hızlı Bilgilendirme
+    st.success("💡 **İpucu:** 'JUNILEX Chat' içerisindeki 'Bağlam Arşivi' menüsünden, kaydettiğin tüm verileri (PDF, Mevzuat, Dilekçe) tek tıkla masaya koyup AI ile tartışabilirsin.")
+
+elif secim == "🏛️ Adliye (Mevzuat Sorgu)":
     st.title("🏛️ Junilex Akıllı Mevzuat Bankası")
     st.markdown("Kategori filtreli kanun kütüphanesi. Maddeleri numarayla çağırabilir veya içinde geçen kelimelerle aratabilirsiniz.")
 
