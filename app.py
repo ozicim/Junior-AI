@@ -263,6 +263,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# KENAR ÇUBUĞU (SIDEBAR)
 with st.sidebar:
     st.title("⚖️ Junilex AI")
     
@@ -279,12 +280,10 @@ with st.sidebar:
     
     st.divider()
     
-    # İstatistik Paneli
-    with st.container(border=True):
-        st.markdown("##### 📊 Çalışma Karnen")
+    # İstatistik Paneli (Toggle özelliği eklendi)
+    with st.expander("📊 Çalışma Verileri", expanded=False):
         try:
             db = firestore.client()
-            # Kullanıcıya özel filtreleme ile veriyi çek
             arsiv_ref = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).get()
             pdf_ref = db.collection("ders_notlari").get()
 
