@@ -276,6 +276,24 @@ with st.sidebar:
             "💬 JUNILEX Chat"
         ]
     )
+    
+    # İstatistik Paneli
+    st.divider()
+    with st.container(border=True):
+        st.markdown("##### 📊 Çalışma Karnen")
+        try:
+            db = firestore.client()
+            # Kullanıcıya ait arşivlenmiş öğeleri say
+            arsiv_sayisi = len(list(db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream()))
+            # Yüklenen PDF'leri say
+            pdf_sayisi = len(list(db.collection("ders_notlari").stream()))
+
+            col1, col2 = st.columns(2)
+            col1.metric("Arşiv", arsiv_sayisi)
+            col2.metric("PDF", pdf_sayisi)
+        except Exception:
+            st.caption("Veri senkronize ediliyor...")
+            
     st.divider()
     st.info("Ozan Şahin Sicim | JUNILEX AI v2.0")
 
