@@ -27,11 +27,11 @@ if st.session_state.get("aktif_ekran", "🏠 Ana Ekran") == "🏠 Ana Ekran":
 # --- API ANAHTARLARINI BURAYA YAZ ---
 MY_API_KEY = st.secrets["GEMINI_API_KEY"]
 SERPER_API_KEY = st.secrets["SERPER_API_KEY"]
+DB_DOSYASI = "kullanicilar.json"
 
 # ==========================================
 # 💾 KALICI VERİTABANI MOTORU (JSON)
 # ==========================================
-DB_DOSYASI = "kullanicilar.json"
 
 def veritabani_yukle():
     if not os.path.exists(DB_DOSYASI):
@@ -268,93 +268,91 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# KENAR ÇUBUĞU (SIDEBAR) - GÜNCELLENDİ
+# 🧭 NAVİGASYON VE SIDEBAR YÖNETİMİ
 # ==========================================
-with st.sidebar:
-    st.title("⚖️ Junilex AI")
-    
-    secim = st.radio(
-        "Lütfen bir departman seçin:",
-        [
-            "🏠 Ana Ekran",
-            "🏛️ Adliye (Mevzuat Sorgu)", 
-            "🎓 Akademi (Ders Notları)", 
-            "📝 Arzuhal(Dilekçe Yazım Merkezi)",
-            "⚖️ İçtihat Sorgulama", 
-            "💬 JUNILEX Chat"
-        ]
-    )
-    
-    st.divider()
-    
-    # 📊 İstatistik Paneli
-    with st.expander("📊 Çalışma Verileri", expanded=False):
-        try:
-            db = firestore.client()
-            # Sorguları optimize ediyoruz
-            arsiv_ref = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).get()
-            pdf_ref = db.collection("ders_notlari").get()
 
-            col1, col2 = st.columns(2)
-            col1.metric("Arşiv", len(arsiv_ref))
-            col2.metric("PDF", len(pdf_ref))
-        except Exception:
-            st.caption("Veriler yükleniyor...")
+# 1. Ana Sayfada Sidebar'ı Gizle
+if st.session_state.aktif_ekran == "🏠 Ana Ekran":
+    st.markdown("""
+        <style>
+            [data-testid="stSidebar"] { display: none; }
+        </style>
+    """, unsafe_allow_html=True)
+
+# 2. Sidebar (Sadece Ana Sayfa dışındayken görünür)
+if st.session_state.aktif_ekran != "🏠 Ana Ekran":
+    with st.sidebar:
+        st.title("⚖️ Junilex AI")
+        
+        # Navigasyon Radio
+        secenekler = ["🏠 Ana Ekran", "🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)", "⚖️ İçtihat Sorgulama", "💬 JUNILEX Chat"]
+        secilen = st.radio("Departman:", secenekler, index=secenekler.index(st.session_state.aktif_ekran))
+        
+        if secilen != st.session_state.aktif_ekran:
+            st.session_state.aktif_ekran = secilen
+            st.rerun()
             
-    st.divider()
-    st.info("Ozan Şahin Sicim | JUNILEX AI v2.2")
+        st.divider()
+        with st.expander("📊 Çalışma Verileri"):
+            try:
+                db = firestore.client()
+                arsiv = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).get()
+                pdf = db.collection("ders_notlari").get()
+                c1, c2 = st.columns(2)
+                c1.metric("Arşiv", len(arsiv))
+                c2.metric("PDF", len(pdf))
+            except: st.caption("Veriler yükleniyor...")
+            
+        st.divider()
+        if st.button("🚪 Çıkış Yap", use_container_width=True):
+            st.session_state.logged_in = False
+            st.session_state.aktif_kullanici = ""
+            st.rerun()
 
-# ==========================================
-# 🧭 DEPARTMAN KONTROL PANELİ - ANA EKRAN ENTEGRE
-# ==========================================
-
-# --- ANA YÖNLENDİRİCİ ---
-if st.session_state.get("aktif_ekran", "🏠 Ana Ekran") == "🏠 Ana Ekran":
-    # --- DASHBOARD GÖRÜNÜMÜ ---
+# 3. ANA EKRAN (DASHBOARD)
+if st.session_state.aktif_ekran == "🏠 Ana Ekran":
+    st.markdown("<h1 style='text-align:center;'>JUNILEX AI</h1>", unsafe_allow_html=True)
     st.title(f"Selam {st.session_state.aktif_kullanici.split(' ')[0]},")
     st.markdown("Bugün hangi hukuk sahasında derinleşelim?")
     
     st.write("---")
     
     # 4 Ana Modül Butonu
-    cols = st.columns(4)
-    if cols[0].button("🏛️ Adliye", use_container_width=True): 
+    col1, col2, col3, col4 = st.columns(4)
+    if col1.button("🏛️ Adliye", use_container_width=True): 
         st.session_state.aktif_ekran = "🏛️ Adliye (Mevzuat Sorgu)"; st.rerun()
-    if cols[1].button("🎓 Akademi", use_container_width=True): 
+    if col2.button("🎓 Akademi", use_container_width=True): 
         st.session_state.aktif_ekran = "🎓 Akademi (Ders Notları)"; st.rerun()
-    if cols[2].button("📝 Arzuhal", use_container_width=True): 
+    if col3.button("📝 Arzuhal", use_container_width=True): 
         st.session_state.aktif_ekran = "📝 Arzuhal(Dilekçe Yazım Merkezi)"; st.rerun()
-    if cols[3].button("⚖️ İçtihat", use_container_width=True): 
+    if col4.button("⚖️ İçtihat", use_container_width=True): 
         st.session_state.aktif_ekran = "⚖️ İçtihat Sorgulama"; st.rerun()
     
-    # Chat için ayrı büyük buton
+    st.write("<br>", unsafe_allow_html=True)
     if st.button("💬 JUNILEX Chat'e Başla", use_container_width=True):
         st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
 
     st.write("---")
     
-    # Son 3 İşlem
+    # Son 3 İşlem Sorgusu
     st.subheader("🕒 Son 3 İşlem")
-    # (Buraya önceki adımda konuştuğumuz db sorgusunu ekle)
-    
-else:
-    # --- MODÜL GÖRÜNÜMÜ (Sidebar Aktif) ---
-    with st.sidebar:
-        st.title("⚖️ Junilex AI")
-        if st.button("🏠 Ana Menüye Dön", use_container_width=True):
-            st.session_state.aktif_ekran = "🏠 Ana Ekran"; st.rerun()
-        st.divider()
-        # ... Mevcut Sidebar İstatistiklerin ...
+    try:
+        db = firestore.client()
+        recent = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
         
-    # Modül Seçimi (Radio butonu yerine yönlendirici)
-    if st.session_state.aktif_ekran == "🏛️ Adliye (Mevzuat Sorgu)":
-        # ... Mevzuat kodların ...
-        pass
-    elif st.session_state.aktif_ekran == "💬 JUNILEX Chat":
-        # ... Chat kodların ...
-        pass
+        found = False
+        for doc in recent:
+            d = doc.to_dict()
+            with st.container(border=True):
+                st.markdown(f"**{d.get('baslik')}** \n *Kategori: {d.get('kategori')}*")
+                found = True
+        if not found:
+            st.info("Henüz geçmiş işlem yok.")
+    except Exception as e:
+        st.error(f"Veri çekilemedi: {e}")
 
-elif secim == "🏛️ Adliye (Mevzuat Sorgu)":
+# 4. MODÜL YÖNLENDİRME (Ana Ekran dışı)
+elif st.session_state.aktif_ekran == "🏛️ Adliye (Mevzuat Sorgu)":
     st.title("🏛️ Junilex Akıllı Mevzuat Bankası")
     st.markdown("Kategori filtreli kanun kütüphanesi. Maddeleri numarayla çağırabilir veya içinde geçen kelimelerle aratabilirsiniz.")
 
