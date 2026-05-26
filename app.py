@@ -279,20 +279,27 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
         </style>
     """, unsafe_allow_html=True)
 
-# 2. Sidebar (Sadece Ana Sayfa dışındayken görünür)
+# --- SIDEBAR (Sadece Ana Ekran dışındayken) ---
 if st.session_state.aktif_ekran != "🏠 Ana Ekran":
     with st.sidebar:
         st.title("⚖️ Junilex AI")
         
-        # Navigasyon Radio
+        # Seçenekler
         secenekler = ["🏠 Ana Ekran", "🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)", "⚖️ İçtihat Sorgulama", "💬 JUNILEX Chat"]
-        secilen = st.radio("Departman:", secenekler, index=secenekler.index(st.session_state.aktif_ekran))
+        
+        # HATA DÜZELTME: Eğer aktif_ekran listede yoksa ilk seçeneğe sıfırla
+        if st.session_state.aktif_ekran not in secenekler:
+            st.session_state.aktif_ekran = secenekler[0]
+            
+        current_index = secenekler.index(st.session_state.aktif_ekran)
+        secilen = st.radio("Departman:", secenekler, index=current_index)
         
         if secilen != st.session_state.aktif_ekran:
             st.session_state.aktif_ekran = secilen
             st.rerun()
             
         st.divider()
+        # ... geri kalan sidebar içeriği ...
         with st.expander("📊 Çalışma Verileri"):
             try:
                 db = firestore.client()
