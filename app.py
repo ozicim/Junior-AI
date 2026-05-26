@@ -43,17 +43,19 @@ def veritabani_kaydet(veri):
         json.dump(veri, f, ensure_ascii=False, indent=4)
 
 # ==========================================
-# 💾 ORTAK ARŞİV KAYIT MOTORU (YENİ EKLENDİ)
+# 💾 JUNILEX ÖZEL ARŞİV MOTORU (GÜNCELLENDİ)
 # ==========================================
-def junilex_arsive_kaydet(dosya_adi, metin):
-    """Farklı modüllerden gelen metinleri ortak hafızaya (Notlarım) kaydeder."""
+def junilex_arsive_kaydet(kategori, baslik, metin):
+    """Uygulama içinde üretilen verileri (Mevzuat, İçtihat, Dilekçe) kendi özel koleksiyonuna yazar."""
     try:
         from firebase_admin import firestore
         db = firestore.client()
-        db.collection("ders_notlari").add({
-            "dosya_adi": dosya_adi,
+        db.collection("junilex_arsiv").add({
+            "kategori": kategori,
+            "baslik": baslik,
             "metin": metin,
-            "tarih": firestore.SERVER_TIMESTAMP
+            "tarih": firestore.SERVER_TIMESTAMP,
+            "kullanici": st.session_state.aktif_kullanici
         })
         return True, "Başarılı"
     except Exception as e:
@@ -408,7 +410,7 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
                 st.session_state.son_madde_analizi = analiz_sonucu
                 st.session_state.son_madde_baslik = f"Mevzuat Analizi: {madde['kanun_adi']} M.{madde['madde_no']}"
 
-        # MEVZUAT ANALİZİNİ KAYDETME BLOĞU EKLENDİ
+        # YENİ EKLENEN ARŞİV KAYIT BUTONU
         if "son_madde_analizi" in st.session_state:
             st.markdown("### 🧠 JUNILEX Yapay Zeka Analiz Raporu")
             st.markdown(f"""
@@ -419,9 +421,9 @@ if secim == "🏛️ Adliye (Mevzuat Sorgu)":
             st.caption("⚠️ Yapay zeka analizi hukuki danışmanlık değildir. Kesin bilgi için avukat veya resmi kaynaklara başvurunuz.")
             
             if st.button("💾 Bu Analizi JUNILEX Arşivine Kaydet", key="btn_kaydet_mevzuat"):
-                basarili, mesaj = junilex_arsive_kaydet(st.session_state.son_madde_baslik, st.session_state.son_madde_analizi)
+                basarili, mesaj = junilex_arsive_kaydet("🏛️ Mevzuat Şerhi", st.session_state.son_madde_baslik, st.session_state.son_madde_analizi)
                 if basarili:
-                    st.success("✅ Arşive kaydedildi! Akademi > Notlarım sekmesinden seçip Chat'te üzerinden tartışabilirsin.")
+                    st.success("✅ Arşive kaydedildi! JUNILEX Chat > Bağlam Arşivi menüsünden seçip tartışabilirsin.")
                 else:
                     st.error(f"Hata: {mesaj}")
 
@@ -531,6 +533,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
 
     with tab_notlar:
         st.header("📥 Not Yükleme Alanı")
+        st.info("💡 Burası sadece senin dışarıdan yüklediğin PDF ders notlarını barındırır. Ürettiğin diğer analizler doğrudan Chat menüsündeki arşivine düşer.")
         
         uploaded_file = st.file_uploader("Notunu Buraya Yükle (PDF)", type="pdf", key="main_uploader")
         
@@ -553,7 +556,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
 
         st.markdown("---") 
         st.subheader("📚 Dijital Arşivim")
-        with st.expander("Daha Önce Tarattığın Veya Kaydettiğin Metinleri Yönet", expanded=True):
+        with st.expander("Daha Önce Tarattığın PDF Metinleri Yönet", expanded=True):
             mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
             
             if mevcut_notlar: 
@@ -808,7 +811,7 @@ elif secim == "⚖️ İçtihat Sorgulama":
                     else:
                         st.error("Analiz sonucu boş döndü, lütfen tekrar deneyin.")
 
-        # İÇTİHAT ANALİZİNİ KAYDETME BLOĞU EKLENDİ
+        # YENİ EKLENEN ARŞİV KAYIT BUTONU
         if "analiz_sayfalari" in st.session_state and st.session_state.analiz_sayfalari:
             sayfalar = st.session_state.analiz_sayfalari
             aktif = st.session_state.analiz_aktif_sayfa
@@ -837,9 +840,9 @@ elif secim == "⚖️ İçtihat Sorgulama":
             st.markdown("---")
             if st.button("💾 Bu Şerhi JUNILEX Arşivine Kaydet", key="btn_kaydet_serh"):
                 tam_metin = "\n".join(st.session_state.analiz_sayfalari)
-                basarili, mesaj = junilex_arsive_kaydet("İçtihat Şerhi (Karar Analizi)", tam_metin)
+                basarili, mesaj = junilex_arsive_kaydet("⚖️ İçtihat Şerhi", "Karar Analizi", tam_metin)
                 if basarili:
-                    st.success("✅ Arşive kaydedildi! Akademi > Notlarım kısmından seçip JUNILEX Chat'te soru sorabilirsiniz.")
+                    st.success("✅ Arşive kaydedildi! JUNILEX Chat menüsünden ulaşıp üzerinde konuşabilirsiniz.")
 
     with tab2:
         st.subheader("🔎 Yargıtay Yönelim Analizi")
@@ -867,7 +870,7 @@ elif secim == "⚖️ İçtihat Sorgulama":
             else:
                 st.warning("Ustam, önce bir olay anlatman lazım.")
 
-        # EMSAL ANALİZİNİ KAYDETME BLOĞU EKLENDİ
+        # YENİ EKLENEN ARŞİV KAYIT BUTONU
         if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
             st.markdown("---")
             sayfalar_emsal = st.session_state.kitap_sayfalari
@@ -895,9 +898,9 @@ elif secim == "⚖️ İçtihat Sorgulama":
             st.markdown("---")
             if st.button("💾 Bu Emsal Analizini Arşive Kaydet", key="btn_kaydet_emsal"):
                 tam_metin = "\n".join(st.session_state.kitap_sayfalari)
-                basarili, mesaj = junilex_arsive_kaydet("Emsal Yönelim Analizi", tam_metin)
+                basarili, mesaj = junilex_arsive_kaydet("🔎 Emsal Yönelim", "Emsal Analizi", tam_metin)
                 if basarili:
-                    st.success("✅ Arşive kaydedildi! Akademi > Notlarım kısmından seçip JUNILEX Chat'te kullanabilirsiniz.")
+                    st.success("✅ Arşive kaydedildi! JUNILEX Chat menüsünden ulaşıp kullanabilirsiniz.")
 
 elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
     st.header("⚖️ Dilekçe Marketi")
@@ -944,7 +947,7 @@ elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
         else:
             st.warning("Lütfen tüm alanları doldurunuz ustam!")
 
-    # DİLEKÇEYİ KAYDETME BLOĞU EKLENDİ (Form Dışına Çıkarıldı ki Silinmesin)
+    # YENİ EKLENEN ARŞİV KAYIT BUTONU
     if "son_dilekce" in st.session_state:
         st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
         st.text_area("Taslak Metin", value=st.session_state.son_dilekce, height=400)
@@ -961,10 +964,9 @@ elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
             )
         with c2:
             if st.button("💾 Dilekçeyi Arşive Kaydet", use_container_width=True):
-                dosya_adi = f"Dilekçe: {st.session_state.son_dilekce_turu}"
-                basarili, mesaj = junilex_arsive_kaydet(dosya_adi, st.session_state.son_dilekce)
+                basarili, mesaj = junilex_arsive_kaydet("📝 Dilekçe", st.session_state.son_dilekce_turu, st.session_state.son_dilekce)
                 if basarili:
-                    st.success("✅ Dilekçe arşive kaydedildi! Akademi > Notlarım kısmından seçip JUNILEX Chat'te üzerinde çalışmaya devam edebilirsin.")
+                    st.success("✅ Dilekçe arşive kaydedildi! Chat kısmından seçip üzerinde çalışmaya devam edebilirsin.")
 
 elif secim == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
@@ -972,18 +974,49 @@ elif secim == "💬 JUNILEX Chat":
     if 'chat_mode' not in st.session_state: 
         st.session_state.chat_mode = "Özet"
     if "chat_messages" not in st.session_state: 
-        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi aydınlatalım?"}]
+        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi veya belgeyi aydınlatalım?"}]
 
     col_chat, col_context = st.columns([3, 1])
 
+    # YENİ EKLENEN ORTAK ÇAĞIRMA (BAĞLAM ARŞİVİ) EKRANI
     with col_context:
-        st.markdown("### 🔍 Bağlam")
-        aktif_belge = st.session_state.get('aktif_dosya', 'Belge seçilmedi')
-        st.info(f"**Aktif Belge:**\n{aktif_belge}")
-        if st.button("Belgeyi Temizle"):
-            st.session_state.aktif_dosya = None
-            st.session_state.islenmis_not = None
+        st.markdown("### 🗂️ Bağlam Arşivi")
+        st.caption("Masaya koymak istediğin belgeyi seç:")
+        
+        db = firestore.client()
+        arsiv_secenekleri = {"Seçiniz...": None}
+        
+        try:
+            # 1. PDF'leri Çek (ders_notlari koleksiyonundan)
+            notlar_ref = db.collection("ders_notlari").get()
+            for doc in notlar_ref:
+                d = doc.to_dict()
+                if "dosya_adi" in d and "metin" in d:
+                    arsiv_secenekleri[f"📄 PDF: {d.get('dosya_adi')}"] = d.get('metin')
+                
+            # 2. Üretilmiş Belgeleri Çek (junilex_arsiv koleksiyonundan - Sadece giriş yapan kullanıcınınkiler)
+            if st.session_state.aktif_kullanici:
+                junilex_ref = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).get()
+                for doc in junilex_ref:
+                    d = doc.to_dict()
+                    if "kategori" in d and "baslik" in d and "metin" in d:
+                        arsiv_secenekleri[f"{d.get('kategori')} | {d.get('baslik')}"] = d.get('metin')
+        except Exception as e:
+            st.error(f"Arşiv okunurken hata: {e}")
+            
+        secilen_isim = st.selectbox("Belge Listesi", list(arsiv_secenekleri.keys()), label_visibility="collapsed")
+        
+        if st.button("📌 Masaya Koy", use_container_width=True) and secilen_isim != "Seçiniz...":
+            st.session_state.aktif_dosya = secilen_isim
+            st.session_state.islenmis_not = arsiv_secenekleri[secilen_isim]
             st.rerun()
+            
+        if st.session_state.get('aktif_dosya'):
+            st.success(f"**Şu an İncelenen:**\n{st.session_state.aktif_dosya}")
+            if st.button("🗑️ Masayı Temizle", use_container_width=True):
+                st.session_state.aktif_dosya = None
+                st.session_state.islenmis_not = None
+                st.rerun()
 
     with col_chat:
         for message in st.session_state.chat_messages:
