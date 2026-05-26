@@ -314,29 +314,48 @@ st.markdown("""
 # ==========================================
 
 if secim == "🏠 Ana Ekran":
-    st.title(f"Hoş geldin, {st.session_state.aktif_kullanici}")
-    st.markdown("### Bugün hangi hukuk sahasında derinleşelim?")
-    
+    st.title(f"Selam {st.session_state.aktif_kullanici.split(' ')[0]},")
+    st.markdown("Hukuk pratiğini hızlandırmak için hazırız.")
+    st.write("")
+
+    # 1. Hızlı Aksiyonlar (Grid Yapısı)
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        if st.button("🏛️ Mevzuat", use_container_width=True): 
+            # Navigasyon mantığı
+            pass
+    with c2:
+        if st.button("🎓 Akademi", use_container_width=True): pass
+    with c3:
+        if st.button("📝 Dilekçe", use_container_width=True): pass
+    with c4:
+        if st.button("⚖️ İçtihat", use_container_width=True): pass
+
     st.write("---")
+
+    # 2. Son Çalışılanlar (Gerçek Kullanım)
+    st.subheader("🕒 Son Çalışılanlar")
     
-    # Dashboard Metrikleri
-    try:
-        db = firestore.client()
-        arsiv = list(db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
-        pdf = list(db.collection("ders_notlari").stream())
-        
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Toplam Arşivlenmiş Veri", len(arsiv))
-        c2.metric("Sisteme Yüklenen PDF", len(pdf))
-        c3.metric("Chat Modu", st.session_state.chat_mode)
-    except:
-        st.info("İstatistikler yükleniyor...")
-        
-    st.write("---")
-    st.markdown("Sol taraftaki menüden istediğin modüle giriş yapabilirsin.")
-    
-    # Hızlı Bilgilendirme
-    st.success("💡 **İpucu:** 'JUNILEX Chat' içerisindeki 'Bağlam Arşivi' menüsünden, kaydettiğin tüm verileri (PDF, Mevzuat, Dilekçe) tek tıkla masaya koyup AI ile tartışabilirsin.")
+    # Buraya en son kaydedilen 3 belgeyi çek
+    db = firestore.client()
+    recent_docs = db.collection("junilex_arsiv").order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).get()
+
+    if recent_docs:
+        for doc in recent_docs:
+            d = doc.to_dict()
+            with st.container(border=True):
+                col_i, col_b = st.columns([1, 4])
+                col_i.markdown(f"📄")
+                col_b.markdown(f"**{d.get('baslik')}** \n\n*{d.get('kategori')}*")
+    else:
+        st.info("Henüz üzerinde çalıştığın bir belge yok. Bir Mevzuat Analizi veya Dilekçe oluşturmaya başla.")
+
+    # 3. İstatistikler (Sadece gerçekten değer ifade edenler)
+    with st.expander("Gelişmiş İstatistikler"):
+        # Burada mevcut 0 ve 8 gibi metriklerini daha şık bir dille göster
+        c1, c2 = st.columns(2)
+        c1.metric("Toplam Hukuki Analiz", len(list(db.collection("junilex_arsiv").stream())))
+        c2.metric("Kütüphanedeki PDF", len(list(db.collection("ders_notlari").stream())))
 
 elif secim == "🏛️ Adliye (Mevzuat Sorgu)":
     st.title("🏛️ Junilex Akıllı Mevzuat Bankası")
