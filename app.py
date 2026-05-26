@@ -971,9 +971,21 @@ elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
 elif secim == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
     
-    # ... (chat_mode ve chat_messages başlangıç kontrolleri aynı kalsın) ...
+    # --- GÜÇLENDİRİLMİŞ BAŞLATMA BLOĞU ---
+    # Eğer bu anahtarlar yoksa, uygulama hata vermeden önce oluşturulmasını garanti ediyoruz
+    if 'chat_mode' not in st.session_state: 
+        st.session_state.chat_mode = "Özet"
+    
+    if "chat_messages" not in st.session_state: 
+        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi veya belgeyi aydınlatalım?"}]
+        
+    # Eğer aktif_dosya yoksa hata vermesin diye başlangıç değeri atayalım
+    if 'aktif_dosya' not in st.session_state:
+        st.session_state.aktif_dosya = None
 
+    # ... (Geri kalan kodların aynı şekilde devam edebilir) ...
     col_chat, col_context = st.columns([3, 1])
+    # ...
 
     with col_context:
         st.markdown("### 🗂️ Bağlam Arşivi")
