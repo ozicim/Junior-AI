@@ -1,7 +1,4 @@
 import streamlit as st
-# 1. SAYFA AYARLARI (Bu komut her zaman importlardan hemen sonra gelmek ZORUNDADIR!)
-st.set_page_config(page_title="JUNIOR AI", page_icon="⚖️", layout="centered")
-
 import firebase_admin
 from firebase_admin import firestore
 import random
@@ -19,6 +16,13 @@ from dilekce_engine import DilekceEngine
 from akademik_sinav_modu import AkademikSinavEngine
 from ictihat_engine import IctihatEngine
 from chat_engine import ChatEngine
+# CSS ile Sidebar gizleme/gösterme mantığı
+if st.session_state.get("aktif_ekran", "🏠 Ana Ekran") == "🏠 Ana Ekran":
+    st.markdown("""
+        <style>
+            [data-testid="stSidebar"] { display: none; }
+        </style>
+    """, unsafe_allow_html=True)
 
 # --- API ANAHTARLARINI BURAYA YAZ ---
 MY_API_KEY = st.secrets["GEMINI_API_KEY"]
