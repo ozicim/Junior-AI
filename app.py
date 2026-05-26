@@ -309,7 +309,34 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
             
             toplam_islem = len(tum_kayitlar)
             mevzuat_sayisi = sum(1 for d in tum_kayitlar if "Mevzuat" in d.to_dict().get("kategori", ""))
-            dilekce_
+            dilekce_sayisi = sum(1 for d in tum_kayitlar if "Dilekçe" in d.to_dict().get("kategori", ""))
+            ictihat_sayisi = sum(1 for d in tum_kayitlar if "İçtihat" in d.to_dict().get("kategori", ""))
+            
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Toplam Kayıt", toplam_islem)
+            m2.metric("Mevzuat Şerhi", mevzuat_sayisi)
+            m3.metric("Dilekçe Taslağı", dilekce_sayisi)
+            m4.metric("İçtihat Analizi", ictihat_sayisi)
+            
+        except Exception as e:
+            st.caption("Aktivite verileri yüklenemedi.")
+
+        st.write("---")
+        
+        st.subheader("🕒 Son 3 İşlem")
+        try:
+            recent = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
+            found = False
+            for doc in recent:
+                d = doc.to_dict()
+                with st.container(border=True):
+                    col_i, col_b = st.columns([1, 8])
+                    col_i.markdown("📄")
+                    col_b.markdown(f"**{d.get('baslik')}** \n *Kategori: {d.get('kategori')}*")
+                    found = True
+            if not found: st.info("Henüz geçmiş işlem yok.")
+        except Exception as e:
+            st.error(f"Veri çekilemedi: {e}")
 
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
