@@ -978,33 +978,25 @@ elif secim == "💬 JUNILEX Chat":
     with col_context:
         st.markdown("### 🗂️ Bağlam Arşivi")
         
-        db = firestore.client()
+        # KARTLI TASARIM (Ölü alanı böyle doldururuz)
+        with st.container(border=True):
+            st.markdown("<b>Aktif Çalışma Dosyası</b>", unsafe_allow_html=True)
+            if st.session_state.get('aktif_dosya'):
+                st.success(f"{st.session_state.aktif_dosya}")
+                st.caption("Bu belge üzerinden Junilex ile konuşuyorsun.")
+                if st.button("🗑️ Arşivden Çıkar"):
+                    st.session_state.aktif_dosya = None; st.rerun()
+            else:
+                st.info("Henüz belge seçmedin.")
+    
+        st.markdown("---")
         
-        # 1. Kategori Seçimi
-        kategori_secim = st.selectbox("Kategori Seçin:", ["Seçiniz...", "🏛️ Adliye (Mevzuat)", "🎓 Akademi (PDF)", "📝 Dilekçe", "⚖️ İçtihat"])
-        
-        if kategori_secim != "Seçiniz...":
-            arsiv_secenekleri = {}
-            
-            # Veri çekme mantığı (Kategoriye göre)
-            try:
-                if kategori_secim == "🎓 Akademi (PDF)":
-                    notlar_ref = db.collection("ders_notlari").get()
-                    for doc in notlar_ref:
-                        d = doc.to_dict()
-                        arsiv_secenekleri[d.get('dosya_adi', 'Adsız')] = d.get('metin')
-                else:
-                    # Diğerleri junilex_arsiv koleksiyonundan (Kategori filtresi ile)
-                    kategori_map = {"🏛️ Adliye (Mevzuat)": "🏛️ Mevzuat Şerhi", "📝 Dilekçe": "📝 Dilekçe", "⚖️ İçtihat": "⚖️ İçtihat Şerhi"}
-                    filtre = kategori_map.get(kategori_secim)
-                    
-                    if st.session_state.aktif_kullanici:
-                        docs = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).where("kategori", "==", filtre).get()
-                        for doc in docs:
-                            d = doc.to_dict()
-                            arsiv_secenekleri[d.get('baslik', 'Adsız Başlık')] = d.get('metin')
-            except Exception as e:
-                st.error("Arşiv yüklenirken hata.")
+        # HIZLI AKSİYONLAR (Boşlukları butonlarla doldur)
+        st.markdown("<b>Hızlı Analiz Araçları</b>", unsafe_allow_html=True)
+        if st.button("⚖️ Kararı Şerh Düş", use_container_width=True):
+            st.switch_page("pages/ictihat_bolumu.py") # Veya ilgili sekme
+        if st.button("📝 Dilekçeye Dönüştür", use_container_width=True):
+            st.switch_page("pages/dilekce_bolumu.py")
 
             # 2. Belge Seçimi
             if arsiv_secenekleri:
