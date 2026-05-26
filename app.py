@@ -9,6 +9,7 @@ import urllib.request
 import json
 import google.generativeai as genai
 from fpdf import FPDF
+import gc
 
 from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine, YASAL_UYARI
@@ -16,22 +17,46 @@ from dilekce_engine import DilekceEngine
 from akademik_sinav_modu import AkademikSinavEngine
 from ictihat_engine import IctihatEngine
 from chat_engine import ChatEngine
-# CSS ile Sidebar gizleme/gösterme mantığı
-if st.session_state.get("aktif_ekran", "🏠 Ana Ekran") == "🏠 Ana Ekran":
-    st.markdown("""
-        <style>
-            [data-testid="stSidebar"] { display: none; }
-        </style>
-    """, unsafe_allow_html=True)
 
-# --- API ANAHTARLARINI BURAYA YAZ ---
+# ==========================================
+# ⚙️ AYARLAR VE BELLEK YÖNETİMİ
+# ==========================================
+st.set_page_config(layout="wide", page_title="JUNILEX AI")
+
+# OVER CAPACITY HATASINI ÇÖZEN EN ÖNEMLİ KOD:
+@st.cache_resource
+def get_db():
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app()
+    return firestore.client()
+
+# ==========================================
+# 🎨 CSS VE TASARIM
+# ==========================================
+if st.session_state.get("aktif_ekran", "🏠 Ana Ekran") == "🏠 Ana Ekran":
+    st.markdown("""<style>[data-testid="stSidebar"] { display: none; }</style>""", unsafe_allow_html=True)
+
+st.markdown("""
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+    <style>
+        html, body, [class*="css"] { font-family: 'Lora', serif; }
+        .header-container { text-align: center; padding: 20px 0; }
+        .header-logo-svg { width: 100px; height: auto; margin: 0 auto 10px auto; display: block; }
+        .main-title { font-size: 52px; font-weight: 800; color: #1A1A1A; letter-spacing: 6px; margin: 0; text-transform: uppercase; }
+        .sub-title { color: #C5A059; font-weight: 600; letter-spacing: 4px; font-size: 14px; text-align: center; margin-bottom: 20px; }
+        .madde-kutusu { background-color: #121212 !important; color: #FFFFFF !important; padding: 35px; border-radius: 12px; border: 2px solid #C5A059; background-image: radial-gradient(#2a2a2a 2px, transparent 2px) !important; background-size: 25px 25px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin: 25px 0; line-height: 1.8; }
+        .madde-baslik { color: #C5A059 !important; font-weight: 700; font-size: 24px; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; text-align: left; }
+        .madde-icerik p { margin-bottom: 15px; color: #f0f0f0 !important; }
+        .hoca-anlatim-kutusu { background-color: #fdf6e3; padding: 25px; border-radius: 12px; border-left: 8px solid #C5A059; color: #2c3e50; line-height: 1.7; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 20px; }
+    </style>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# 🔐 API VE MOTORLAR
+# ==========================================
 MY_API_KEY = st.secrets["GEMINI_API_KEY"]
 SERPER_API_KEY = st.secrets["SERPER_API_KEY"]
 DB_DOSYASI = "kullanicilar.json"
-
-# ==========================================
-# 💾 KALICI VERİTABANI MOTORU (JSON)
-# ==========================================
 
 def veritabani_yukle():
     if not os.path.exists(DB_DOSYASI):
@@ -46,37 +71,23 @@ def veritabani_kaydet(veri):
     with open(DB_DOSYASI, "w", encoding="utf-8") as f:
         json.dump(veri, f, ensure_ascii=False, indent=4)
 
-# ==========================================
-# 💾 JUNILEX ÖZEL ARŞİV MOTORU (GÜNCELLENDİ)
-# ==========================================
 def junilex_arsive_kaydet(kategori, baslik, metin):
-    """Uygulama içinde üretilen verileri (Mevzuat, İçtihat, Dilekçe) kendi özel koleksiyonuna yazar."""
     try:
-        from firebase_admin import firestore
-        db = firestore.client()
+        db = get_db()
         db.collection("junilex_arsiv").add({
-            "kategori": kategori,
-            "baslik": baslik,
-            "metin": metin,
-            "tarih": firestore.SERVER_TIMESTAMP,
-            "kullanici": st.session_state.aktif_kullanici
+            "kategori": kategori, "baslik": baslik, "metin": metin,
+            "tarih": firestore.SERVER_TIMESTAMP, "kullanici": st.session_state.aktif_kullanici
         })
         return True, "Başarılı"
-    except Exception as e:
-        return False, str(e)
+    except Exception as e: return False, str(e)
 
-# ==========================================
-# 📧 E-POSTA GÖNDERME MOTORU
-# ==========================================
 def onay_kodu_gonder(alici_mail, kod):
     gonderici_mail = "ozan.scm@gmail.com"
     uygulama_sifresi = "eidf uhkc zqxl gyhs"
-
     msg = MIMEText(f"JUNILEX'e hoş geldin!\n\nKayıt işlemini tamamlamak için doğrulama kodun: {kod}\n\nBu kodu kimseyle paylaşmayın.", "plain", "utf-8")
     msg['Subject'] = "JUNILEX Doğrulama Kodu"
     msg['From'] = "JUNILEX Asistan"
     msg['To'] = alici_mail
-
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -84,20 +95,43 @@ def onay_kodu_gonder(alici_mail, kod):
         server.send_message(msg)
         server.quit()
         return True, "Başarılı"
-    except Exception as e:
-        return False, str(e)
+    except Exception as e: return False, str(e)
+
+def metni_sayfalara_bol(metin, sayfa_boyutu=1000):
+    if not metin: return []
+    paragraflar = metin.split('\n')
+    sayfalar = []
+    suanki_sayfa = ""
+    for p in paragraflar:
+        if len(suanki_sayfa) + len(p) > sayfa_boyutu:
+            sayfalar.append(suanki_sayfa.strip())
+            suanki_sayfa = p + "\n"
+        else: suanki_sayfa += p + "\n"
+    if suanki_sayfa.strip(): sayfalar.append(suanki_sayfa.strip())
+    return sayfalar
 
 # ==========================================
-# 🔐 GÜVENLİK VE VERİTABANI BAŞLATMA
+# 🚀 SESSION STATE YÖNETİMİ
 # ==========================================
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "aktif_kullanici" not in st.session_state:
-    st.session_state.aktif_kullanici = ""
-if "kullanici_veritabani" not in st.session_state:
-    st.session_state.kullanici_veritabani = veritabani_yukle() 
-if "onay_bekleyen" not in st.session_state:
-    st.session_state.onay_bekleyen = None 
+if "logged_in" not in st.session_state: st.session_state.logged_in = False
+if "aktif_kullanici" not in st.session_state: st.session_state.aktif_kullanici = ""
+if "kullanici_veritabani" not in st.session_state: st.session_state.kullanici_veritabani = veritabani_yukle() 
+if "onay_bekleyen" not in st.session_state: st.session_state.onay_bekleyen = None 
+if 'aktif_ekran' not in st.session_state: st.session_state.aktif_ekran = '🏠 Ana Ekran'
+if 'secili_kanun' not in st.session_state: st.session_state.secili_kanun = None
+if 'bulunan_madde' not in st.session_state: st.session_state.bulunan_madde = None
+if 'arama_sonuclari' not in st.session_state: st.session_state.arama_sonuclari = []
+if 'islenmis_not' not in st.session_state: st.session_state.islenmis_not = None
+if 'su_anki_sinav' not in st.session_state: st.session_state.su_anki_sinav = None
+if "aktif_sayfa" not in st.session_state: st.session_state.aktif_sayfa = 0
+if "analiz_aktif_sayfa" not in st.session_state: st.session_state.analiz_aktif_sayfa = 0
+if "akademi_aktif_sayfa" not in st.session_state: st.session_state.akademi_aktif_sayfa = 0
+if "kitap_sayfalari" not in st.session_state: st.session_state.kitap_sayfalari = []
+if "analiz_sayfalari" not in st.session_state: st.session_state.analiz_sayfalari = []
+if "akademi_notlari" not in st.session_state: st.session_state.akademi_notlari = []
+if "chat_mode" not in st.session_state: st.session_state.chat_mode = "Özet"
+if "chat_messages" not in st.session_state: st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi veya belgeyi aydınlatalım?"}]
+if "aktif_dosya" not in st.session_state: st.session_state.aktif_dosya = None
 
 # ==========================================
 # 🛑 GİRİŞ VE KAYIT EKRANI
@@ -118,15 +152,13 @@ if not st.session_state.logged_in:
         with tab_giris:
             giris_email = st.text_input("E-Posta Adresi", key="giris_email")
             giris_sifre = st.text_input("Şifre", type="password", key="giris_sifre")
-            
             if st.button("🚀 Sisteme Giriş Yap", use_container_width=True):
                 st.session_state.kullanici_veritabani = veritabani_yukle()
                 if giris_email in st.session_state.kullanici_veritabani and st.session_state.kullanici_veritabani[giris_email]["sifre"] == giris_sifre:
                     st.session_state.logged_in = True
                     st.session_state.aktif_kullanici = st.session_state.kullanici_veritabani[giris_email]["isim"]
                     st.rerun() 
-                else:
-                    st.error("E-posta adresi veya şifre hatalı!")
+                else: st.error("E-posta adresi veya şifre hatalı!")
                     
         with tab_kayit:
             if st.session_state.onay_bekleyen is None:
@@ -134,54 +166,36 @@ if not st.session_state.logged_in:
                 kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
                 kayit_sifre = st.text_input("Yeni Şifre", type="password", key="kayit_sifre")
                 kayit_sifre_tekrar = st.text_input("Şifre Tekrar", type="password", key="kayit_sifre_tekrar")
-                
                 if st.button("Kayıt Ol", use_container_width=True):
                     st.session_state.kullanici_veritabani = veritabani_yukle()
-                    if len(kayit_isim.strip()) < 3:
-                        st.warning("⚠️ Lütfen geçerli bir İsim Soyisim giriniz!")
-                    elif "@" not in kayit_email or "." not in kayit_email:
-                        st.warning("⚠️ Lütfen geçerli bir e-posta adresi giriniz!")
-                    elif kayit_email in st.session_state.kullanici_veritabani:
-                        st.warning("Bu e-posta adresi zaten sisteme kayıtlı!")
-                    elif kayit_sifre != kayit_sifre_tekrar:
-                        st.error("Şifreler uyuşmuyor!")
-                    elif len(kayit_sifre) < 6:
-                        st.warning("Şifre en az 6 karakter olmalıdır.")
+                    if len(kayit_isim.strip()) < 3: st.warning("⚠️ Lütfen geçerli bir İsim Soyisim giriniz!")
+                    elif "@" not in kayit_email or "." not in kayit_email: st.warning("⚠️ Lütfen geçerli bir e-posta adresi giriniz!")
+                    elif kayit_email in st.session_state.kullanici_veritabani: st.warning("Bu e-posta adresi zaten sisteme kayıtlı!")
+                    elif kayit_sifre != kayit_sifre_tekrar: st.error("Şifreler uyuşmuyor!")
+                    elif len(kayit_sifre) < 6: st.warning("Şifre en az 6 karakter olmalıdır.")
                     else:
                         uretilen_kod = str(random.randint(100000, 999999))
                         with st.spinner("Onay kodu e-postanıza gönderiliyor..."):
                             basarili_mi, hata_mesaji = onay_kodu_gonder(kayit_email, uretilen_kod)
                         if basarili_mi:
-                            st.session_state.onay_bekleyen = {
-                                "isim": kayit_isim.title(),
-                                "email": kayit_email,
-                                "sifre": kayit_sifre,
-                                "kod": uretilen_kod
-                            }
+                            st.session_state.onay_bekleyen = {"isim": kayit_isim.title(), "email": kayit_email, "sifre": kayit_sifre, "kod": uretilen_kod}
                             st.success("✅ Kod gönderildi! Lütfen e-postanızı kontrol edin.")
                             st.rerun()
-                        else:
-                            st.error(f"E-posta gönderilemedi! Teknik detay: {hata_mesaji}")
+                        else: st.error(f"E-posta gönderilemedi! Teknik detay: {hata_mesaji}")
             else:
                 st.info(f"📧 **{st.session_state.onay_bekleyen['email']}** adresine 6 haneli bir doğrulama kodu gönderdik.")
                 girilen_kod = st.text_input("Doğrulama Kodu", key="dogrulama_kodu", max_chars=6)
-                
                 col_onay1, col_onay2, col_onay3 = st.columns(3)
-                
                 with col_onay1:
                     if st.button("✅ Kodu Doğrula", use_container_width=True):
                         if girilen_kod == st.session_state.onay_bekleyen["kod"]:
                             yeni_mail = st.session_state.onay_bekleyen["email"]
-                            st.session_state.kullanici_veritabani[yeni_mail] = {
-                                "sifre": st.session_state.onay_bekleyen["sifre"], 
-                                "isim": st.session_state.onay_bekleyen["isim"]
-                            }
+                            st.session_state.kullanici_veritabani[yeni_mail] = {"sifre": st.session_state.onay_bekleyen["sifre"], "isim": st.session_state.onay_bekleyen["isim"]}
                             veritabani_kaydet(st.session_state.kullanici_veritabani)
                             st.session_state.onay_bekleyen = None
                             st.balloons() 
                             st.success("🎉 Kayıt başarılı! Şimdi 'Giriş Yap' sekmesine geçerek JUNILEX'i kullanmaya başlayabilirsiniz.")
-                        else:
-                            st.error("❌ Doğrulama kodu hatalı! Lütfen tekrar kontrol edin.")
+                        else: st.error("❌ Doğrulama kodu hatalı! Lütfen tekrar kontrol edin.")
                 with col_onay2:
                     if st.button("🔄 Tekrar Kod Gönder", use_container_width=True):
                         yeni_kod = str(random.randint(100000, 999999))
@@ -190,8 +204,7 @@ if not st.session_state.logged_in:
                         if basarili:
                             st.session_state.onay_bekleyen["kod"] = yeni_kod
                             st.toast("✅ Yeni kod başarıyla gönderildi!", icon="📧")
-                        else:
-                            st.error(f"Kod gönderimi başarısız: {mesaj}")
+                        else: st.error(f"Kod gönderimi başarısız: {mesaj}")
                 with col_onay3:
                     if st.button("⬅️ Bilgileri Düzenle", use_container_width=True):
                         st.session_state.onay_bekleyen = None
@@ -199,97 +212,24 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# ✅ ANA UYGULAMA (SADECE GİRİŞ YAPANLAR GÖREBİLİR)
+# 🧭 SIDEBAR (SADECE MODÜLLERDE GÖRÜNÜR)
 # ==========================================
-st.sidebar.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.aktif_kullanici}")
-if st.sidebar.button("🚪 Çıkış Yap", use_container_width=True):
-    st.session_state.logged_in = False
-    st.session_state.aktif_kullanici = ""
-    st.rerun()
-st.sidebar.markdown("---")
-
 try:
     AkademikEngine.veritabanini_baslat()
 except Exception as e:
-    st.error(f"Veritabanı başlatılamadı: {e}")
+    pass
 
-# SESSION STATE BAŞLATMA
-if 'aktif_ekran' not in st.session_state: st.session_state.aktif_ekran = 'liste'
-if 'secili_kanun' not in st.session_state: st.session_state.secili_kanun = None
-if 'bulunan_madde' not in st.session_state: st.session_state.bulunan_madde = None
-if 'arama_sonuclari' not in st.session_state: st.session_state.arama_sonuclari = []
-if 'islenmis_not' not in st.session_state: st.session_state.islenmis_not = None
-if 'su_anki_sinav' not in st.session_state: st.session_state.su_anki_sinav = None
-if "aktif_sayfa" not in st.session_state: st.session_state.aktif_sayfa = 0
-if "analiz_aktif_sayfa" not in st.session_state: st.session_state.analiz_aktif_sayfa = 0
-if "akademi_aktif_sayfa" not in st.session_state: st.session_state.akademi_aktif_sayfa = 0
-if "kitap_sayfalari" not in st.session_state: st.session_state.kitap_sayfalari = []
-if "analiz_sayfalari" not in st.session_state: st.session_state.analiz_sayfalari = []
-if "akademi_notlari" not in st.session_state: st.session_state.akademi_notlari = []
-
-def ekran_degistir(yeni_ekran):
-    st.session_state.aktif_ekran = yeni_ekran
-
-def kanun_sec(kanun):
-    st.session_state.secili_kanun = kanun
-    st.session_state.bulunan_madde = None
-    st.session_state.arama_sonuclari = []
-    ekran_degistir('maddeSecim')
-    
-def metni_sayfalara_bol(metin, sayfa_boyutu=1000):
-    if not metin: return []
-    paragraflar = metin.split('\n')
-    sayfalar = []
-    suanki_sayfa = ""
-    for p in paragraflar:
-        if len(suanki_sayfa) + len(p) > sayfa_boyutu:
-            sayfalar.append(suanki_sayfa.strip())
-            suanki_sayfa = p + "\n"
-        else:
-            suanki_sayfa += p + "\n"
-    if suanki_sayfa.strip():
-        sayfalar.append(suanki_sayfa.strip())
-    return sayfalar
-
-# CSS BLOĞU
-st.markdown("""
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
-    <style>
-        html, body, [class*="css"] { font-family: 'Lora', serif; }
-        .header-container { text-align: center; padding: 20px 0; }
-        .header-logo-svg { width: 100px; height: auto; margin: 0 auto 10px auto; display: block; }
-        .main-title { font-size: 52px; font-weight: 800; color: #1A1A1A; letter-spacing: 6px; margin: 0; text-transform: uppercase; }
-        .sub-title { color: #C5A059; font-weight: 600; letter-spacing: 4px; font-size: 14px; text-align: center; margin-bottom: 20px; }
-        .madde-kutusu { background-color: #121212 !important; color: #FFFFFF !important; padding: 35px; border-radius: 12px; border: 2px solid #C5A059; background-image: radial-gradient(#2a2a2a 2px, transparent 2px) !important; background-size: 25px 25px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin: 25px 0; line-height: 1.8; }
-        .madde-baslik { color: #C5A059 !important; font-weight: 700; font-size: 24px; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; text-align: left; }
-        .madde-icerik p { margin-bottom: 15px; color: #f0f0f0 !important; }
-        .hoca-anlatim-kutusu { background-color: #fdf6e3; padding: 25px; border-radius: 12px; border-left: 8px solid #C5A059; color: #2c3e50; line-height: 1.7; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 20px; }
-    </style>
-""", unsafe_allow_html=True)
-
-# ==========================================
-# 🧭 NAVİGASYON VE SIDEBAR YÖNETİMİ
-# ==========================================
-
-# 1. Ana Sayfada Sidebar'ı Gizle
-if st.session_state.aktif_ekran == "🏠 Ana Ekran":
-    st.markdown("""
-        <style>
-            [data-testid="stSidebar"] { display: none; }
-        </style>
-    """, unsafe_allow_html=True)
-
-# --- SIDEBAR (Sadece Ana Ekran dışındayken) ---
 if st.session_state.aktif_ekran != "🏠 Ana Ekran":
     with st.sidebar:
-        st.title("⚖️ Junilex AI")
+        st.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.aktif_kullanici}")
+        if st.button("🏠 Ana Menüye Dön", use_container_width=True):
+            st.session_state.aktif_ekran = "🏠 Ana Ekran"
+            st.rerun()
+        st.divider()
         
-        # Seçenekler
         secenekler = ["🏠 Ana Ekran", "🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)", "⚖️ İçtihat Sorgulama", "💬 JUNILEX Chat"]
-        
-        # HATA DÜZELTME: Eğer aktif_ekran listede yoksa ilk seçeneğe sıfırla
         if st.session_state.aktif_ekran not in secenekler:
-            st.session_state.aktif_ekran = secenekler[0]
+            st.session_state.aktif_ekran = secenekler[1]
             
         current_index = secenekler.index(st.session_state.aktif_ekran)
         secilen = st.radio("Departman:", secenekler, index=current_index)
@@ -299,66 +239,78 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
             st.rerun()
             
         st.divider()
-        # ... geri kalan sidebar içeriği ...
-        with st.expander("📊 Çalışma Verileri"):
+        with st.expander("📊 Çalışma Verileri", expanded=False):
             try:
-                db = firestore.client()
-                arsiv = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).get()
-                pdf = db.collection("ders_notlari").get()
-                c1, c2 = st.columns(2)
-                c1.metric("Arşiv", len(arsiv))
-                c2.metric("PDF", len(pdf))
-            except: st.caption("Veriler yükleniyor...")
-            
+                db = get_db()
+                arsiv_ref = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).get()
+                pdf_ref = db.collection("ders_notlari").get()
+                col1, col2 = st.columns(2)
+                col1.metric("Arşiv", len(arsiv_ref))
+                col2.metric("PDF", len(pdf_ref))
+            except Exception:
+                st.caption("Veriler yükleniyor...")
+                
         st.divider()
         if st.button("🚪 Çıkış Yap", use_container_width=True):
             st.session_state.logged_in = False
             st.session_state.aktif_kullanici = ""
             st.rerun()
+        st.info("Ozan Şahin Sicim | JUNILEX AI v2.2")
 
-# 3. ANA EKRAN (DASHBOARD)
+# ==========================================
+# 🏠 DASHBOARD (ANA EKRAN)
+# ==========================================
 if st.session_state.aktif_ekran == "🏠 Ana Ekran":
-    st.markdown("<h1 style='text-align:center;'>JUNILEX AI</h1>", unsafe_allow_html=True)
+    st.markdown("""
+        <div class="header-container">
+            <svg class="header-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="45" stroke="#C5A059" stroke-width="2" fill="none"/>
+                <path d="M30 45C30 45 35 60 50 60C65 60 70 45 70 45" stroke="#C5A059" stroke-width="2" fill="none"/>
+                <path d="M50 20V80" stroke="#C5A059" stroke-width="2"/>
+                <path d="M25 35H75" stroke="#1A1A1A" stroke-width="4"/>
+            </svg>
+            <h1 class="main-title">JUNILEX AI</h1>
+            <p class="sub-title">LEGAL INTELLIGENCE & ACADEMY</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
     st.title(f"Selam {st.session_state.aktif_kullanici.split(' ')[0]},")
     st.markdown("Bugün hangi hukuk sahasında derinleşelim?")
-    
     st.write("---")
     
-    # 4 Ana Modül Butonu
-    col1, col2, col3, col4 = st.columns(4)
-    if col1.button("🏛️ Adliye", use_container_width=True): 
+    cols = st.columns(4)
+    if cols[0].button("🏛️ Adliye", use_container_width=True): 
         st.session_state.aktif_ekran = "🏛️ Adliye (Mevzuat Sorgu)"; st.rerun()
-    if col2.button("🎓 Akademi", use_container_width=True): 
+    if cols[1].button("🎓 Akademi", use_container_width=True): 
         st.session_state.aktif_ekran = "🎓 Akademi (Ders Notları)"; st.rerun()
-    if col3.button("📝 Arzuhal", use_container_width=True): 
+    if cols[2].button("📝 Arzuhal", use_container_width=True): 
         st.session_state.aktif_ekran = "📝 Arzuhal(Dilekçe Yazım Merkezi)"; st.rerun()
-    if col4.button("⚖️ İçtihat", use_container_width=True): 
+    if cols[3].button("⚖️ İçtihat", use_container_width=True): 
         st.session_state.aktif_ekran = "⚖️ İçtihat Sorgulama"; st.rerun()
     
-    st.write("<br>", unsafe_allow_html=True)
     if st.button("💬 JUNILEX Chat'e Başla", use_container_width=True):
         st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
 
     st.write("---")
-    
-    # Son 3 İşlem Sorgusu
     st.subheader("🕒 Son 3 İşlem")
     try:
-        db = firestore.client()
+        db = get_db()
         recent = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
-        
         found = False
         for doc in recent:
             d = doc.to_dict()
             with st.container(border=True):
-                st.markdown(f"**{d.get('baslik')}** \n *Kategori: {d.get('kategori')}*")
+                col_i, col_b = st.columns([1, 6])
+                col_i.markdown("📄")
+                col_b.markdown(f"**{d.get('baslik')}** \n *Kategori: {d.get('kategori')}*")
                 found = True
-        if not found:
-            st.info("Henüz geçmiş işlem yok.")
+        if not found: st.info("Henüz geçmiş işlem yok.")
     except Exception as e:
         st.error(f"Veri çekilemedi: {e}")
 
-# 4. MODÜL YÖNLENDİRME (Ana Ekran dışı)
+# ==========================================
+# 🏛️ ADLİYE MODÜLÜ
+# ==========================================
 elif st.session_state.aktif_ekran == "🏛️ Adliye (Mevzuat Sorgu)":
     st.title("🏛️ Junilex Akıllı Mevzuat Bankası")
     st.markdown("Kategori filtreli kanun kütüphanesi. Maddeleri numarayla çağırabilir veya içinde geçen kelimelerle aratabilirsiniz.")
@@ -473,7 +425,6 @@ elif st.session_state.aktif_ekran == "🏛️ Adliye (Mevzuat Sorgu)":
                 st.session_state.son_madde_analizi = analiz_sonucu
                 st.session_state.son_madde_baslik = f"Mevzuat Analizi: {madde['kanun_adi']} M.{madde['madde_no']}"
 
-        # YENİ EKLENEN ARŞİV KAYIT BUTONU
         if "son_madde_analizi" in st.session_state:
             st.markdown("### 🧠 JUNILEX Yapay Zeka Analiz Raporu")
             st.markdown(f"""
@@ -506,7 +457,10 @@ elif st.session_state.aktif_ekran == "🏛️ Adliye (Mevzuat Sorgu)":
                     except Exception as e:
                         st.error(f"❌ Yerel Vektörleştirme Hatası: {str(e)}")
 
-elif secim == "🎓 Akademi (Ders Notları)":
+# ==========================================
+# 🎓 AKADEMİ MODÜLÜ
+# ==========================================
+elif st.session_state.aktif_ekran == "🎓 Akademi (Ders Notları)":
     st.header("🎓 Akademik Asistan")
     
     tab_mufredat, tab_notlar, tab_sinav = st.tabs(["📚 Müfredat", "📄 Notlarım", "📝 Sınav Modu"])
@@ -605,7 +559,7 @@ elif secim == "🎓 Akademi (Ders Notları)":
             with st.spinner("PDF okunuyor ve arşive işleniyor... (Bu biraz sürebilir)"):
                 cikarilan_metin = AkademikEngine.dosyadan_metin_cikar(uploaded_file)
                 try:
-                    db = firestore.client()
+                    db = get_db()
                     db.collection("ders_notlari").add({
                         "dosya_adi": dosya_ismi,
                         "metin": cikarilan_metin,  
@@ -791,7 +745,6 @@ elif secim == "🎓 Akademi (Ders Notları)":
         aktif_not = ""
 
         if sinav_kaynagi == "📚 AI Kütüphane":
-            from akademik_engine import AkademikEngine
             mufredat = AkademikEngine.get_akademik_mufredat()
             col1, col2 = st.columns(2)
             with col1:
@@ -829,9 +782,9 @@ elif secim == "🎓 Akademi (Ders Notları)":
                 st.markdown(f"**Soru {i+1}:** {soru_data['soru']}")
                 
                 if sinav_tipi == "Çoktan Seçmeli":
-                    secim = st.radio("Seçenekler:", soru_data['secenekler'], key=f"q_{i}")
+                    secim_cvp = st.radio("Seçenekler:", soru_data['secenekler'], key=f"q_{i}")
                     if st.button(f"Kontrol Et {i+1}", key=f"b_{i}"):
-                        if secim == soru_data['cevap']:
+                        if secim_cvp == soru_data['cevap']:
                             st.success("✅ Doğru!")
                         else:
                             st.error(f"❌ Yanlış! Doğrusu: {soru_data['cevap']}")
@@ -843,7 +796,78 @@ elif secim == "🎓 Akademi (Ders Notları)":
                             st.metric("Puan", f"{puan_sonucu['puan']}/100")
                             st.write(f"**Hoca'nın Yorumu:** {puan_sonucu['gercekce']}")
 
-elif secim == "⚖️ İçtihat Sorgulama":
+# ==========================================
+# 📝 ARZUHAL MODÜLÜ
+# ==========================================
+elif st.session_state.aktif_ekran == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
+    st.header("⚖️ Dilekçe Marketi")
+    st.markdown("""
+        <style>
+        div[data-testid="stForm"] { background-color: #161616; padding: 25px; border-radius: 12px; border: 1px solid #333; }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        kategori = st.selectbox("Kategori Seçin:", list(DilekceEngine.DILEKCE_KATALOGU.keys()))
+    with col_b:
+        tur = st.selectbox("Dilekçe Türü:", list(DilekceEngine.DILEKCE_KATALOGU[kategori].keys()))
+    
+    st.markdown("---")
+    
+    gerekli_alanlar = DilekceEngine.DILEKCE_KATALOGU[kategori][tur]
+    form_verileri = {}
+    
+    with st.form("arzuhal_form"):
+        st.subheader(f"📋 {tur} Detayları")
+        cols = st.columns(2)
+        for i, alan in enumerate(gerekli_alanlar):
+            col = cols[i % 2]
+            with col:
+                if "Tarihi" in alan:
+                    form_verileri[alan] = str(st.date_input(f"{alan}"))
+                elif "Sayısı" in alan or "Miktarı" in alan:
+                    form_verileri[alan] = str(st.number_input(f"{alan}", min_value=0, step=1))
+                elif "Detay" in alan or "Özeti" in alan or "Gerekçe" in alan:
+                    form_verileri[alan] = st.text_area(f"{alan}:", height=120)
+                else:
+                    form_verileri[alan] = st.text_input(f"{alan}:")
+        
+        submitted = st.form_submit_button("🚀 Dilekçeyi Hazırla", use_container_width=True)
+    
+    if submitted:
+        if all(form_verileri.values()):
+            with st.spinner("Hukuki taslak oluşturuluyor..."):
+                taslak_metin = DilekceEngine.dilekce_uret(MY_API_KEY, tur, form_verileri)
+                st.session_state.son_dilekce = taslak_metin
+                st.session_state.son_dilekce_turu = tur
+        else:
+            st.warning("Lütfen tüm alanları doldurunuz ustam!")
+
+    if "son_dilekce" in st.session_state:
+        st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
+        st.text_area("Taslak Metin", value=st.session_state.son_dilekce, height=400)
+        word_data = DilekceEngine.word_dosyasi_yap(st.session_state.son_dilekce)
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            st.download_button(
+                "📥 Word Dosyası Olarak Kaydet", 
+                data=word_data, 
+                file_name=f"{st.session_state.son_dilekce_turu}_taslak.docx", 
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                use_container_width=True
+            )
+        with c2:
+            if st.button("💾 Dilekçeyi Arşive Kaydet", use_container_width=True):
+                basarili, mesaj = junilex_arsive_kaydet("📝 Dilekçe", st.session_state.son_dilekce_turu, st.session_state.son_dilekce)
+                if basarili:
+                    st.success("✅ Dilekçe arşive kaydedildi! Chat kısmından seçip üzerinde çalışmaya devam edebilirsin.")
+
+# ==========================================
+# ⚖️ İÇTİHAT MODÜLÜ
+# ==========================================
+elif st.session_state.aktif_ekran == "⚖️ İçtihat Sorgulama":
     st.header("⚖️ İçtihat ve Emsal Merkezi")
     
     tab1, tab2 = st.tabs(["🔍 Karar Analizi (Şerh)", "🔎 Emsal Karar Bulucu"])
@@ -874,7 +898,6 @@ elif secim == "⚖️ İçtihat Sorgulama":
                     else:
                         st.error("Analiz sonucu boş döndü, lütfen tekrar deneyin.")
 
-        # YENİ EKLENEN ARŞİV KAYIT BUTONU
         if "analiz_sayfalari" in st.session_state and st.session_state.analiz_sayfalari:
             sayfalar = st.session_state.analiz_sayfalari
             aktif = st.session_state.analiz_aktif_sayfa
@@ -933,7 +956,6 @@ elif secim == "⚖️ İçtihat Sorgulama":
             else:
                 st.warning("Ustam, önce bir olay anlatman lazım.")
 
-        # YENİ EKLENEN ARŞİV KAYIT BUTONU
         if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
             st.markdown("---")
             sayfalar_emsal = st.session_state.kitap_sayfalari
@@ -965,103 +987,24 @@ elif secim == "⚖️ İçtihat Sorgulama":
                 if basarili:
                     st.success("✅ Arşive kaydedildi! JUNILEX Chat menüsünden ulaşıp kullanabilirsiniz.")
 
-elif secim == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
-    st.header("⚖️ Dilekçe Marketi")
-    st.markdown("""
-        <style>
-        div[data-testid="stForm"] { background-color: #161616; padding: 25px; border-radius: 12px; border: 1px solid #333; }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    col_a, col_b = st.columns(2)
-    with col_a:
-        kategori = st.selectbox("Kategori Seçin:", list(DilekceEngine.DILEKCE_KATALOGU.keys()))
-    with col_b:
-        tur = st.selectbox("Dilekçe Türü:", list(DilekceEngine.DILEKCE_KATALOGU[kategori].keys()))
-    
-    st.markdown("---")
-    
-    gerekli_alanlar = DilekceEngine.DILEKCE_KATALOGU[kategori][tur]
-    form_verileri = {}
-    
-    with st.form("arzuhal_form"):
-        st.subheader(f"📋 {tur} Detayları")
-        cols = st.columns(2)
-        for i, alan in enumerate(gerekli_alanlar):
-            col = cols[i % 2]
-            with col:
-                if "Tarihi" in alan:
-                    form_verileri[alan] = str(st.date_input(f"{alan}"))
-                elif "Sayısı" in alan or "Miktarı" in alan:
-                    form_verileri[alan] = str(st.number_input(f"{alan}", min_value=0, step=1))
-                elif "Detay" in alan or "Özeti" in alan or "Gerekçe" in alan:
-                    form_verileri[alan] = st.text_area(f"{alan}:", height=120)
-                else:
-                    form_verileri[alan] = st.text_input(f"{alan}:")
-        
-        submitted = st.form_submit_button("🚀 Dilekçeyi Hazırla", use_container_width=True)
-    
-    if submitted:
-        if all(form_verileri.values()):
-            with st.spinner("Hukuki taslak oluşturuluyor..."):
-                taslak_metin = DilekceEngine.dilekce_uret(MY_API_KEY, tur, form_verileri)
-                st.session_state.son_dilekce = taslak_metin
-                st.session_state.son_dilekce_turu = tur
-        else:
-            st.warning("Lütfen tüm alanları doldurunuz ustam!")
-
-    # YENİ EKLENEN ARŞİV KAYIT BUTONU
-    if "son_dilekce" in st.session_state:
-        st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
-        st.text_area("Taslak Metin", value=st.session_state.son_dilekce, height=400)
-        word_data = DilekceEngine.word_dosyasi_yap(st.session_state.son_dilekce)
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            st.download_button(
-                "📥 Word Dosyası Olarak Kaydet", 
-                data=word_data, 
-                file_name=f"{st.session_state.son_dilekce_turu}_taslak.docx", 
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
-                use_container_width=True
-            )
-        with c2:
-            if st.button("💾 Dilekçeyi Arşive Kaydet", use_container_width=True):
-                basarili, mesaj = junilex_arsive_kaydet("📝 Dilekçe", st.session_state.son_dilekce_turu, st.session_state.son_dilekce)
-                if basarili:
-                    st.success("✅ Dilekçe arşive kaydedildi! Chat kısmından seçip üzerinde çalışmaya devam edebilirsin.")
-
-elif secim == "💬 JUNILEX Chat":
+# ==========================================
+# 💬 CHAT MODÜLÜ
+# ==========================================
+elif st.session_state.aktif_ekran == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
     
-    # --- GÜÇLENDİRİLMİŞ BAŞLATMA BLOĞU ---
-    # Eğer bu anahtarlar yoksa, uygulama hata vermeden önce oluşturulmasını garanti ediyoruz
-    if 'chat_mode' not in st.session_state: 
-        st.session_state.chat_mode = "Özet"
-    
-    if "chat_messages" not in st.session_state: 
-        st.session_state.chat_messages = [{"role": "assistant", "content": "Selam ustam, hangi meseleyi veya belgeyi aydınlatalım?"}]
-        
-    # Eğer aktif_dosya yoksa hata vermesin diye başlangıç değeri atayalım
-    if 'aktif_dosya' not in st.session_state:
-        st.session_state.aktif_dosya = None
-
-    # ... (Geri kalan kodların aynı şekilde devam edebilir) ...
     col_chat, col_context = st.columns([3, 1])
-    # ...
 
     with col_context:
         st.markdown("### 🗂️ Bağlam Arşivi")
         
-        db = firestore.client()
+        db = get_db()
         
-        # 1. Kategori Seçimi
         kategori_secim = st.selectbox("Kategori Seçin:", ["Seçiniz...", "🏛️ Adliye (Mevzuat)", "🎓 Akademi (PDF)", "📝 Dilekçe", "⚖️ İçtihat"])
         
         if kategori_secim != "Seçiniz...":
             arsiv_secenekleri = {}
             
-            # Veri çekme mantığı (Kategoriye göre)
             try:
                 if kategori_secim == "🎓 Akademi (PDF)":
                     notlar_ref = db.collection("ders_notlari").get()
@@ -1069,7 +1012,6 @@ elif secim == "💬 JUNILEX Chat":
                         d = doc.to_dict()
                         arsiv_secenekleri[d.get('dosya_adi', 'Adsız')] = d.get('metin')
                 else:
-                    # Diğerleri junilex_arsiv koleksiyonundan (Kategori filtresi ile)
                     kategori_map = {"🏛️ Adliye (Mevzuat)": "🏛️ Mevzuat Şerhi", "📝 Dilekçe": "📝 Dilekçe", "⚖️ İçtihat": "⚖️ İçtihat Şerhi"}
                     filtre = kategori_map.get(kategori_secim)
                     
@@ -1081,7 +1023,6 @@ elif secim == "💬 JUNILEX Chat":
             except Exception as e:
                 st.error("Arşiv yüklenirken hata.")
 
-            # 2. Belge Seçimi
             if arsiv_secenekleri:
                 secilen_belge = st.selectbox("Belgeyi Seç:", list(arsiv_secenekleri.keys()))
                 if st.button("📌 Masaya Koy", use_container_width=True):
@@ -1100,7 +1041,6 @@ elif secim == "💬 JUNILEX Chat":
                 st.rerun()
 
     with col_chat:
-        # ... (Geri kalan Chat mesaj döngüsü ve input kısmı aynen kalacak) ...
         for message in st.session_state.chat_messages:
             simge = "https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent" if message["role"] == "user" else "https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"
             with st.chat_message(message["role"], avatar=simge):
@@ -1139,3 +1079,6 @@ elif secim == "💬 JUNILEX Chat":
                     st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
                 except Exception as e:
                     st.error(f"Sistem Hatası: {e}")
+
+# Sayfanın en sonunda RAM temizliği için (Gereksiz değişkenleri çöpe atar)
+gc.collect()
