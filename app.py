@@ -263,9 +263,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# KENAR ÇUBUĞU (SIDEBAR)
 with st.sidebar:
     st.title("⚖️ Junilex AI")
+    
     secim = st.radio(
         "Lütfen bir departman seçin:",
         [
@@ -277,25 +277,25 @@ with st.sidebar:
         ]
     )
     
-    # İstatistik Paneli
     st.divider()
+    
+    # İstatistik Paneli
     with st.container(border=True):
         st.markdown("##### 📊 Çalışma Karnen")
         try:
             db = firestore.client()
-            # Kullanıcıya ait arşivlenmiş öğeleri say
-            arsiv_sayisi = len(list(db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream()))
-            # Yüklenen PDF'leri say
-            pdf_sayisi = len(list(db.collection("ders_notlari").stream()))
+            # Kullanıcıya özel filtreleme ile veriyi çek
+            arsiv_ref = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).get()
+            pdf_ref = db.collection("ders_notlari").get()
 
             col1, col2 = st.columns(2)
-            col1.metric("Arşiv", arsiv_sayisi)
-            col2.metric("PDF", pdf_sayisi)
+            col1.metric("Arşiv", len(arsiv_ref))
+            col2.metric("PDF", len(pdf_ref))
         except Exception:
-            st.caption("Veri senkronize ediliyor...")
+            st.caption("Veriler yükleniyor...")
             
     st.divider()
-    st.info("Ozan Şahin Sicim | JUNILEX AI v2.0")
+    st.info("Ozan Şahin Sicim | JUNILEX AI v2.2")
 
 # LOGO VE ÜST BAŞLIK
 st.markdown("""
