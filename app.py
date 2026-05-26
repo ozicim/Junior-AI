@@ -261,7 +261,6 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
 # 🏠 DASHBOARD (ANA EKRAN)
 # ==========================================
 if st.session_state.aktif_ekran == "🏠 Ana Ekran":
-    # Tüm içeriği ortada toplamak için kenarlara boşluk (spacer) bırakıyoruz [1, 2, 1] oranıyla
     spacer_sol, ana_kolon, spacer_sag = st.columns([1, 2, 1])
     
     with ana_kolon:
@@ -282,7 +281,6 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
         st.markdown("Bugün hangi hukuk sahasında derinleşelim?")
         st.write("---")
         
-        # Butonları basık olmaktan kurtarmak için 2x2 ızgara (grid) yapıyoruz
         üst_satir_1, üst_satir_2 = st.columns(2)
         if üst_satir_1.button("🏛️ Adliye", use_container_width=True): 
             st.session_state.aktif_ekran = "🏛️ Adliye (Mevzuat Sorgu)"; st.rerun()
@@ -297,26 +295,21 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
         
         st.write("<br>", unsafe_allow_html=True)
         
-        # Chat butonu özel ve belirgin
         if st.button("💬 JUNILEX Chat'e Başla", use_container_width=True, type="primary"):
             st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
 
         st.write("---")
-        st.subheader("🕒 Son 3 İşlem")
+        
+        # 🔥 YENİ: MİNİ AKTİVİTE METRİKLERİ 🔥
+        st.subheader("📊 Aktivite Özeti")
         try:
             db = get_db()
-            recent = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
-            found = False
-            for doc in recent:
-                d = doc.to_dict()
-                with st.container(border=True):
-                    col_i, col_b = st.columns([1, 8])
-                    col_i.markdown("📄")
-                    col_b.markdown(f"**{d.get('baslik')}** \n *Kategori: {d.get('kategori')}*")
-                    found = True
-            if not found: st.info("Henüz geçmiş işlem yok.")
-        except Exception as e:
-            st.error(f"Veri çekilemedi: {e}")
+            # Kullanıcının tüm arşivini çekiyoruz
+            tum_kayitlar = list(db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
+            
+            toplam_islem = len(tum_kayitlar)
+            mevzuat_sayisi = sum(1 for d in tum_kayitlar if "Mevzuat" in d.to_dict().get("kategori", ""))
+            dilekce_
 
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
