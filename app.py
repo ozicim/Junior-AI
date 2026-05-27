@@ -7,6 +7,7 @@ from email.mime.text import MIMEText
 import os
 import urllib.request
 import json
+import datetime
 import google.generativeai as genai
 from fpdf import FPDF
 import gc
@@ -216,9 +217,13 @@ if not st.session_state.logged_in:
                 st.info(f"📧 **{st.session_state.onay_bekleyen['email']}** adresine 6 haneli bir doğrulama kodu gönderdik.")
                 girilen_kod = st.text_input("Doğrulama Kodu", key="dogrulama_kodu", max_chars=6)
                 col_onay1, col_onay2, col_onay3 = st.columns(3)
+                
                 with col_onay1:
                     if st.button("✅ Kodu Doğrula", use_container_width=True):
                         if girilen_kod == st.session_state.onay_bekleyen["kod"]:
+                            import datetime  # Tarihi almak için eklendi
+                            bugun = datetime.date.today().strftime("%d.%m.%Y")
+                            
                             yeni_mail = st.session_state.onay_bekleyen["email"]
                             yeni_id = benzersiz_id_uret(st.session_state.kullanici_veritabani)
                             
@@ -226,6 +231,7 @@ if not st.session_state.logged_in:
                                 "sifre": st.session_state.onay_bekleyen["sifre"], 
                                 "isim": st.session_state.onay_bekleyen["isim"],
                                 "id": yeni_id,
+                                "kayit_tarihi": bugun,  # 🔥 KAYIT TARİHİ BURADA EKLENİYOR
                                 "arkadaslar": [],
                                 "gelen_istekler": []
                             }
