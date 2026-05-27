@@ -545,20 +545,25 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
         
         ekiplerim = db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream()
         
+        # Ekiplerin listelendiği for döngüsünü bununla değiştir:
         for doc in ekiplerim:
             ekip = doc.to_dict()
-            with st.expander(f"🏢 {ekip['isim']} ({ekip['ekip_id']})"):
-                st.info(f"🔑 **Ekip ID:** `{ekip['ekip_id']}`")
+            
+            # Güvenli okuma yapıyoruz (.get ile)
+            gosterilen_id = ekip.get('ekip_id', 'ID Yok')
+            gosterilen_isim = ekip.get('isim', 'İsimsiz Ekip')
+            
+            with st.expander(f"🏢 {gosterilen_isim} ({gosterilen_id})"):
+                st.info(f"🔑 **Ekip ID:** `{gosterilen_id}`")
                 
                 # Sadece Kurucu İçin Yönetim Paneli
-                if ekip['kurucu'] == benim_mailim:
+                if ekip.get('kurucu') == benim_mailim:
                     st.markdown("---")
                     st.write("📩 **Bekleyen İstekler:**")
                     for istek_mail in ekip.get('istekler', []):
                         col_istek, col_onay = st.columns([3, 1])
                         col_istek.write(f"👤 {istek_mail}")
-                        if col_onay.button("✅ Onayla", key=f"onay_{istek_mail}"):
-                            # Üyeyi ekle ve istekten çıkar
+                        if col_onay.button("✅ Onayla", key=f"onay_{istek_mail}_{doc.id}"):
                             istek_isim = db_json.get(istek_mail, {}).get("isim", "Üye")
                             doc.reference.update({
                                 "uyeler_mail": firestore.ArrayUnion([istek_mail]),
