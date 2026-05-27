@@ -509,34 +509,58 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                             veritabani_kaydet(db_json)
                             st.rerun()
 
-    # 🔥 Yeni: Ekipler Merkezi
-    with tab_ekipler:
+   with tab_ekipler:
         db_fs = get_db()
-        c_kur, c_arsiv = st.columns([1, 2])
         
+        # 1. YENİ EKİP KURMA VE EKİP ID ARAMA
+        c_kur, c_katil = st.columns(2)
         with c_kur:
             st.subheader("🛠️ Yeni Ekip Kur")
-            ekip_adi = st.text_input("Ekip Adı", placeholder="Örn: Ceza Departmanı")
-            
-            arkadas_secenekleri = {f"{db_json.get(m, {}).get('isim', 'Bilinmeyen')} ({db_json.get(m, {}).get('id', '')})": m for m in arkadaslar}
-            secilenler = st.multiselect("Ekibe Katılacak Arkadaşların", list(arkadas_secenekleri.keys()), max_selections=9, help="Firestore kısıtlamaları gereği bir ekipte maksimum 10 kişi (sen dahil) bulunabilir.")
-            
-            if st.button("🚀 Ekibi Oluştur", use_container_width=True, type="primary"):
-                if ekip_adi and secilenler:
-                    uyeler_mail = [benim_mailim] + [arkadas_secenekleri[isim] for isim in secilenler]
-                    uyeler_isim = [st.session_state.aktif_kullanici] + [db_json.get(arkadas_secenekleri[isim], {}).get('isim') for isim in secilenler]
-                    
+            ekip_adi = st.text_input("Ekip Adı")
+            if st.button("🚀 Ekip Kur", use_container_width=True):
+                if ekip_adi:
+                    ekip_id = "#E-" + str(random.randint(10000, 99999))
                     db_fs.collection("junilex_ekipler").add({
-                        "isim": ekip_adi,
+                        "isim": ekip_adi, "ekip_id": ekip_id,
                         "kurucu": benim_mailim,
-                        "uyeler_mail": uyeler_mail,
-                        "uyeler_isim": uyeler_isim,
-                        "tarih": firestore.SERVER_TIMESTAMP
+                        "uyeler": {benim_mailim: "aktif"}, # Mail: Durum
+                        "istekler": []
                     })
-                    st.success(f"'{ekip_adi}' başarıyla kuruldu!")
+                    st.success(f"Ekip kuruldu! ID: {ekip_id}")
                     st.rerun()
-                else:
-                    st.warning("Geçerli bir ekip adı yazmalı ve en az 1 arkadaş seçmelisin.")
+        
+        with c_katil:
+            st.subheader("🚪 Ekibe Katıl")
+            girilen_ekip_id = st.text_input("Ekip ID'si Girin")
+            if st.button("İstek Gönder", use_container_width=True):
+                ekip_sorgu = db_fs.collection("junilex_ekipler").where("ekip_id", "==", girilen_ekip_id).stream()
+                for doc in ekip_sorgu:
+                    doc_ref = doc.reference
+                    doc_ref.update({"istekler": firestore.ArrayUnion([benim_mailim])})
+                    st.success("Katılma isteği gönderildi.")
+
+        # 2. EKİPLERİM VE YÖNETİM
+        st.divider()
+        st.subheader("🏢 Ekiplerim")
+        ekiplerim = db_fs.collection("junilex_ekipler").where("uyeler", "array_contains", benim_mailim).stream()
+        
+        for doc in ekiplerim:
+            ekip = doc.to_dict()
+            with st.expander(f"🏢 {ekip['isim']} ({ekip['ekip_id']})"):
+                # İstekleri Yönet (Sadece Kurucu İçin)
+                if ekip['kurucu'] == benim_mailim:
+                    st.write("📩 **Bekleyen İstekler:**")
+                    for istek_mail in ekip.get('istekler', []):
+                        if st.button(f"✅ {istek_mail}'i Onayla", key=f"onay_{istek_mail}"):
+                            doc.reference.update({
+                                f"uyeler.{istek_mail}": "aktif",
+                                "istekler": firestore.ArrayRemove([istek_mail])
+                            })
+                            st.rerun()
+                
+                # Arşiv Gösterimi
+                st.write("📄 **Ekip Belgeleri:**")
+                # ... (Daha önceki ortak belge listeleme kodun) ...
 
         with c_arsiv:
             st.subheader("🗂️ Ekiplerim ve Ortak Arşiv")
