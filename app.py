@@ -400,11 +400,16 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
         st.subheader("Hukukçu Bul")
         aranan_id = st.text_input("Kullanıcının 5 Haneli ID'sini Girin (Örn: #12345)")
         
+        # Arama tetiklendiğinde sonucu hafızaya al
         if st.button("Ara", use_container_width=True, type="primary"):
+            st.session_state.son_aranan_id = aranan_id
+            
+        # Hafızada bir arama varsa işlemlere devam et
+        if st.session_state.get("son_aranan_id"):
             bulunan_mail = None
             bulunan_isim = None
             for mail, data in db_json.items():
-                if data.get("id") == aranan_id:
+                if data.get("id") == st.session_state.son_aranan_id:
                     bulunan_mail = mail
                     bulunan_isim = data.get("isim")
                     break
@@ -421,12 +426,14 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     if benim_mailim in karsi_taraf_istekleri:
                         st.info("⏳ Bu kullanıcıya zaten bağlantı isteği gönderdin. Yanıt bekleniyor...")
                     else:
+                        # Artık sayfa yenilense de bu buton çalışacak
                         if st.button(f"➕ {bulunan_isim}'e İstek Gönder", key="btn_istek_at"):
                             db_json[bulunan_mail]["gelen_istekler"].append(benim_mailim)
                             veritabani_kaydet(db_json)
+                            st.session_state.son_aranan_id = None # İşlem bitince aramayı temizle
                             st.success("İstek başarıyla gönderildi!")
                             st.rerun()
-            elif aranan_id:
+            else:
                 st.error("Bu ID'ye ait bir Junilex kullanıcısı bulunamadı.")
                 
     with tab_istekler:
