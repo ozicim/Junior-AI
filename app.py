@@ -478,12 +478,39 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                 ark_data = db_json.get(ark_mail, {})
                 ark_isim = ark_data.get("isim", "Bilinmeyen")
                 ark_id = ark_data.get("id", "")
+                
                 with st.container(border=True):
-                    col_isim, col_sil = st.columns([4, 1])
+                    col_isim, col_profil, col_sil = st.columns([3, 1, 1])
                     with col_isim:
                         st.markdown(f"🤝 **{ark_isim}** `({ark_id})`")
+                    
+                    with col_profil:
+                        # Profil detaylarını gösteren açılır kutu
+                        with st.popover("👁️ Profili Gör", use_container_width=True):
+                            st.markdown(f"#### {ark_isim}")
+                            st.caption(f"Junilex ID: {ark_id}")
+                            st.divider()
+                            
+                            # Kayıt Tarihi (Eskiler için varsayılan atama)
+                            kayit_tarihi = ark_data.get("kayit_tarihi", "Sistem Güncellemesi Öncesi")
+                            st.write(f"📅 **Ağa Katılım:** {kayit_tarihi}")
+                            
+                            # Ortak Arkadaş Hesaplaması
+                            karsi_arkadaslar = set(ark_data.get("arkadaslar", []))
+                            benim_arkadaslar_set = set(arkadaslar)
+                            ortak_baglantilar = karsi_arkadaslar.intersection(benim_arkadaslar_set)
+                            st.write(f"👥 **Ortak Bağlantı:** {len(ortak_baglantilar)} kişi")
+                            
+                            # Aktivite (Firestore'dan)
+                            try:
+                                db_fs = get_db()
+                                ark_arsiv = db_fs.collection("junilex_arsiv").where("kullanici", "==", ark_isim).get()
+                                st.write(f"📊 **Hukuki İşlem Hacmi:** {len(ark_arsiv)} Evrak")
+                            except Exception:
+                                st.write("📊 Aktivite verisi alınamadı.")
+
                     with col_sil:
-                        if st.button("Kaldır", key=f"sil_ark_{ark_mail}"):
+                        if st.button("Kaldır", key=f"sil_ark_{ark_mail}", use_container_width=True):
                             db_json[benim_mailim]["arkadaslar"].remove(ark_mail)
                             if benim_mailim in db_json[ark_mail]["arkadaslar"]:
                                 db_json[ark_mail]["arkadaslar"].remove(benim_mailim)
