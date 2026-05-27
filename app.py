@@ -379,16 +379,15 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
             st.error(f"Veri çekilemedi: {e}")
 
 # ==========================================
-# 👥 JUNILEX AĞI (SOSYAL AĞ)
+# 👥 JUNILEX AĞI (SOSYAL AĞ VE EKİPLER)
 # ==========================================
 elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
-    st.title("👥 Junilex Ağı")
-    st.markdown("Diğer meslektaşlarla bağlantı kur ve Junilex Ağını genişlet.")
+    st.title("👥 Junilex Ağı ve Ekipler")
+    st.markdown("Meslektaşlarınla bağlantı kur, ekipler oluştur ve ortak arşivde çalış.")
     
     benim_mailim = st.session_state.aktif_kullanici_email
     st.info(f"📌 **Senin JUNILEX ID'n:** `{st.session_state.aktif_kullanici_id}`\n\nBu kodu diğer kullanıcılara göndererek seni arkadaş eklemelerini sağlayabilirsin.")
     
-    # Her işlemde güncel veriyi almak için
     st.session_state.kullanici_veritabani = veritabani_yukle()
     db_json = st.session_state.kullanici_veritabani
     benim_verim = db_json.get(benim_mailim, {})
@@ -396,21 +395,21 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
     gelen_istekler = benim_verim.get("gelen_istekler", [])
     arkadaslar = benim_verim.get("arkadaslar", [])
     
-    tab_ara, tab_istekler, tab_arkadaslar = st.tabs([
+    # 🔥 Yeni: Ekipler sekmesi eklendi
+    tab_ara, tab_istekler, tab_arkadaslar, tab_ekipler = st.tabs([
         "🔍 Kişi Ara", 
         f"🔔 İstekler ({len(gelen_istekler)})", 
-        f"🤝 Arkadaşlarım ({len(arkadaslar)})"
+        f"🤝 Arkadaşlarım ({len(arkadaslar)})",
+        "🏢 Ekiplerim ve Arşiv"
     ])
     
     with tab_ara:
         st.subheader("Hukukçu Bul")
         aranan_id = st.text_input("Kullanıcının 5 Haneli ID'sini Girin (Örn: #12345)")
         
-        # Arama tetiklendiğinde sonucu hafızaya al
         if st.button("Ara", use_container_width=True, type="primary"):
             st.session_state.son_aranan_id = aranan_id
             
-        # Hafızada bir arama varsa işlemlere devam et
         if st.session_state.get("son_aranan_id"):
             bulunan_mail = None
             bulunan_isim = None
@@ -432,11 +431,10 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     if benim_mailim in karsi_taraf_istekleri:
                         st.info("⏳ Bu kullanıcıya zaten bağlantı isteği gönderdin. Yanıt bekleniyor...")
                     else:
-                        # Artık sayfa yenilense de bu buton çalışacak
                         if st.button(f"➕ {bulunan_isim}'e İstek Gönder", key="btn_istek_at"):
                             db_json[bulunan_mail]["gelen_istekler"].append(benim_mailim)
                             veritabani_kaydet(db_json)
-                            st.session_state.son_aranan_id = None # İşlem bitince aramayı temizle
+                            st.session_state.son_aranan_id = None
                             st.success("İstek başarıyla gönderildi!")
                             st.rerun()
             else:
@@ -455,10 +453,8 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                         st.markdown(f"👤 **{istek_isim}** seninle bağlantı kurmak istiyor.")
                     with col2:
                         if st.button("✅ Kabul Et", key=f"kabul_{istek_mail}", use_container_width=True):
-                            # Karşılıklı ekleme işlemi
                             db_json[benim_mailim]["arkadaslar"].append(istek_mail)
                             db_json[istek_mail]["arkadaslar"].append(benim_mailim)
-                            # İsteği listeden silme
                             db_json[benim_mailim]["gelen_istekler"].remove(istek_mail)
                             veritabani_kaydet(db_json)
                             st.success("Bağlantı kuruldu!")
@@ -485,23 +481,19 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                         st.markdown(f"🤝 **{ark_isim}** `({ark_id})`")
                     
                     with col_profil:
-                        # Profil detaylarını gösteren açılır kutu
                         with st.popover("👁️ Profili Gör", use_container_width=True):
                             st.markdown(f"#### {ark_isim}")
                             st.caption(f"Junilex ID: {ark_id}")
                             st.divider()
                             
-                            # Kayıt Tarihi (Eskiler için varsayılan atama)
                             kayit_tarihi = ark_data.get("kayit_tarihi", "Sistem Güncellemesi Öncesi")
                             st.write(f"📅 **Ağa Katılım:** {kayit_tarihi}")
                             
-                            # Ortak Arkadaş Hesaplaması
                             karsi_arkadaslar = set(ark_data.get("arkadaslar", []))
                             benim_arkadaslar_set = set(arkadaslar)
                             ortak_baglantilar = karsi_arkadaslar.intersection(benim_arkadaslar_set)
                             st.write(f"👥 **Ortak Bağlantı:** {len(ortak_baglantilar)} kişi")
                             
-                            # Aktivite (Firestore'dan)
                             try:
                                 db_fs = get_db()
                                 ark_arsiv = db_fs.collection("junilex_arsiv").where("kullanici", "==", ark_isim).get()
@@ -517,6 +509,68 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                             veritabani_kaydet(db_json)
                             st.rerun()
 
+    # 🔥 Yeni: Ekipler Merkezi
+    with tab_ekipler:
+        db_fs = get_db()
+        c_kur, c_arsiv = st.columns([1, 2])
+        
+        with c_kur:
+            st.subheader("🛠️ Yeni Ekip Kur")
+            ekip_adi = st.text_input("Ekip Adı", placeholder="Örn: Ceza Departmanı")
+            
+            arkadas_secenekleri = {f"{db_json.get(m, {}).get('isim', 'Bilinmeyen')} ({db_json.get(m, {}).get('id', '')})": m for m in arkadaslar}
+            secilenler = st.multiselect("Ekibe Katılacak Arkadaşların", list(arkadas_secenekleri.keys()), max_selections=9, help="Firestore kısıtlamaları gereği bir ekipte maksimum 10 kişi (sen dahil) bulunabilir.")
+            
+            if st.button("🚀 Ekibi Oluştur", use_container_width=True, type="primary"):
+                if ekip_adi and secilenler:
+                    uyeler_mail = [benim_mailim] + [arkadas_secenekleri[isim] for isim in secilenler]
+                    uyeler_isim = [st.session_state.aktif_kullanici] + [db_json.get(arkadas_secenekleri[isim], {}).get('isim') for isim in secilenler]
+                    
+                    db_fs.collection("junilex_ekipler").add({
+                        "isim": ekip_adi,
+                        "kurucu": benim_mailim,
+                        "uyeler_mail": uyeler_mail,
+                        "uyeler_isim": uyeler_isim,
+                        "tarih": firestore.SERVER_TIMESTAMP
+                    })
+                    st.success(f"'{ekip_adi}' başarıyla kuruldu!")
+                    st.rerun()
+                else:
+                    st.warning("Geçerli bir ekip adı yazmalı ve en az 1 arkadaş seçmelisin.")
+
+        with c_arsiv:
+            st.subheader("🗂️ Ekiplerim ve Ortak Arşiv")
+            try:
+                ekipler_sorgusu = list(db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream())
+                
+                if not ekipler_sorgusu:
+                    st.info("Henüz bir çalışma ekibine dahil değilsin.")
+                else:
+                    ekip_katalogu = {doc.to_dict().get("isim"): doc.to_dict() for doc in ekipler_sorgusu}
+                    secilen_ekip_adi = st.selectbox("Aktif Çalışma Ekibini Seç:", list(ekip_katalogu.keys()))
+                    aktif_ekip = ekip_katalogu[secilen_ekip_adi]
+                    
+                    st.markdown(f"**Ekip Üyeleri:** {', '.join(aktif_ekip['uyeler_isim'])}")
+                    st.divider()
+                    
+                    sorgu_isimleri = aktif_ekip['uyeler_isim'][:10] 
+                    ortak_evraklar = db_fs.collection("junilex_arsiv").where("kullanici", "in", sorgu_isimleri).order_by("tarih", direction=firestore.Query.DESCENDING).limit(50).stream()
+                    
+                    evrak_sayaci = 0
+                    for evrak in ortak_evraklar:
+                        evrak_sayaci += 1
+                        e_data = evrak.to_dict()
+                        with st.expander(f"📄 {e_data.get('baslik')} | 👤 {e_data.get('kullanici')} | 🏷️ {e_data.get('kategori')}"):
+                            st.write(e_data.get("metin"))
+                            st.download_button("📥 TXT Olarak İndir", data=e_data.get("metin", ""), file_name=f"{e_data.get('baslik')}.txt", key=f"dl_{evrak.id}", use_container_width=True)
+                            
+                    if evrak_sayaci == 0:
+                        st.info("Bu ekibin üyeleri arşive henüz bir belge işlememiş.")
+            except Exception as e:
+                if "index" in str(e).lower():
+                    st.error("Veritabanı dizin (index) kurulumu gerekiyor. Lütfen terminal loglarındaki Firebase linkine tıklayarak dizini oluştur.")
+                else:
+                    st.error(f"Arşiv yüklenirken hata oluştu: {e}")
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
 # ==========================================
