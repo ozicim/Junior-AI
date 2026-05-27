@@ -557,10 +557,6 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                                 "istekler": firestore.ArrayRemove([istek_mail])
                             })
                             st.rerun()
-                
-                # Arşiv Gösterimi
-                st.write("📄 **Ekip Belgeleri:**")
-                # ... (Daha önceki ortak belge listeleme kodun) ...
 
         with c_arsiv:
             st.subheader("🗂️ Ekiplerim ve Ortak Arşiv")
