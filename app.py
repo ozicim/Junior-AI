@@ -506,106 +506,106 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                             st.rerun()
 
        with tab_ekipler:
-            db_fs = get_db()
+        db_fs = get_db()
+        
+        # 1. YENİ EKİP KURMA VE EKİP ID ARAMA
+        c_kur, c_katil = st.columns(2)
+        with c_kur:
+            st.subheader("🛠️ Yeni Ekip Kur")
+            ekip_adi = st.text_input("Ekip Adı", placeholder="Örn: Ceza Departmanı")
+            if st.button("🚀 Ekip Kur", use_container_width=True, type="primary"):
+                if ekip_adi:
+                    ekip_id = "#E-" + str(random.randint(10000, 99999))
+                    db_fs.collection("junilex_ekipler").add({
+                        "isim": ekip_adi, 
+                        "ekip_id": ekip_id,
+                        "kurucu": benim_mailim,
+                        "uyeler_mail": [benim_mailim],
+                        "uyeler_isim": [st.session_state.aktif_kullanici],
+                        "istekler": []
+                    })
+                    st.success(f"Ekip kuruldu! ID: {ekip_id}")
+                    st.rerun()
+        
+        with c_katil:
+            st.subheader("🚪 Ekibe Katıl")
+            girilen_ekip_id = st.text_input("Ekip ID'si Girin")
+            if st.button("İstek Gönder", use_container_width=True):
+                ekip_sorgu = db_fs.collection("junilex_ekipler").where("ekip_id", "==", girilen_ekip_id).stream()
+                bulundu = False
+                for doc in ekip_sorgu:
+                    doc.reference.update({"istekler": firestore.ArrayUnion([benim_mailim])})
+                    st.success("Katılma isteği gönderildi.")
+                    bulundu = True
+                if not bulundu:
+                    st.error("Böyle bir ekip ID'si yok.")
+
+        st.divider()
+        st.subheader("🏢 Ekiplerim")
+        
+        ekiplerim = db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream()
+        
+        for doc in ekiplerim:
+            ekip = doc.to_dict()
+            g_id = ekip.get('ekip_id', 'ID Yok')
+            g_isim = ekip.get('isim', 'İsimsiz')
+            g_uyeler = ekip.get('uyeler_isim', [ekip.get('kurucu', 'Kurucu')])
             
-            # 1. YENİ EKİP KURMA VE EKİP ID ARAMA
-            c_kur, c_katil = st.columns(2)
-            with c_kur:
-                st.subheader("🛠️ Yeni Ekip Kur")
-                ekip_adi = st.text_input("Ekip Adı", placeholder="Örn: Ceza Departmanı")
-                if st.button("🚀 Ekip Kur", use_container_width=True, type="primary"):
-                    if ekip_adi:
-                        ekip_id = "#E-" + str(random.randint(10000, 99999))
-                        db_fs.collection("junilex_ekipler").add({
-                            "isim": ekip_adi, 
-                            "ekip_id": ekip_id,
-                            "kurucu": benim_mailim,
-                            "uyeler_mail": [benim_mailim],
-                            "uyeler_isim": [st.session_state.aktif_kullanici],
-                            "istekler": []
-                        })
-                        st.success(f"Ekip kuruldu! ID: {ekip_id}")
-                        st.rerun()
-            
-            with c_katil:
-                st.subheader("🚪 Ekibe Katıl")
-                girilen_ekip_id = st.text_input("Ekip ID'si Girin")
-                if st.button("İstek Gönder", use_container_width=True):
-                    ekip_sorgu = db_fs.collection("junilex_ekipler").where("ekip_id", "==", girilen_ekip_id).stream()
-                    bulundu = False
-                    for doc in ekip_sorgu:
-                        doc.reference.update({"istekler": firestore.ArrayUnion([benim_mailim])})
-                        st.success("Katılma isteği gönderildi.")
-                        bulundu = True
-                    if not bulundu:
-                        st.error("Böyle bir ekip ID'si yok.")
-    
-            st.divider()
-            st.subheader("🏢 Ekiplerim")
-            
-            ekiplerim = db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream()
-            
-            for doc in ekiplerim:
-                ekip = doc.to_dict()
-                g_id = ekip.get('ekip_id', 'ID Yok')
-                g_isim = ekip.get('isim', 'İsimsiz')
-                g_uyeler = ekip.get('uyeler_isim', [ekip.get('kurucu', 'Kurucu')])
+            with st.expander(f"🏢 {g_isim} ({g_id})"):
+                st.info(f"🔑 **Ekip ID:** `{g_id}`")
+                st.write(f"👥 **Üyeler:** {', '.join(g_uyeler)}")
                 
-                with st.expander(f"🏢 {g_isim} ({g_id})"):
-                    st.info(f"🔑 **Ekip ID:** `{g_id}`")
-                    st.write(f"👥 **Üyeler:** {', '.join(g_uyeler)}")
-                    
-                    # Sadece Kurucu İçin Yönetim Paneli
-                    if ekip.get('kurucu') == benim_mailim:
-                        if ekip.get('istekler'):
-                            st.markdown("---")
-                            st.write("📩 **Bekleyen İstekler:**")
-                            for istek_mail in ekip.get('istekler', []):
-                                col_istek, col_onay = st.columns([3, 1])
-                                col_istek.write(f"👤 {istek_mail}")
-                                if col_onay.button("✅ Onayla", key=f"onay_{istek_mail}_{doc.id}"):
-                                    # Onaylayanın ismini bulalım
-                                    istek_isim = db_json.get(istek_mail, {}).get("isim", "Üye")
-                                    doc.reference.update({
-                                        "uyeler_mail": firestore.ArrayUnion([istek_mail]),
-                                        "uyeler_isim": firestore.ArrayUnion([istek_isim]),
-                                        "istekler": firestore.ArrayRemove([istek_mail])
-                                    })
-                                    st.rerun()
-                        
+                # Sadece Kurucu İçin Yönetim Paneli
+                if ekip.get('kurucu') == benim_mailim:
+                    if ekip.get('istekler'):
                         st.markdown("---")
-                        if st.button("🗑️ EKİBİ TAMAMEN SİL", key=f"sil_{doc.id}", type="primary", use_container_width=True):
-                            doc.reference.delete()
-                            st.warning("Ekip silindi!")
-                            st.rerun()
-    
-            st.divider()
-            st.subheader("🗂️ Ekiplerin Ortak Arşivi")
-            ekiplerim_liste = list(db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream())
-            
-            if ekiplerim_liste:
-                ekip_katalogu = {d.to_dict().get("isim"): d for d in ekiplerim_liste}
-                secilen_ekip_adi = st.selectbox("Arşivini Görmek İçin Ekip Seç:", list(ekip_katalogu.keys()))
-                aktif_ekip = ekip_katalogu[secilen_ekip_adi].to_dict()
-                
-                st.markdown(f"**Üyeler:** {', '.join(aktif_ekip.get('uyeler_isim', []))}")
-                st.divider()
-                
-                sorgu_isimleri = aktif_ekip.get('uyeler_isim', [])
-                if sorgu_isimleri:
-                    # Arşiv sorgusu
-                    ortak_evraklar = db_fs.collection("junilex_arsiv").where("kullanici", "in", sorgu_isimleri).order_by("tarih", direction=firestore.Query.DESCENDING).limit(50).stream()
+                        st.write("📩 **Bekleyen İstekler:**")
+                        for istek_mail in ekip.get('istekler', []):
+                            col_istek, col_onay = st.columns([3, 1])
+                            col_istek.write(f"👤 {istek_mail}")
+                            if col_onay.button("✅ Onayla", key=f"onay_{istek_mail}_{doc.id}"):
+                                # Onaylayanın ismini bulalım
+                                istek_isim = db_json.get(istek_mail, {}).get("isim", "Üye")
+                                doc.reference.update({
+                                    "uyeler_mail": firestore.ArrayUnion([istek_mail]),
+                                    "uyeler_isim": firestore.ArrayUnion([istek_isim]),
+                                    "istekler": firestore.ArrayRemove([istek_mail])
+                                })
+                                st.rerun()
                     
-                    evrak_sayaci = 0
-                    for evrak in ortak_evraklar:
-                        evrak_sayaci += 1
-                        e_data = evrak.to_dict()
-                        with st.expander(f"📄 {e_data.get('baslik')} | 👤 {e_data.get('kullanici')}"):
-                            st.write(e_data.get("metin"))
-                            st.download_button("📥 TXT Olarak İndir", data=e_data.get("metin", ""), file_name=f"{e_data.get('baslik')}.txt", key=f"dl_{evrak.id}", use_container_width=True)
-                            
-                    if evrak_sayaci == 0:
-                        st.info("Bu ekibin üyeleri arşive henüz bir belge işlememiş.")
+                    st.markdown("---")
+                    if st.button("🗑️ EKİBİ TAMAMEN SİL", key=f"sil_{doc.id}", type="primary", use_container_width=True):
+                        doc.reference.delete()
+                        st.warning("Ekip silindi!")
+                        st.rerun()
+
+        st.divider()
+        st.subheader("🗂️ Ekiplerin Ortak Arşivi")
+        ekiplerim_liste = list(db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream())
+        
+        if ekiplerim_liste:
+            ekip_katalogu = {d.to_dict().get("isim"): d for d in ekiplerim_liste}
+            secilen_ekip_adi = st.selectbox("Arşivini Görmek İçin Ekip Seç:", list(ekip_katalogu.keys()))
+            aktif_ekip = ekip_katalogu[secilen_ekip_adi].to_dict()
+            
+            st.markdown(f"**Üyeler:** {', '.join(aktif_ekip.get('uyeler_isim', []))}")
+            st.divider()
+            
+            sorgu_isimleri = aktif_ekip.get('uyeler_isim', [])
+            if sorgu_isimleri:
+                # Arşiv sorgusu
+                ortak_evraklar = db_fs.collection("junilex_arsiv").where("kullanici", "in", sorgu_isimleri).order_by("tarih", direction=firestore.Query.DESCENDING).limit(50).stream()
+                
+                evrak_sayaci = 0
+                for evrak in ortak_evraklar:
+                    evrak_sayaci += 1
+                    e_data = evrak.to_dict()
+                    with st.expander(f"📄 {e_data.get('baslik')} | 👤 {e_data.get('kullanici')}"):
+                        st.write(e_data.get("metin"))
+                        st.download_button("📥 TXT Olarak İndir", data=e_data.get("metin", ""), file_name=f"{e_data.get('baslik')}.txt", key=f"dl_{evrak.id}", use_container_width=True)
+                        
+                if evrak_sayaci == 0:
+                    st.info("Bu ekibin üyeleri arşive henüz bir belge işlememiş.")
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
 # ==========================================
