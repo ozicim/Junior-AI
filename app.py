@@ -508,7 +508,7 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
     with tab_ekipler:
         db_fs = get_db()
         
-        # Ekip Kurma ve Katılma Bölümü
+        # 1. YENİ EKİP KURMA VE EKİP ID ARAMA
         c_kur, c_katil = st.columns(2)
         with c_kur:
             st.subheader("🛠️ Yeni Ekip Kur")
@@ -520,7 +520,8 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                         "isim": ekip_adi, 
                         "ekip_id": ekip_id,
                         "kurucu": benim_mailim,
-                        "uyeler_mail": [benim_mailim], # Sorgulama için liste
+                        "uyeler_mail": [benim_mailim],
+                        "uyeler_isim": [st.session_state.aktif_kullanici],
                         "istekler": []
                     })
                     st.success(f"Ekip kuruldu! ID: {ekip_id}")
@@ -528,7 +529,7 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
         
         with c_katil:
             st.subheader("🚪 Ekibe Katıl")
-            girilen_ekip_id = st.text_input("Ekip ID'si Girin")
+            girilen_ekip_id = st.text_input("Ekip ID'si Girin (Örn: #E-12345)")
             if st.button("İstek Gönder", use_container_width=True):
                 ekip_sorgu = db_fs.collection("junilex_ekipler").where("ekip_id", "==", girilen_ekip_id).stream()
                 bulundu = False
@@ -540,43 +541,55 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     st.error("Böyle bir ekip ID'si yok.")
 
         st.divider()
-        st.subheader("🗂️ Ekiplerim ve Ortak Arşiv")
+        st.subheader("🏢 Ekiplerim")
         
-        # Ekip Listeleme ve Arşiv Sorgusu
         ekiplerim = db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream()
-        ekip_liste = list(ekiplerim)
         
-        if not ekip_liste:
-            st.info("Henüz bir çalışma ekibine dahil değilsin.")
-        else:
-            ekip_isimleri = {doc.to_dict()['isim']: doc for doc in ekip_liste}
-            secilen_ekip_adi = st.selectbox("Aktif Çalışma Ekibini Seç:", list(ekip_isimleri.keys()))
-            aktif_ekip_doc = ekip_isimleri[secilen_ekip_adi]
-            ekip_data = aktif_ekip_doc.to_dict()
-            
-            # İstek Yönetimi (Kurucu İçin)
-            if ekip_data['kurucu'] == benim_mailim:
-                if ekip_data.get('istekler'):
-                    with st.expander("📩 Bekleyen Katılma İstekleri"):
-                        for istek in ekip_data['istekler']:
-                            if st.button(f"✅ {istek} onaylıyorum", key=f"onay_{istek}"):
-                                aktif_ekip_doc.reference.update({
-                                    "uyeler_mail": firestore.ArrayUnion([istek]),
-                                    "istekler": firestore.ArrayRemove([istek])
-                                })
-                                st.rerun()
+        for doc in ekiplerim:
+            ekip = doc.to_dict()
+            with st.expander(f"🏢 {ekip['isim']} ({ekip['ekip_id']})"):
+                st.info(f"🔑 **Ekip ID:** `{ekip['ekip_id']}`")
+                
+                # Sadece Kurucu İçin Yönetim Paneli
+                if ekip['kurucu'] == benim_mailim:
+                    st.markdown("---")
+                    st.write("📩 **Bekleyen İstekler:**")
+                    for istek_mail in ekip.get('istekler', []):
+                        col_istek, col_onay = st.columns([3, 1])
+                        col_istek.write(f"👤 {istek_mail}")
+                        if col_onay.button("✅ Onayla", key=f"onay_{istek_mail}"):
+                            # Üyeyi ekle ve istekten çıkar
+                            istek_isim = db_json.get(istek_mail, {}).get("isim", "Üye")
+                            doc.reference.update({
+                                "uyeler_mail": firestore.ArrayUnion([istek_mail]),
+                                "uyeler_isim": firestore.ArrayUnion([istek_isim]),
+                                "istekler": firestore.ArrayRemove([istek_mail])
+                            })
+                            st.rerun()
+                    
+                    st.markdown("---")
+                    if st.button("🗑️ EKİBİ TAMAMEN SİL", key=f"sil_ekip_{doc.id}", type="primary", use_container_width=True):
+                        doc.reference.delete()
+                        st.warning("Ekip silindi!")
+                        st.rerun()
 
-            # Ortak Arşiv Gösterimi
-            st.markdown(f"**Ekip:** {ekip_data['isim']} | **Üyeler:** {', '.join(ekip_data['uyeler_mail'])}")
+        st.divider()
+        st.subheader("🗂️ Ekiplerin Ortak Arşivi")
+        ekiplerim_liste = list(db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream())
+        
+        if ekiplerim_liste:
+            ekip_katalogu = {d.to_dict().get("isim"): d for d in ekiplerim_liste}
+            secilen_ekip_adi = st.selectbox("Arşivini Görmek İçin Ekip Seç:", list(ekip_katalogu.keys()))
+            aktif_ekip = ekip_katalogu[secilen_ekip_adi].to_dict()
             
-            # Arşivden ekip üyelerinin belgelerini çek
-            ortak_evraklar = db_fs.collection("junilex_arsiv").where("kullanici", "in", ekip_data['uyeler_mail']).order_by("tarih", direction=firestore.Query.DESCENDING).limit(50).stream()
-            
-            for evrak in ortak_evraklar:
-                e_data = evrak.to_dict()
-                with st.expander(f"📄 {e_data.get('baslik')} | 👤 {e_data.get('kullanici')}"):
-                    st.write(e_data.get("metin"))
-                    st.download_button("📥 TXT Olarak İndir", data=e_data.get("metin", ""), file_name=f"{e_data.get('baslik')}.txt")
+            sorgu_isimleri = aktif_ekip.get('uyeler_isim', [])
+            if sorgu_isimleri:
+                ortak_evraklar = db_fs.collection("junilex_arsiv").where("kullanici", "in", sorgu_isimleri).order_by("tarih", direction=firestore.Query.DESCENDING).limit(50).stream()
+                for evrak in ortak_evraklar:
+                    e_data = evrak.to_dict()
+                    with st.expander(f"📄 {e_data.get('baslik')} | 👤 {e_data.get('kullanici')}"):
+                        st.write(e_data.get("metin"))
+                        st.download_button("📥 TXT Olarak İndir", data=e_data.get("metin", ""), file_name=f"{e_data.get('baslik')}.txt")
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
 # ==========================================
