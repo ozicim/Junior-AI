@@ -11,6 +11,7 @@ import google.generativeai as genai
 from fpdf import FPDF
 import gc
 
+# Engine'ler
 from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine, YASAL_UYARI
 from dilekce_engine import DilekceEngine
@@ -23,7 +24,6 @@ from chat_engine import ChatEngine
 # ==========================================
 st.set_page_config(layout="wide", page_title="JUNILEX AI")
 
-# OVER CAPACITY HATASINI ÇÖZEN EN ÖNEMLİ KOD:
 @st.cache_resource
 def get_db():
     if not firebase_admin._apps:
@@ -60,16 +60,42 @@ DB_DOSYASI = "kullanicilar.json"
 
 def veritabani_yukle():
     if not os.path.exists(DB_DOSYASI):
-        baslangic_verisi = {"ozan@junilex.com": {"sifre": "123456", "isim": "Ozan Şahin Sicim"}}
+        baslangic_verisi = {"ozan@junilex.com": {"sifre": "123456", "isim": "Ozan Şahin Sicim", "id": "#00001", "arkadaslar": [], "gelen_istekler": []}}
         with open(DB_DOSYASI, "w", encoding="utf-8") as f:
             json.dump(baslangic_verisi, f, ensure_ascii=False, indent=4)
         return baslangic_verisi
+        
     with open(DB_DOSYASI, "r", encoding="utf-8") as f:
-        return json.load(f)
+        db = json.load(f)
+        
+    # YAMA: Eski kullanıcıların veritabanına otomatik ID ve arkadaş listesi ekler
+    degisiklik = False
+    for mail, data in db.items():
+        if "id" not in data:
+            data["id"] = "#" + str(random.randint(10000, 99999))
+            degisiklik = True
+        if "arkadaslar" not in data:
+            data["arkadaslar"] = []
+            degisiklik = True
+        if "gelen_istekler" not in data:
+            data["gelen_istekler"] = []
+            degisiklik = True
+            
+    if degisiklik:
+        with open(DB_DOSYASI, "w", encoding="utf-8") as f:
+            json.dump(db, f, ensure_ascii=False, indent=4)
+            
+    return db
 
 def veritabani_kaydet(veri):
     with open(DB_DOSYASI, "w", encoding="utf-8") as f:
         json.dump(veri, f, ensure_ascii=False, indent=4)
+
+def benzersiz_id_uret(db):
+    while True:
+        yeni_id = "#" + str(random.randint(10000, 99999))
+        if not any(kullanici.get("id") == yeni_id for kullanici in db.values()):
+            return yeni_id
 
 def junilex_arsive_kaydet(kategori, baslik, metin):
     try:
@@ -115,6 +141,8 @@ def metni_sayfalara_bol(metin, sayfa_boyutu=1000):
 # ==========================================
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "aktif_kullanici" not in st.session_state: st.session_state.aktif_kullanici = ""
+if "aktif_kullanici_email" not in st.session_state: st.session_state.aktif_kullanici_email = ""
+if "aktif_kullanici_id" not in st.session_state: st.session_state.aktif_kullanici_id = ""
 if "kullanici_veritabani" not in st.session_state: st.session_state.kullanici_veritabani = veritabani_yukle() 
 if "onay_bekleyen" not in st.session_state: st.session_state.onay_bekleyen = None 
 if 'aktif_ekran' not in st.session_state: st.session_state.aktif_ekran = '🏠 Ana Ekran'
@@ -157,6 +185,8 @@ if not st.session_state.logged_in:
                 if giris_email in st.session_state.kullanici_veritabani and st.session_state.kullanici_veritabani[giris_email]["sifre"] == giris_sifre:
                     st.session_state.logged_in = True
                     st.session_state.aktif_kullanici = st.session_state.kullanici_veritabani[giris_email]["isim"]
+                    st.session_state.aktif_kullanici_email = giris_email
+                    st.session_state.aktif_kullanici_id = st.session_state.kullanici_veritabani[giris_email]["id"]
                     st.rerun() 
                 else: st.error("E-posta adresi veya şifre hatalı!")
                     
@@ -190,7 +220,15 @@ if not st.session_state.logged_in:
                     if st.button("✅ Kodu Doğrula", use_container_width=True):
                         if girilen_kod == st.session_state.onay_bekleyen["kod"]:
                             yeni_mail = st.session_state.onay_bekleyen["email"]
-                            st.session_state.kullanici_veritabani[yeni_mail] = {"sifre": st.session_state.onay_bekleyen["sifre"], "isim": st.session_state.onay_bekleyen["isim"]}
+                            yeni_id = benzersiz_id_uret(st.session_state.kullanici_veritabani)
+                            
+                            st.session_state.kullanici_veritabani[yeni_mail] = {
+                                "sifre": st.session_state.onay_bekleyen["sifre"], 
+                                "isim": st.session_state.onay_bekleyen["isim"],
+                                "id": yeni_id,
+                                "arkadaslar": [],
+                                "gelen_istekler": []
+                            }
                             veritabani_kaydet(st.session_state.kullanici_veritabani)
                             st.session_state.onay_bekleyen = None
                             st.balloons() 
@@ -222,12 +260,14 @@ except Exception as e:
 if st.session_state.aktif_ekran != "🏠 Ana Ekran":
     with st.sidebar:
         st.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.aktif_kullanici}")
+        st.caption(f"Senin ID'n: **{st.session_state.aktif_kullanici_id}**")
+        
         if st.button("🏠 Ana Menüye Dön", use_container_width=True):
             st.session_state.aktif_ekran = "🏠 Ana Ekran"
             st.rerun()
         st.divider()
         
-        secenekler = ["🏠 Ana Ekran", "🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)", "⚖️ İçtihat Sorgulama", "💬 JUNILEX Chat"]
+        secenekler = ["🏠 Ana Ekran", "🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)", "⚖️ İçtihat Sorgulama", "💬 JUNILEX Chat", "👥 Junilex Ağı"]
         if st.session_state.aktif_ekran not in secenekler:
             st.session_state.aktif_ekran = secenekler[1]
             
@@ -278,34 +318,29 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
         """, unsafe_allow_html=True)
         
         st.title(f"Selam {st.session_state.aktif_kullanici.split(' ')[0]},")
-        st.markdown("Bugün sana nasıl yardımcı olabilirim?")
+        st.markdown("Bugün hangi hukuk sahasında derinleşelim?")
         st.write("---")
         
         üst_satir_1, üst_satir_2 = st.columns(2)
-        if üst_satir_1.button("🏛️ Adliye", use_container_width=True): 
-            st.session_state.aktif_ekran = "🏛️ Adliye (Mevzuat Sorgu)"; st.rerun()
-        if üst_satir_2.button("🎓 Akademi", use_container_width=True): 
-            st.session_state.aktif_ekran = "🎓 Akademi (Ders Notları)"; st.rerun()
+        if üst_satir_1.button("🏛️ Adliye", use_container_width=True): st.session_state.aktif_ekran = "🏛️ Adliye (Mevzuat Sorgu)"; st.rerun()
+        if üst_satir_2.button("🎓 Akademi", use_container_width=True): st.session_state.aktif_ekran = "🎓 Akademi (Ders Notları)"; st.rerun()
             
         alt_satir_1, alt_satir_2 = st.columns(2)
-        if alt_satir_1.button("📝 Arzuhal", use_container_width=True): 
-            st.session_state.aktif_ekran = "📝 Arzuhal(Dilekçe Yazım Merkezi)"; st.rerun()
-        if alt_satir_2.button("⚖️ İçtihat", use_container_width=True): 
-            st.session_state.aktif_ekran = "⚖️ İçtihat Sorgulama"; st.rerun()
+        if alt_satir_1.button("📝 Arzuhal", use_container_width=True): st.session_state.aktif_ekran = "📝 Arzuhal(Dilekçe Yazım Merkezi)"; st.rerun()
+        if alt_satir_2.button("⚖️ İçtihat", use_container_width=True): st.session_state.aktif_ekran = "⚖️ İçtihat Sorgulama"; st.rerun()
         
         st.write("<br>", unsafe_allow_html=True)
         
-        if st.button("💬 JUNILEX Chat'e Başla", use_container_width=True, type="primary"):
-            st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
+        col_chat, col_ag = st.columns(2)
+        if col_chat.button("💬 JUNILEX Chat'e Başla", use_container_width=True, type="primary"): st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
+        if col_ag.button("👥 Junilex Ağı (Arkadaşlar)", use_container_width=True): st.session_state.aktif_ekran = "👥 Junilex Ağı"; st.rerun()
 
         st.write("---")
         
-        # 🔥 YENİ: MİNİ AKTİVİTE METRİKLERİ 🔥
         st.subheader("📊 Aktivite Özeti")
         try:
-            db = get_db()
-            # Kullanıcının tüm arşivini çekiyoruz
-            tum_kayitlar = list(db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
+            db_fs = get_db()
+            tum_kayitlar = list(db_fs.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
             
             toplam_islem = len(tum_kayitlar)
             mevzuat_sayisi = sum(1 for d in tum_kayitlar if "Mevzuat" in d.to_dict().get("kategori", ""))
@@ -322,10 +357,9 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
             st.caption("Aktivite verileri yüklenemedi.")
 
         st.write("---")
-        
         st.subheader("🕒 Son 3 İşlem")
         try:
-            recent = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
+            recent = db_fs.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
             found = False
             for doc in recent:
                 d = doc.to_dict()
@@ -337,6 +371,111 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
             if not found: st.info("Henüz geçmiş işlem yok.")
         except Exception as e:
             st.error(f"Veri çekilemedi: {e}")
+
+# ==========================================
+# 👥 JUNILEX AĞI (SOSYAL AĞ)
+# ==========================================
+elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
+    st.title("👥 Junilex Ağı")
+    st.markdown("Diğer meslektaşlarla bağlantı kur ve Junilex Ağını genişlet.")
+    
+    benim_mailim = st.session_state.aktif_kullanici_email
+    st.info(f"📌 **Senin JUNILEX ID'n:** `{st.session_state.aktif_kullanici_id}`\n\nBu kodu diğer kullanıcılara göndererek seni arkadaş eklemelerini sağlayabilirsin.")
+    
+    # Her işlemde güncel veriyi almak için
+    st.session_state.kullanici_veritabani = veritabani_yukle()
+    db_json = st.session_state.kullanici_veritabani
+    benim_verim = db_json.get(benim_mailim, {})
+    
+    gelen_istekler = benim_verim.get("gelen_istekler", [])
+    arkadaslar = benim_verim.get("arkadaslar", [])
+    
+    tab_ara, tab_istekler, tab_arkadaslar = st.tabs([
+        "🔍 Kişi Ara", 
+        f"🔔 İstekler ({len(gelen_istekler)})", 
+        f"🤝 Arkadaşlarım ({len(arkadaslar)})"
+    ])
+    
+    with tab_ara:
+        st.subheader("Hukukçu Bul")
+        aranan_id = st.text_input("Kullanıcının 5 Haneli ID'sini Girin (Örn: #12345)")
+        
+        if st.button("Ara", use_container_width=True, type="primary"):
+            bulunan_mail = None
+            bulunan_isim = None
+            for mail, data in db_json.items():
+                if data.get("id") == aranan_id:
+                    bulunan_mail = mail
+                    bulunan_isim = data.get("isim")
+                    break
+            
+            if bulunan_mail:
+                if bulunan_mail == benim_mailim:
+                    st.warning("Kendini ekleyemezsin ustam!")
+                elif bulunan_mail in arkadaslar:
+                    st.info(f"✅ **{bulunan_isim}** zaten seninle bağlantılı.")
+                else:
+                    st.success(f"👤 Kullanıcı Bulundu: **{bulunan_isim}**")
+                    
+                    karsi_taraf_istekleri = db_json[bulunan_mail].get("gelen_istekler", [])
+                    if benim_mailim in karsi_taraf_istekleri:
+                        st.info("⏳ Bu kullanıcıya zaten bağlantı isteği gönderdin. Yanıt bekleniyor...")
+                    else:
+                        if st.button(f"➕ {bulunan_isim}'e İstek Gönder", key="btn_istek_at"):
+                            db_json[bulunan_mail]["gelen_istekler"].append(benim_mailim)
+                            veritabani_kaydet(db_json)
+                            st.success("İstek başarıyla gönderildi!")
+                            st.rerun()
+            elif aranan_id:
+                st.error("Bu ID'ye ait bir Junilex kullanıcısı bulunamadı.")
+                
+    with tab_istekler:
+        st.subheader("Gelen Bağlantı İstekleri")
+        if not gelen_istekler:
+            st.info("Şu an bekleyen bir isteğin yok.")
+        else:
+            for istek_mail in gelen_istekler:
+                istek_isim = db_json.get(istek_mail, {}).get("isim", "Bilinmeyen")
+                with st.container(border=True):
+                    col1, col2, col3 = st.columns([3, 1, 1])
+                    with col1:
+                        st.markdown(f"👤 **{istek_isim}** seninle bağlantı kurmak istiyor.")
+                    with col2:
+                        if st.button("✅ Kabul Et", key=f"kabul_{istek_mail}", use_container_width=True):
+                            # Karşılıklı ekleme işlemi
+                            db_json[benim_mailim]["arkadaslar"].append(istek_mail)
+                            db_json[istek_mail]["arkadaslar"].append(benim_mailim)
+                            # İsteği listeden silme
+                            db_json[benim_mailim]["gelen_istekler"].remove(istek_mail)
+                            veritabani_kaydet(db_json)
+                            st.success("Bağlantı kuruldu!")
+                            st.rerun()
+                    with col3:
+                        if st.button("❌ Reddet", key=f"reddet_{istek_mail}", use_container_width=True):
+                            db_json[benim_mailim]["gelen_istekler"].remove(istek_mail)
+                            veritabani_kaydet(db_json)
+                            st.rerun()
+                            
+    with tab_arkadaslar:
+        st.subheader("Bağlantılı Olduğum Kişiler")
+        if not arkadaslar:
+            st.info("Henüz ekli bir meslektaşın yok. Kişi Ara sekmesinden Junilex ID'si ile bağlantı kurmaya başla!")
+        else:
+            for ark_mail in arkadaslar:
+                ark_data = db_json.get(ark_mail, {})
+                ark_isim = ark_data.get("isim", "Bilinmeyen")
+                ark_id = ark_data.get("id", "")
+                with st.container(border=True):
+                    col_isim, col_sil = st.columns([4, 1])
+                    with col_isim:
+                        st.markdown(f"🤝 **{ark_isim}** `({ark_id})`")
+                    with col_sil:
+                        if st.button("Kaldır", key=f"sil_ark_{ark_mail}"):
+                            db_json[benim_mailim]["arkadaslar"].remove(ark_mail)
+                            if benim_mailim in db_json[ark_mail]["arkadaslar"]:
+                                db_json[ark_mail]["arkadaslar"].remove(benim_mailim)
+                            veritabani_kaydet(db_json)
+                            st.rerun()
 
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
@@ -471,7 +610,6 @@ elif st.session_state.aktif_ekran == "🏛️ Adliye (Mevzuat Sorgu)":
                 else:
                     st.error(f"Hata: {mesaj}")
 
-    # GELİŞTİRİCİ PANELİ
     if st.session_state.get("aktif_kullanici") == "Ozan Şahin Sicim":
         st.write("<br><br><br>", unsafe_allow_html=True)
         with st.expander("🔑 JUNILEX Geliştirici — Kalıcı Hafızaya Kazıma Paneli", expanded=False):
@@ -1110,5 +1248,7 @@ elif st.session_state.aktif_ekran == "💬 JUNILEX Chat":
                 except Exception as e:
                     st.error(f"Sistem Hatası: {e}")
 
-# Sayfanın en sonunda RAM temizliği için (Gereksiz değişkenleri çöpe atar)
+# ==========================================
+# 🧹 RAM TEMİZLİĞİ 
+# ==========================================
 gc.collect()
