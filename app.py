@@ -617,6 +617,7 @@ elif st.session_state.aktif_ekran == "🏛️ Adliye (Mevzuat Sorgu)":
                 else:
                     st.error(f"Hata: {mesaj}")
 
+    # GELİŞTİRİCİ PANELİ
     if st.session_state.get("aktif_kullanici") == "Ozan Şahin Sicim":
         st.write("<br><br><br>", unsafe_allow_html=True)
         with st.expander("🔑 JUNILEX Geliştirici — Kalıcı Hafızaya Kazıma Paneli", expanded=False):
