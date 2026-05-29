@@ -668,25 +668,81 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                         st.warning("Ekip silindi!")
                         st.rerun()
 
+        # BURADAN İTİBAREN ALT KISMI DEĞİŞTİRİYORSUN:
         st.divider()
-        st.subheader("🗂️ Ekiplerin Ortak Arşivi")
+        st.subheader("🏢 Aktif Ekip Paneli")
         ekiplerim_liste = list(db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream())
         
         if ekiplerim_liste:
             ekip_katalogu = {d.to_dict().get("isim"): d for d in ekiplerim_liste}
-            secilen_ekip_adi = st.selectbox("Arşivini Görmek İçin Ekip Seç:", list(ekip_katalogu.keys()))
-            aktif_ekip = ekip_katalogu[secilen_ekip_adi].to_dict()
+            secilen_ekip_adi = st.selectbox("Çalışacağın Ekibi Seç:", list(ekip_katalogu.keys()))
+            aktif_ekip_doc = ekip_katalogu[secilen_ekip_adi]
+            aktif_ekip = aktif_ekip_doc.to_dict()
+            aktif_ekip_id = aktif_ekip.get("ekip_id")
+            
             st.markdown(f"**Üyeler:** {', '.join(aktif_ekip.get('uyeler_isim', []))}")
             st.divider()
             
-            sorgu_isimleri = aktif_ekip.get('uyeler_isim', [])
-            if sorgu_isimleri:
-                ortak_evraklar = db_fs.collection("junilex_arsiv").where("kullanici", "in", sorgu_isimleri).order_by("tarih", direction=firestore.Query.DESCENDING).limit(50).stream()
-                for evrak in ortak_evraklar:
-                    e_data = evrak.to_dict()
-                    with st.expander(f"📄 {e_data.get('baslik')} | 👤 {e_data.get('kullanici')}"):
-                        st.write(e_data.get("metin"))
-                        st.download_button("📥 TXT İndir", data=e_data.get("metin", ""), file_name=f"{e_data.get('baslik')}.txt")
+            # Arşiv ve Sohbet için alt sekmeler oluşturduk
+            alt_tab_arsiv, alt_tab_sohbet = st.tabs(["🗂️ Ortak Arşiv", "💬 Ekip İçi Sohbet"])
+            
+            with alt_tab_arsiv:
+                sorgu_isimleri = aktif_ekip.get('uyeler_isim', [])
+                if sorgu_isimleri:
+                    ortak_evraklar = db_fs.collection("junilex_arsiv").where("kullanici", "in", sorgu_isimleri).order_by("tarih", direction=firestore.Query.DESCENDING).limit(50).stream()
+                    
+                    evrak_sayaci = 0
+                    for evrak in ortak_evraklar:
+                        evrak_sayaci += 1
+                        e_data = evrak.to_dict()
+                        with st.expander(f"📄 {e_data.get('baslik')} | 👤 {e_data.get('kullanici')}"):
+                            st.write(e_data.get("metin"))
+                            st.download_button("📥 TXT Olarak İndir", data=e_data.get("metin", ""), file_name=f"{e_data.get('baslik')}.txt", key=f"dl_{evrak.id}", use_container_width=True)
+                            
+                    if evrak_sayaci == 0:
+                        st.info("Bu ekibin üyeleri arşive henüz bir belge işlememiş.")
+
+            with alt_tab_sohbet:
+                sohbet_alani = st.container(height=400) # Kaydırılabilir sohbet penceresi
+                
+                try:
+                    # Firestore'dan mesajları tarihe göre sıralayıp çekiyoruz
+                    mesajlar_sorgu = db_fs.collection("junilex_ekip_sohbet").where("ekip_id", "==", aktif_ekip_id).order_by("tarih", direction=firestore.Query.ASCENDING).limit(100).stream()
+                    
+                    with sohbet_alani:
+                        mesaj_var_mi = False
+                        for m in mesajlar_sorgu:
+                            mesaj_var_mi = True
+                            m_data = m.to_dict()
+                            gonderen = m_data.get("isim", "Bilinmeyen")
+                            mesaj = m_data.get("mesaj", "")
+                            
+                            # Kendi mesajlarımızı sağda, başkalarınınkini solda gösteren avatar mantığı
+                            if gonderen == st.session_state.aktif_kullanici:
+                                with st.chat_message("user", avatar="🧑‍💻"):
+                                    st.markdown(f"**Sen:** {mesaj}")
+                            else:
+                                with st.chat_message("assistant", avatar="👤"):
+                                    st.markdown(f"**{gonderen}:** {mesaj}")
+                                    
+                        if not mesaj_var_mi:
+                            st.info("Bu ekipte henüz hiç mesaj yok. İlk mesajı sen gönder!")
+                            
+                except Exception as e:
+                    if "index" in str(e).lower():
+                        st.error("Sohbet geçmişi için veritabanı dizin (index) kurulumu gerekiyor. Lütfen terminal (log) ekranındaki Firebase linkine tıklayarak oluşturun.")
+                    else:
+                        st.error(f"Sohbet yüklenemedi: {e}")
+
+                # Mesaj Yazma Kutusu
+                if yeni_mesaj := st.chat_input("Ekibe mesaj yaz..."):
+                    db_fs.collection("junilex_ekip_sohbet").add({
+                        "ekip_id": aktif_ekip_id,
+                        "isim": st.session_state.aktif_kullanici,
+                        "mesaj": yeni_mesaj,
+                        "tarih": firestore.SERVER_TIMESTAMP
+                    })
+                    st.rerun() # Mesaj gidince sayfayı yenile ki hemen ekrana düşsün
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
 # ==========================================
