@@ -19,6 +19,7 @@ from dilekce_engine import DilekceEngine
 from akademik_sinav_modu import AkademikSinavEngine
 from ictihat_engine import IctihatEngine
 from chat_engine import ChatEngine
+from ag_engine import AgEngine
 
 # ==========================================
 # ⚙️ AYARLAR VE BELLEK YÖNETİMİ
@@ -405,199 +406,92 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
     with tab_ara:
         st.subheader("Hukukçu Bul")
         aranan_id = st.text_input("Kullanıcının 5 Haneli ID'sini Girin (Örn: #12345)")
+        
         if st.button("Ara", use_container_width=True, type="primary"):
             st.session_state.son_aranan_id = aranan_id
             
         if st.session_state.get("son_aranan_id"):
-            bulunan_mail = None
-
-            bulunan_isim = None
-
-            for mail, data in db_json.items():
-
-                if data.get("id") == st.session_state.son_aranan_id:
-
-                    bulunan_mail = mail
-
-                    bulunan_isim = data.get("isim")
-
-                    break
-
+            bulunan_mail, bulunan_isim = AgEngine.kisi_ara(db_json, st.session_state.son_aranan_id)
             
-
             if bulunan_mail:
-
                 if bulunan_mail == benim_mailim:
-
                     st.warning("Kendini ekleyemezsin ustam!")
-
                 elif bulunan_mail in arkadaslar:
-
                     st.info(f"✅ **{bulunan_isim}** zaten seninle bağlantılı.")
-
                 else:
-
                     st.success(f"👤 Kullanıcı Bulundu: **{bulunan_isim}**")
-
                     
-
-                    karsi_taraf_istekleri = db_json[bulunan_mail].get("gelen_istekler", [])
-
-                    if benim_mailim in karsi_taraf_istekleri:
-
+                    karsi_istekler = db_json[bulunan_mail].get("gelen_istekler", [])
+                    if benim_mailim in karsi_istekler:
                         st.info("⏳ Bu kullanıcıya zaten bağlantı isteği gönderdin. Yanıt bekleniyor...")
-
                     else:
-
                         if st.button(f"➕ {bulunan_isim}'e İstek Gönder", key="btn_istek_at"):
-
-                            db_json[bulunan_mail]["gelen_istekler"].append(benim_mailim)
-
+                            db_json = AgEngine.arkadaslik_istegi_gonder(db_json, benim_mailim, bulunan_mail)
                             veritabani_kaydet(db_json)
-
                             st.session_state.son_aranan_id = None
-
                             st.success("İstek başarıyla gönderildi!")
-
                             st.rerun()
-
             else:
-
                 st.error("Bu ID'ye ait bir Junilex kullanıcısı bulunamadı.")
 
     with tab_istekler:
         st.subheader("Gelen Bağlantı İstekleri")
-
         if not gelen_istekler:
-
             st.info("Şu an bekleyen bir isteğin yok.")
-
         else:
-
             for istek_mail in gelen_istekler:
-
                 istek_isim = db_json.get(istek_mail, {}).get("isim", "Bilinmeyen")
-
                 with st.container(border=True):
-
                     col1, col2, col3 = st.columns([3, 1, 1])
-
                     with col1:
-
                         st.markdown(f"👤 **{istek_isim}** seninle bağlantı kurmak istiyor.")
-
                     with col2:
-
                         if st.button("✅ Kabul Et", key=f"kabul_{istek_mail}", use_container_width=True):
-
-                            db_json[benim_mailim]["arkadaslar"].append(istek_mail)
-
-                            db_json[istek_mail]["arkadaslar"].append(benim_mailim)
-
-                            db_json[benim_mailim]["gelen_istekler"].remove(istek_mail)
-
+                            db_json = AgEngine.istek_kabul_et(db_json, benim_mailim, istek_mail)
                             veritabani_kaydet(db_json)
-
                             st.success("Bağlantı kuruldu!")
-
                             st.rerun()
-
                     with col3:
-
                         if st.button("❌ Reddet", key=f"reddet_{istek_mail}", use_container_width=True):
-
-                            db_json[benim_mailim]["gelen_istekler"].remove(istek_mail)
-
+                            db_json = AgEngine.istek_reddet(db_json, benim_mailim, istek_mail)
                             veritabani_kaydet(db_json)
-
                             st.rerun()
 
     with tab_arkadaslar:
         st.subheader("Bağlantılı Olduğum Kişiler")
-
         if not arkadaslar:
-
             st.info("Henüz ekli bir meslektaşın yok. Kişi Ara sekmesinden Junilex ID'si ile bağlantı kurmaya başla!")
-
         else:
-
             for ark_mail in arkadaslar:
-
                 ark_data = db_json.get(ark_mail, {})
-
                 ark_isim = ark_data.get("isim", "Bilinmeyen")
-
                 ark_id = ark_data.get("id", "")
-
                 
-
                 with st.container(border=True):
-
                     col_isim, col_profil, col_sil = st.columns([3, 1, 1])
-
                     with col_isim:
-
                         st.markdown(f"🤝 **{ark_isim}** `({ark_id})`")
-
                     
-
                     with col_profil:
-
                         with st.popover("👁️ Profili Gör", use_container_width=True):
-
                             st.markdown(f"#### {ark_isim}")
-
                             st.caption(f"Junilex ID: {ark_id}")
-
                             st.divider()
-
+                            st.write(f"📅 **Ağa Katılım:** {ark_data.get('kayit_tarihi', 'Bilinmiyor')}")
+                            ortak_bag = set(ark_data.get("arkadaslar", [])).intersection(set(arkadaslar))
+                            st.write(f"👥 **Ortak Bağlantı:** {len(ortak_bag)} kişi")
                             
-
-                            kayit_tarihi = ark_data.get("kayit_tarihi", "Sistem Güncellemesi Öncesi")
-
-                            st.write(f"📅 **Ağa Katılım:** {kayit_tarihi}")
-
-                            
-
-                            karsi_arkadaslar = set(ark_data.get("arkadaslar", []))
-
-                            benim_arkadaslar_set = set(arkadaslar)
-
-                            ortak_baglantilar = karsi_arkadaslar.intersection(benim_arkadaslar_set)
-
-                            st.write(f"👥 **Ortak Bağlantı:** {len(ortak_baglantilar)} kişi")
-
-                            
-
                             try:
-
-                                db_fs = get_db()
-
-                                ark_arsiv = db_fs.collection("junilex_arsiv").where("kullanici", "==", ark_isim).get()
-
+                                ark_arsiv = get_db().collection("junilex_arsiv").where("kullanici", "==", ark_isim).get()
                                 st.write(f"📊 **Hukuki İşlem Hacmi:** {len(ark_arsiv)} Evrak")
-
                             except Exception:
-
                                 st.write("📊 Aktivite verisi alınamadı.")
 
-
-
                     with col_sil:
-
                         if st.button("Kaldır", key=f"sil_ark_{ark_mail}", use_container_width=True):
-
-                            db_json[benim_mailim]["arkadaslar"].remove(ark_mail)
-
-                            if benim_mailim in db_json[ark_mail]["arkadaslar"]:
-
-                                db_json[ark_mail]["arkadaslar"].remove(benim_mailim)
-
+                            db_json = AgEngine.arkadas_cikar(db_json, benim_mailim, ark_mail)
                             veritabani_kaydet(db_json)
-
                             st.rerun()
-
-
 
     with tab_ekipler:
         db_fs = get_db()
@@ -608,36 +502,26 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
             ekip_adi = st.text_input("Ekip Adı", placeholder="Örn: Ceza Departmanı")
             if st.button("🚀 Ekip Kur", use_container_width=True, type="primary"):
                 if ekip_adi:
-                    ekip_id = "#E-" + str(random.randint(10000, 99999))
-                    db_fs.collection("junilex_ekipler").add({
-                        "isim": ekip_adi, 
-                        "ekip_id": ekip_id,
-                        "kurucu": benim_mailim,
-                        "uyeler_mail": [benim_mailim],
-                        "uyeler_isim": [st.session_state.aktif_kullanici],
-                        "istekler": []
-                    })
-                    st.success(f"Ekip kuruldu! ID: {ekip_id}")
+                    yeni_id = AgEngine.ekip_kur(db_fs, ekip_adi, benim_mailim, st.session_state.aktif_kullanici)
+                    st.success(f"Ekip kuruldu! ID: {yeni_id}")
                     st.rerun()
         
         with c_katil:
             st.subheader("🚪 Ekibe Katıl")
             girilen_ekip_id = st.text_input("Ekip ID'si Girin")
             if st.button("İstek Gönder", use_container_width=True):
-                ekip_sorgu = db_fs.collection("junilex_ekipler").where("ekip_id", "==", girilen_ekip_id).stream()
-                bulundu = False
-                for doc in ekip_sorgu:
-                    doc.reference.update({"istekler": firestore.ArrayUnion([benim_mailim])})
+                basarili = AgEngine.ekibe_katilma_istegi_gonder(db_fs, girilen_ekip_id, benim_mailim)
+                if basarili:
                     st.success("Katılma isteği gönderildi.")
-                    bulundu = True
-                if not bulundu:
+                else:
                     st.error("Böyle bir ekip ID'si yok.")
 
         st.divider()
         st.subheader("🏢 Ekiplerim")
-        ekiplerim = db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream()
         
-        for doc in ekiplerim:
+        ekiplerim_doc_listesi = AgEngine.ekiplerimi_getir(db_fs, benim_mailim)
+        
+        for doc in ekiplerim_doc_listesi:
             ekip = doc.to_dict()
             g_id = ekip.get('ekip_id', 'ID Yok')
             g_isim = ekip.get('isim', 'İsimsiz')
@@ -655,11 +539,7 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                             col_istek.write(f"👤 {istek_mail}")
                             if col_onay.button("✅ Onayla", key=f"onay_{istek_mail}_{doc.id}"):
                                 istek_isim = db_json.get(istek_mail, {}).get("isim", "Üye")
-                                doc.reference.update({
-                                    "uyeler_mail": firestore.ArrayUnion([istek_mail]),
-                                    "uyeler_isim": firestore.ArrayUnion([istek_isim]),
-                                    "istekler": firestore.ArrayRemove([istek_mail])
-                                })
+                                AgEngine.ekip_istek_onayla(doc.reference, istek_mail, istek_isim)
                                 st.rerun()
                     
                     st.markdown("---")
@@ -668,13 +548,11 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                         st.warning("Ekip silindi!")
                         st.rerun()
 
-        # BURADAN İTİBAREN ALT KISMI DEĞİŞTİRİYORSUN:
         st.divider()
         st.subheader("🏢 Aktif Ekip Paneli")
-        ekiplerim_liste = list(db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream())
         
-        if ekiplerim_liste:
-            ekip_katalogu = {d.to_dict().get("isim"): d for d in ekiplerim_liste}
+        if ekiplerim_doc_listesi:
+            ekip_katalogu = {d.to_dict().get("isim"): d for d in ekiplerim_doc_listesi}
             secilen_ekip_adi = st.selectbox("Çalışacağın Ekibi Seç:", list(ekip_katalogu.keys()))
             aktif_ekip_doc = ekip_katalogu[secilen_ekip_adi]
             aktif_ekip = aktif_ekip_doc.to_dict()
@@ -683,26 +561,20 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
             st.markdown(f"**Üyeler:** {', '.join(aktif_ekip.get('uyeler_isim', []))}")
             st.divider()
             
-            # Arşiv ve Sohbet için alt sekmeler oluşturduk
             alt_tab_arsiv, alt_tab_sohbet = st.tabs(["🗂️ Ortak Arşiv", "💬 Ekip İçi Sohbet"])
             
             with alt_tab_arsiv:
-                sorgu_isimleri = aktif_ekip.get('uyeler_isim', [])
-                if sorgu_isimleri:
-                    ortak_evraklar = db_fs.collection("junilex_arsiv").where("kullanici", "in", sorgu_isimleri).order_by("tarih", direction=firestore.Query.DESCENDING).limit(50).stream()
-                    
-                    evrak_sayaci = 0
+                ortak_evraklar = AgEngine.ekip_ortak_arsiv_getir(db_fs, aktif_ekip.get('uyeler_isim', []))
+                
+                if not ortak_evraklar:
+                    st.info("Bu ekibin üyeleri arşive henüz bir belge işlememiş.")
+                else:
                     for evrak in ortak_evraklar:
-                        evrak_sayaci += 1
                         e_data = evrak.to_dict()
                         with st.expander(f"📄 {e_data.get('baslik')} | 👤 {e_data.get('kullanici')}"):
                             st.write(e_data.get("metin"))
-                            st.download_button("📥 TXT Olarak İndir", data=e_data.get("metin", ""), file_name=f"{e_data.get('baslik')}.txt", key=f"dl_{evrak.id}", use_container_width=True)
-                            
-                    if evrak_sayaci == 0:
-                        st.info("Bu ekibin üyeleri arşive henüz bir belge işlememiş.")
+                            st.download_button("📥 TXT İndir", data=e_data.get("metin", ""), file_name=f"{e_data.get('baslik')}.txt", key=f"dl_{evrak.id}", use_container_width=True)
 
-            import threading
             import time
 
             with alt_tab_sohbet:
@@ -710,37 +582,28 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                 def sohbeti_otomatik_guncelle():
                     sohbet_alani = st.container(height=400)
                     try:
-                        mesajlar_sorgu = db_fs.collection("junilex_ekip_sohbet").where("ekip_id", "==", aktif_ekip_id).order_by("tarih", direction=firestore.Query.ASCENDING).limit(100).stream()
+                        db_mesajlari = AgEngine.sohbet_mesajlarini_getir(db_fs, aktif_ekip_id)
                         
-                        db_mesajlari = [m.to_dict() for m in mesajlar_sorgu]
-                        
-                        # Bizim yeni attığımız mesaj DB'ye ulaştı mı kontrolü
                         son_mesaj = st.session_state.get("bekleyen_mesaj", "")
                         db_de_var_mi = any(m.get("mesaj") == son_mesaj and m.get("isim") == st.session_state.aktif_kullanici for m in db_mesajlari)
 
                         with sohbet_alani:
                             mesaj_var_mi = False
                             
-                            # 1. Veritabanına ulaşmış kesin mesajları yazdır
                             for m_data in db_mesajlari:
                                 mesaj_var_mi = True
                                 gonderen = m_data.get("isim", "Bilinmeyen")
                                 mesaj = m_data.get("mesaj", "")
                                 
                                 if gonderen == st.session_state.aktif_kullanici:
-                                    with st.chat_message("user", avatar="🧑‍💻"):
-                                        st.markdown(f"**Sen:** {mesaj}")
+                                    with st.chat_message("user", avatar="🧑‍💻"): st.markdown(f"**Sen:** {mesaj}")
                                 else:
-                                    with st.chat_message("assistant", avatar="👤"):
-                                        st.markdown(f"**{gonderen}:** {mesaj}")
+                                    with st.chat_message("assistant", avatar="👤"): st.markdown(f"**{gonderen}:** {mesaj}")
                                         
-                            # 2. Henüz yolda olan (Arka planda giden) mesajı göster (İyimser Arayüz)
                             if son_mesaj and not db_de_var_mi:
-                                # 5 saniyeden eskiyse zaten düşmüştür, bugda kalmasın diye gizle
                                 if time.time() - st.session_state.get("bekleyen_mesaj_zamani", 0) < 5: 
                                     mesaj_var_mi = True
-                                    with st.chat_message("user", avatar="⏳"):
-                                        st.markdown(f"**Sen:** {son_mesaj}")
+                                    with st.chat_message("user", avatar="⏳"): st.markdown(f"**Sen:** {son_mesaj}")
                                         
                             if not mesaj_var_mi:
                                 st.info("Bu ekipte henüz hiç mesaj yok. İlk mesajı sen gönder!")
@@ -748,37 +611,15 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                         if "index" not in str(e).lower():
                             st.error(f"Sohbet yüklenemedi: {e}")
 
-                # Otomatik döngüyü başlatıyoruz
                 sohbeti_otomatik_guncelle()
 
-                # Mesaj Yazma Kutusu
                 if yeni_mesaj := st.chat_input("Ekibe mesaj yaz..."):
-                    
-                    # 1. Anında ekranda göstermek için geçici hafızaya al
                     st.session_state.bekleyen_mesaj = yeni_mesaj
                     st.session_state.bekleyen_mesaj_zamani = time.time()
                     
-                    # 2. Gönderme işini UI'ı (Ekranı) kitlememesi için arka plana at
-                    def arka_planda_gonder(e_id, k_isim, msj):
-                        try:
-                            import firebase_admin
-                            from firebase_admin import firestore as thread_fs
-                            if not firebase_admin._apps:
-                                firebase_admin.initialize_app()
-                            db_thread = thread_fs.client()
-                            db_thread.collection("junilex_ekip_sohbet").add({
-                                "ekip_id": e_id,
-                                "isim": k_isim,
-                                "mesaj": msj,
-                                "tarih": thread_fs.SERVER_TIMESTAMP
-                            })
-                        except Exception:
-                            pass
-
-                    # Arka plan motorunu ateşle
-                    threading.Thread(target=arka_planda_gonder, args=(aktif_ekip_id, st.session_state.aktif_kullanici, yeni_mesaj)).start()
+                    # Motor üzerinden arka planda Firebase'e atıyoruz
+                    AgEngine.arka_planda_mesaj_gonder(aktif_ekip_id, st.session_state.aktif_kullanici, yeni_mesaj)
                     
-                    # 3. Ekranı hiç beklemeden yenile (Sıfır Gecikme Hissi)
                     st.rerun()
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
