@@ -114,17 +114,31 @@ class AgEngine:
         
         threading.Thread(target=gonder_thread).start()
     @staticmethod
-    def gorev_ekle(db_fs, ekip_id, baslik, aciklama, atanan_kisi, olusturan):
-        """Yeni bir görevi veya duruşmayı veritabanına ekler."""
+    def gorev_ekle(db_fs, ekip_id, baslik, aciklama, atanan_kisi, olusturan, ekip_uyeleri_mail):
+        """Yeni bir görevi veritabanına ekler ve ekibe bildirim yollar."""
         db_fs.collection("junilex_gorevler").add({
             "ekip_id": ekip_id,
             "baslik": baslik,
-             "aciklama": aciklama,
+            "aciklama": aciklama,
             "atanan": atanan_kisi,
             "olusturan": olusturan,
-            "durum": "Yapılacak", # Başlangıç durumu
+            "durum": "Yapılacak",
             "tarih": firestore.SERVER_TIMESTAMP
         })
+        # Yeni! -> Bildirim tetikleyici
+        mesaj = f"📌 {olusturan}, '{baslik}' görevini {atanan_kisi}'ye atadı."
+        AgEngine.bildirim_gonder(db_fs, ekip_uyeleri_mail, mesaj)
+
+    @staticmethod
+    def gorev_durumu_guncelle(db_fs, gorev_id, yeni_durum, baslik, yapan_kisi, ekip_uyeleri_mail):
+        """Görevin durumunu günceller ve bildirim yollar."""
+        db_fs.collection("junilex_gorevler").document(gorev_id).update({"durum": yeni_durum})
+        
+        # Yeni! -> Bildirim tetikleyici
+        if yeni_durum == "Tamamlandı":
+            mesaj = f"✅ {yapan_kisi}, '{baslik}' görevini tamamladı!"
+            AgEngine.bildirim_gonder(db_fs, ekip_uyeleri_mail, mesaj)
+   
     
     @staticmethod
     def gorevleri_getir(db_fs, ekip_id):
@@ -132,12 +146,23 @@ class AgEngine:
         sorgu = db_fs.collection("junilex_gorevler").where("ekip_id", "==", ekip_id).order_by("tarih", direction=firestore.Query.DESCENDING).stream()
         return [{"id": d.id, **d.to_dict()} for d in sorgu]
     
-    @staticmethod
-    def gorev_durumu_guncelle(db_fs, gorev_id, yeni_durum):
-        """Görevi Yapılacak -> Devam Ediyor -> Tamamlandı olarak kaydırır."""
-        db_fs.collection("junilex_gorevler").document(gorev_id).update({"durum": yeni_durum})
             
     @staticmethod
     def gorev_sil(db_fs, gorev_id):
         """İptal edilen veya biten görevi tamamen siler."""
         db_fs.collection("junilex_gorevler").document(gorev_id).delete()
+    @staticmethod
+    def bildirim_gonder(db_fs, alicilar_mail_listesi, mesaj):
+        """Belirtilen kullanıcılara sistem bildirimi gönderir."""
+        if not alicilar_mail_listesi: return
+        db_fs.collection("junilex_bildirimler").add({
+            "alicilar": alicilar_mail_listesi,
+            "mesaj": mesaj,
+            "tarih": firestore.SERVER_TIMESTAMP
+        })
+
+    @staticmethod
+    def bildirimleri_getir(db_fs, benim_mailim):
+        """Kullanıcının bildirimlerini en yeniden eskiye doğru getirir."""
+        sorgu = db_fs.collection("junilex_bildirimler").where("alicilar", "array_contains", benim_mailim).order_by("tarih", direction=firestore.Query.DESCENDING).limit(15).stream()
+        return [d.to_dict() for d in sorgu]
