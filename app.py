@@ -1508,7 +1508,10 @@ elif st.session_state.aktif_ekran == "🧮 Pratik Hesaplamalar":
     st.title("🧮 Hukuki Pratik Hesaplamalar")
     st.markdown("Günlük ofis işlerinizde vakit kazandıracak hızlı hesaplama araçları.")
     
-    tab_smm, tab_faiz = st.tabs(["🧾 Serbest Meslek Makbuzu", "📈 Faiz Hesaplama"])
+    # 5 sekmeye çıkardık
+    tab_smm, tab_faiz, tab_isci, tab_harc, tab_kademeli = st.tabs([
+        "🧾 SMM", "📈 Faiz", "💼 İşçilik Alacakları", "⚖️ Harç", "📊 AAÜT / Kademeli"
+    ])
     
     # --- 1. SMM HESAPLAYICI ---
     with tab_smm:
