@@ -702,19 +702,28 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     if evrak_sayaci == 0:
                         st.info("Bu ekibin üyeleri arşive henüz bir belge işlememiş.")
 
+            import threading
+            import time
+
             with alt_tab_sohbet:
-                # Sadece bu fonksiyonun içini her 3 saniyede bir otomatik yeniler
                 @st.fragment(run_every=3)
                 def sohbeti_otomatik_guncelle():
                     sohbet_alani = st.container(height=400)
                     try:
                         mesajlar_sorgu = db_fs.collection("junilex_ekip_sohbet").where("ekip_id", "==", aktif_ekip_id).order_by("tarih", direction=firestore.Query.ASCENDING).limit(100).stream()
                         
+                        db_mesajlari = [m.to_dict() for m in mesajlar_sorgu]
+                        
+                        # Bizim yeni attığımız mesaj DB'ye ulaştı mı kontrolü
+                        son_mesaj = st.session_state.get("bekleyen_mesaj", "")
+                        db_de_var_mi = any(m.get("mesaj") == son_mesaj and m.get("isim") == st.session_state.aktif_kullanici for m in db_mesajlari)
+
                         with sohbet_alani:
                             mesaj_var_mi = False
-                            for m in mesajlar_sorgu:
+                            
+                            # 1. Veritabanına ulaşmış kesin mesajları yazdır
+                            for m_data in db_mesajlari:
                                 mesaj_var_mi = True
-                                m_data = m.to_dict()
                                 gonderen = m_data.get("isim", "Bilinmeyen")
                                 mesaj = m_data.get("mesaj", "")
                                 
@@ -725,26 +734,52 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                                     with st.chat_message("assistant", avatar="👤"):
                                         st.markdown(f"**{gonderen}:** {mesaj}")
                                         
+                            # 2. Henüz yolda olan (Arka planda giden) mesajı göster (İyimser Arayüz)
+                            if son_mesaj and not db_de_var_mi:
+                                # 5 saniyeden eskiyse zaten düşmüştür, bugda kalmasın diye gizle
+                                if time.time() - st.session_state.get("bekleyen_mesaj_zamani", 0) < 5: 
+                                    mesaj_var_mi = True
+                                    with st.chat_message("user", avatar="⏳"):
+                                        st.markdown(f"**Sen:** {son_mesaj}")
+                                        
                             if not mesaj_var_mi:
                                 st.info("Bu ekipte henüz hiç mesaj yok. İlk mesajı sen gönder!")
                     except Exception as e:
                         if "index" not in str(e).lower():
                             st.error(f"Sohbet yüklenemedi: {e}")
 
-                # Fonksiyonu ekrana çağırıyoruz (Otomatik döngüye girer)
+                # Otomatik döngüyü başlatıyoruz
                 sohbeti_otomatik_guncelle()
 
-                # Mesaj Yazma Kutusu (Fragment dışında tutuyoruz ki yazarken sayfa yenilenip klavyeni kesmesin)
+                # Mesaj Yazma Kutusu
                 if yeni_mesaj := st.chat_input("Ekibe mesaj yaz..."):
-                    # Veritabanına yaz
-                    db_fs.collection("junilex_ekip_sohbet").add({
-                        "ekip_id": aktif_ekip_id,
-                        "isim": st.session_state.aktif_kullanici,
-                        "mesaj": yeni_mesaj,
-                        "tarih": firestore.SERVER_TIMESTAMP
-                    })
-                    # Mesajı gönderdikten sonra anında ekranda görmek için tetikliyoruz
-                    st.rerun() # Mesaj gidince sayfayı yenile ki hemen ekrana düşsün
+                    
+                    # 1. Anında ekranda göstermek için geçici hafızaya al
+                    st.session_state.bekleyen_mesaj = yeni_mesaj
+                    st.session_state.bekleyen_mesaj_zamani = time.time()
+                    
+                    # 2. Gönderme işini UI'ı (Ekranı) kitlememesi için arka plana at
+                    def arka_planda_gonder(e_id, k_isim, msj):
+                        try:
+                            import firebase_admin
+                            from firebase_admin import firestore as thread_fs
+                            if not firebase_admin._apps:
+                                firebase_admin.initialize_app()
+                            db_thread = thread_fs.client()
+                            db_thread.collection("junilex_ekip_sohbet").add({
+                                "ekip_id": e_id,
+                                "isim": k_isim,
+                                "mesaj": msj,
+                                "tarih": thread_fs.SERVER_TIMESTAMP
+                            })
+                        except Exception:
+                            pass
+
+                    # Arka plan motorunu ateşle
+                    threading.Thread(target=arka_planda_gonder, args=(aktif_ekip_id, st.session_state.aktif_kullanici, yeni_mesaj)).start()
+                    
+                    # 3. Ekranı hiç beklemeden yenile (Sıfır Gecikme Hissi)
+                    st.rerun()
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
 # ==========================================
