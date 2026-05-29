@@ -624,6 +624,8 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     st.rerun()
                     with alt_tab_gorevler:
                 st.subheader("📌 Ekip İş ve Duruşma Takibi")
+            with alt_tab_gorevler:
+                st.subheader("📌 Ekip İş ve Duruşma Takibi")
                 
                 # 1. YENİ GÖREV EKLEME FORMU
                 with st.expander("➕ Yeni Görev / Duruşma Ata"):
