@@ -113,3 +113,31 @@ class AgEngine:
                 pass
         
         threading.Thread(target=gonder_thread).start()
+    @staticmethod
+    def gorev_ekle(db_fs, ekip_id, baslik, aciklama, atanan_kisi, olusturan):
+        """Yeni bir görevi veya duruşmayı veritabanına ekler."""
+        db_fs.collection("junilex_gorevler").add({
+            "ekip_id": ekip_id,
+            "baslik": baslik,
+             "aciklama": aciklama,
+            "atanan": atanan_kisi,
+            "olusturan": olusturan,
+            "durum": "Yapılacak", # Başlangıç durumu
+            "tarih": firestore.SERVER_TIMESTAMP
+        })
+    
+    @staticmethod
+    def gorevleri_getir(db_fs, ekip_id):
+        """Ekibe ait görevleri ID'leri ile birlikte getirir."""
+        sorgu = db_fs.collection("junilex_gorevler").where("ekip_id", "==", ekip_id).order_by("tarih", direction=firestore.Query.DESCENDING).stream()
+        return [{"id": d.id, **d.to_dict()} for d in sorgu]
+    
+    @staticmethod
+    def gorev_durumu_guncelle(db_fs, gorev_id, yeni_durum):
+        """Görevi Yapılacak -> Devam Ediyor -> Tamamlandı olarak kaydırır."""
+        db_fs.collection("junilex_gorevler").document(gorev_id).update({"durum": yeni_durum})
+            
+    @staticmethod
+    def gorev_sil(db_fs, gorev_id):
+        """İptal edilen veya biten görevi tamamen siler."""
+        db_fs.collection("junilex_gorevler").document(gorev_id).delete()
