@@ -1564,6 +1564,68 @@ elif st.session_state.aktif_ekran == "🧮 Pratik Hesaplamalar":
                 c_ana.metric("Anapara", f"₺{anapara:,.2f}")
                 c_faiz.metric("İşleyen Faiz", f"₺{faiz_miktari:,.2f}")
                 c_top.metric("Toplam Alacak", f"₺{toplam:,.2f}")
+    # --- 3. İŞÇİLİK ALACAKLARI HESAPLAYICI ---
+    with tab_isci:
+        st.subheader("Kıdem ve İhbar Tazminatı Hesaplayıcı")
+        st.info("Kıdem tavanını güncel resmi gazete verisine göre değiştirebilirsiniz.")
+        
+        c_maas, c_tavan = st.columns(2)
+        with c_maas: brut_maas = st.number_input("Brüt Maaş (₺)", value=20002.50, step=500.0)
+        with c_tavan: kidem_tavani = st.number_input("Güncel Kıdem Tavanı (₺)", value=35058.58, step=1000.0)
+            
+        c_giris, c_cikis = st.columns(2)
+        import datetime
+        with c_giris: ise_giris = st.date_input("İşe Giriş Tarihi", value=datetime.date(2020, 1, 1))
+        with c_cikis: isten_cikis = st.date_input("İşten Çıkış Tarihi", value=datetime.date.today())
+            
+        if st.button("Tazminatları Hesapla", type="primary", use_container_width=True):
+            sonuc = HesapEngine.iscil_alacaklar_hesapla(brut_maas, kidem_tavani, ise_giris, isten_cikis)
+            if "Hata" in sonuc:
+                st.error(sonuc["Hata"])
+            else:
+                st.divider()
+                st.write(f"⏱️ **Kıdeme Esas Süre:** {sonuc['Çalışılan Gün']} Gün | **İhbar Süresi:** {sonuc['İhbar Süresi (Hafta)']} Hafta")
+                m1, m2 = st.columns(2)
+                m1.metric("Net Kıdem Tazminatı", f"₺{sonuc['Kıdem Net']:,.2f}")
+                m2.metric("Net İhbar Tazminatı", f"₺{sonuc['İhbar Net']:,.2f}")
+
+    # --- 4. NİSPİ HARÇ HESAPLAYICI ---
+    with tab_harc:
+        st.subheader("Peşin Harç Hesaplayıcı (Binde 68.31)")
+        dava_degeri = st.number_input("Dava Değeri (Müddeabih) ₺", value=100000.0, step=10000.0)
+        
+        if st.button("Harç Hesapla", type="primary"):
+            toplam, pesin = HesapEngine.nispi_harc_hesapla(dava_degeri)
+            st.success(f"**Yatırılacak Peşin Harç (1/4):** ₺{pesin:,.2f}")
+            st.caption(f"Toplam Karar ve İlam Harcı: ₺{toplam:,.2f}")
+
+    # --- 5. KADEMELİ TARİFE (AAÜT) ---
+    with tab_kademeli:
+        st.subheader("Nispi Vekalet Ücreti Hesaplayıcı")
+        st.write("2023-2024 AAÜT İcra/Dava dilimleri (Gerektiğinde koddaki oranları revize edin).")
+        
+        vekalet_tutari = st.number_input("Hükmedilen Tutar / Tahsilat (₺)", value=500000.0, step=50000.0)
+        
+        # Güncel AAÜT oranlarını list of dicts olarak UI'da tutuyoruz
+        # İleride veritabanından dinamik çekilebilir
+        aaut_dilimler = [
+            {"limit": 200000, "oran": 0.16},
+            {"limit": 200000, "oran": 0.15},
+            {"limit": 400000, "oran": 0.14},
+            {"limit": 600000, "oran": 0.11},
+            {"limit": 1200000, "oran": 0.08},
+            {"limit": 1600000, "oran": 0.05},
+            {"limit": 1600000, "oran": 0.03},
+            {"limit": 8000000, "oran": 0.02},
+            {"limit": None, "oran": 0.01} # Üstü
+        ]
+        
+        if st.button("Vekalet Ücreti Hesapla", type="primary"):
+            ucret, detay = HesapEngine.kademeli_tarife_hesapla(vekalet_tutari, aaut_dilimler)
+            st.success(f"**Hesaplanan Vekalet Ücreti:** ₺{ucret:,.2f}")
+            with st.expander("Hesaplama Detayları"):
+                for d in detay:
+                    st.write(d)
 
 # ==========================================
 # 🧹 RAM TEMİZLİĞİ 
