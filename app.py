@@ -561,7 +561,8 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
             st.markdown(f"**Üyeler:** {', '.join(aktif_ekip.get('uyeler_isim', []))}")
             st.divider()
             
-            alt_tab_arsiv, alt_tab_sohbet = st.tabs(["🗂️ Ortak Arşiv", "💬 Ekip İçi Sohbet"])
+            # Görevler sekmesini de ekledik
+            alt_tab_arsiv, alt_tab_sohbet, alt_tab_gorevler = st.tabs(["🗂️ Ortak Arşiv", "💬 Ekip İçi Sohbet", "📅 Görev ve Duruşmalar"])
             
             with alt_tab_arsiv:
                 ortak_evraklar = AgEngine.ekip_ortak_arsiv_getir(db_fs, aktif_ekip.get('uyeler_isim', []))
@@ -621,6 +622,79 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     AgEngine.arka_planda_mesaj_gonder(aktif_ekip_id, st.session_state.aktif_kullanici, yeni_mesaj)
                     
                     st.rerun()
+                    with alt_tab_gorevler:
+                st.subheader("📌 Ekip İş ve Duruşma Takibi")
+                
+                # 1. YENİ GÖREV EKLEME FORMU
+                with st.expander("➕ Yeni Görev / Duruşma Ata"):
+                    g_baslik = st.text_input("Görev Başlığı", placeholder="Örn: X Şirketi Sözleşme İncelemesi")
+                    g_aciklama = st.text_area("Açıklama / Detaylar", placeholder="Dosya no, tarih veya notlar...")
+                    g_atanan = st.selectbox("Kime Atanacak?", aktif_ekip.get('uyeler_isim', []))
+                    
+                    if st.button("Görevi Kaydet", use_container_width=True, type="primary"):
+                        if g_baslik:
+                            AgEngine.gorev_ekle(db_fs, aktif_ekip_id, g_baslik, g_aciklama, g_atanan, st.session_state.aktif_kullanici)
+                            st.success("Görev başarıyla eklendi!")
+                            st.rerun()
+                        else:
+                            st.warning("Görev başlığı boş bırakılamaz.")
+                
+                st.divider()
+                
+                # 2. KANBAN PANOSU (3 Kolonlu Görev Yönetimi)
+                try:
+                    gorevler = AgEngine.gorevleri_getir(db_fs, aktif_ekip_id)
+                    
+                    if not gorevler:
+                        st.info("Şu an ekibe atanmış aktif bir görev veya duruşma bulunmuyor.")
+                    else:
+                        col_yap, col_devam, col_bit = st.columns(3)
+                        
+                        with col_yap: st.markdown("### 🔴 Yapılacaklar")
+                        with col_devam: st.markdown("### 🟡 Devam Edenler")
+                        with col_bit: st.markdown("### 🟢 Tamamlananlar")
+                            
+                        for g in gorevler:
+                            durum = g.get("durum", "Yapılacak")
+                            kart_icerik = f"**{g.get('baslik')}**\n\n👤 *Atanan: {g.get('atanan')}*\n\n📝 {g.get('aciklama')}"
+                            
+                            # Kartları durumlarına göre kolonlara dağıt
+                            if durum == "Yapılacak":
+                                with col_yap:
+                                    with st.container(border=True):
+                                        st.markdown(kart_icerik)
+                                        c1, c2 = st.columns(2)
+                                        if c1.button("Başla ➡️", key=f"basla_{g['id']}", use_container_width=True):
+                                            AgEngine.gorev_durumu_guncelle(db_fs, g['id'], "Devam Ediyor")
+                                            st.rerun()
+                                        if c2.button("🗑️ Sil", key=f"sil_yap_{g['id']}", use_container_width=True):
+                                            AgEngine.gorev_sil(db_fs, g['id'])
+                                            st.rerun()
+                                            
+                            elif durum == "Devam Ediyor":
+                                with col_devam:
+                                    with st.container(border=True):
+                                        st.markdown(kart_icerik)
+                                        c1, c2 = st.columns(2)
+                                        if c1.button("Bitti ✅", key=f"bitir_{g['id']}", use_container_width=True):
+                                            AgEngine.gorev_durumu_guncelle(db_fs, g['id'], "Tamamlandı")
+                                            st.rerun()
+                                        if c2.button("Geri ⬅️", key=f"geri_{g['id']}", use_container_width=True):
+                                            AgEngine.gorev_durumu_guncelle(db_fs, g['id'], "Yapılacak")
+                                            st.rerun()
+                                            
+                            elif durum == "Tamamlandı":
+                                with col_bit:
+                                    with st.container(border=True):
+                                        st.markdown(kart_icerik)
+                                        if st.button("🗑️ Arşivden Sil", key=f"sil_bit_{g['id']}", use_container_width=True):
+                                            AgEngine.gorev_sil(db_fs, g['id'])
+                                            st.rerun()
+                except Exception as e:
+                    if "index" in str(e).lower():
+                        st.error("⚠️ Görev panosu için veritabanı dizin kurulumu gerekiyor. Lütfen terminal (Log) ekranındaki linke tıklayarak dizini oluştur.")
+                    else:
+                        st.error(f"Görevler yüklenemedi: {e}")
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
 # ==========================================
