@@ -387,7 +387,24 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
     st.markdown("Meslektaşlarınla bağlantı kur, ekipler oluştur ve ortak arşivde çalış.")
     
     benim_mailim = st.session_state.aktif_kullanici_email
-    st.info(f"📌 **Senin JUNILEX ID'n:** `{st.session_state.aktif_kullanici_id}`")
+    
+    col_id, col_bildirim = st.columns([4, 1])
+    with col_id:
+        st.info(f"📌 **Senin JUNILEX ID'n:** `{st.session_state.aktif_kullanici_id}`")
+    with col_bildirim:
+        with st.popover("🔔 Bildirimler", use_container_width=True):
+            st.markdown("### 📢 Son Hareketler")
+            try:
+                db_fs = get_db()
+                bildirimler = AgEngine.bildirimleri_getir(db_fs, benim_mailim)
+                if not bildirimler:
+                    st.write("Şu an yeni bir bildiriminiz yok.")
+                else:
+                    for b in bildirimler:
+                        st.info(b.get("mesaj"))
+            except Exception as e:
+                if "index" in str(e).lower():
+                    st.error("Bildirimler için Index bekleniyor...")
     
     st.session_state.kullanici_veritabani = veritabani_yukle()
     db_json = st.session_state.kullanici_veritabani
