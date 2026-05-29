@@ -703,45 +703,47 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                         st.info("Bu ekibin üyeleri arşive henüz bir belge işlememiş.")
 
             with alt_tab_sohbet:
-                sohbet_alani = st.container(height=400) # Kaydırılabilir sohbet penceresi
-                
-                try:
-                    # Firestore'dan mesajları tarihe göre sıralayıp çekiyoruz
-                    mesajlar_sorgu = db_fs.collection("junilex_ekip_sohbet").where("ekip_id", "==", aktif_ekip_id).order_by("tarih", direction=firestore.Query.ASCENDING).limit(100).stream()
-                    
-                    with sohbet_alani:
-                        mesaj_var_mi = False
-                        for m in mesajlar_sorgu:
-                            mesaj_var_mi = True
-                            m_data = m.to_dict()
-                            gonderen = m_data.get("isim", "Bilinmeyen")
-                            mesaj = m_data.get("mesaj", "")
-                            
-                            # Kendi mesajlarımızı sağda, başkalarınınkini solda gösteren avatar mantığı
-                            if gonderen == st.session_state.aktif_kullanici:
-                                with st.chat_message("user", avatar="🧑‍💻"):
-                                    st.markdown(f"**Sen:** {mesaj}")
-                            else:
-                                with st.chat_message("assistant", avatar="👤"):
-                                    st.markdown(f"**{gonderen}:** {mesaj}")
-                                    
-                        if not mesaj_var_mi:
-                            st.info("Bu ekipte henüz hiç mesaj yok. İlk mesajı sen gönder!")
-                            
-                except Exception as e:
-                    if "index" in str(e).lower():
-                        st.error("Sohbet geçmişi için veritabanı dizin (index) kurulumu gerekiyor. Lütfen terminal (log) ekranındaki Firebase linkine tıklayarak oluşturun.")
-                    else:
-                        st.error(f"Sohbet yüklenemedi: {e}")
+                # Sadece bu fonksiyonun içini her 3 saniyede bir otomatik yeniler
+                @st.fragment(run_every=3)
+                def sohbeti_otomatik_guncelle():
+                    sohbet_alani = st.container(height=400)
+                    try:
+                        mesajlar_sorgu = db_fs.collection("junilex_ekip_sohbet").where("ekip_id", "==", aktif_ekip_id).order_by("tarih", direction=firestore.Query.ASCENDING).limit(100).stream()
+                        
+                        with sohbet_alani:
+                            mesaj_var_mi = False
+                            for m in mesajlar_sorgu:
+                                mesaj_var_mi = True
+                                m_data = m.to_dict()
+                                gonderen = m_data.get("isim", "Bilinmeyen")
+                                mesaj = m_data.get("mesaj", "")
+                                
+                                if gonderen == st.session_state.aktif_kullanici:
+                                    with st.chat_message("user", avatar="🧑‍💻"):
+                                        st.markdown(f"**Sen:** {mesaj}")
+                                else:
+                                    with st.chat_message("assistant", avatar="👤"):
+                                        st.markdown(f"**{gonderen}:** {mesaj}")
+                                        
+                            if not mesaj_var_mi:
+                                st.info("Bu ekipte henüz hiç mesaj yok. İlk mesajı sen gönder!")
+                    except Exception as e:
+                        if "index" not in str(e).lower():
+                            st.error(f"Sohbet yüklenemedi: {e}")
 
-                # Mesaj Yazma Kutusu
+                # Fonksiyonu ekrana çağırıyoruz (Otomatik döngüye girer)
+                sohbeti_otomatik_guncelle()
+
+                # Mesaj Yazma Kutusu (Fragment dışında tutuyoruz ki yazarken sayfa yenilenip klavyeni kesmesin)
                 if yeni_mesaj := st.chat_input("Ekibe mesaj yaz..."):
+                    # Veritabanına yaz
                     db_fs.collection("junilex_ekip_sohbet").add({
                         "ekip_id": aktif_ekip_id,
                         "isim": st.session_state.aktif_kullanici,
                         "mesaj": yeni_mesaj,
                         "tarih": firestore.SERVER_TIMESTAMP
                     })
+                    # Mesajı gönderdikten sonra anında ekranda görmek için tetikliyoruz
                     st.rerun() # Mesaj gidince sayfayı yenile ki hemen ekrana düşsün
 # ==========================================
 # 🏛️ ADLİYE MODÜLÜ
