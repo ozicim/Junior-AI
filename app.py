@@ -20,6 +20,7 @@ from akademik_sinav_modu import AkademikSinavEngine
 from ictihat_engine import IctihatEngine
 from chat_engine import ChatEngine
 from ag_engine import AgEngine
+from hesap_engine import HesapEngine
 
 # ==========================================
 # ⚙️ AYARLAR VE BELLEK YÖNETİMİ
@@ -274,7 +275,18 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
             st.rerun()
         st.divider()
         
-        secenekler = ["🏠 Ana Ekran", "🏛️ Adliye (Mevzuat Sorgu)", "🎓 Akademi (Ders Notları)", "📝 Arzuhal(Dilekçe Yazım Merkezi)", "⚖️ İçtihat Sorgulama", "💬 JUNILEX Chat", "👥 Junilex Ağı"]
+        # GÜNCELLEME: "🧮 Pratik Hesaplamalar" listeye eklendi
+        secenekler = [
+            "🏠 Ana Ekran", 
+            "🏛️ Adliye (Mevzuat Sorgu)", 
+            "🎓 Akademi (Ders Notları)", 
+            "📝 Arzuhal(Dilekçe Yazım Merkezi)", 
+            "⚖️ İçtihat Sorgulama", 
+            "💬 JUNILEX Chat", 
+            "👥 Junilex Ağı",
+            "🧮 Pratik Hesaplamalar"
+        ]
+        
         if st.session_state.aktif_ekran not in secenekler:
             st.session_state.aktif_ekran = secenekler[1]
             
@@ -338,9 +350,11 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
         
         st.write("<br>", unsafe_allow_html=True)
         
-        col_chat, col_ag = st.columns(2)
-        if col_chat.button("💬 JUNILEX Chat'e Başla", use_container_width=True, type="primary"): st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
-        if col_ag.button("👥 Junilex Ağı (Arkadaşlar)", use_container_width=True): st.session_state.aktif_ekran = "👥 Junilex Ağı"; st.rerun()
+        # GÜNCELLEME: Hesaplamalar Butonu eklendi (Artık 3 Kolon)
+        col_chat, col_ag, col_hesap = st.columns(3)
+        if col_chat.button("💬 JUNILEX Chat", use_container_width=True, type="primary"): st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
+        if col_ag.button("👥 Junilex Ağı", use_container_width=True): st.session_state.aktif_ekran = "👥 Junilex Ağı"; st.rerun()
+        if col_hesap.button("🧮 Hesaplayıcılar", use_container_width=True): st.session_state.aktif_ekran = "🧮 Pratik Hesaplamalar"; st.rerun()
 
         st.write("---")
         
@@ -1487,6 +1501,69 @@ elif st.session_state.aktif_ekran == "💬 JUNILEX Chat":
                     st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
                 except Exception as e:
                     st.error(f"Sistem Hatası: {e}")
+# ==========================================
+# 🧮 PRATİK HESAPLAMALAR
+# ==========================================
+elif st.session_state.aktif_ekran == "🧮 Pratik Hesaplamalar":
+    st.title("🧮 Hukuki Pratik Hesaplamalar")
+    st.markdown("Günlük ofis işlerinizde vakit kazandıracak hızlı hesaplama araçları.")
+    
+    tab_smm, tab_faiz = st.tabs(["🧾 Serbest Meslek Makbuzu", "📈 Faiz Hesaplama"])
+    
+    # --- 1. SMM HESAPLAYICI ---
+    with tab_smm:
+        st.subheader("Serbest Meslek Makbuzu (SMM) Hesaplayıcı")
+        st.info("KDV %20 ve Stopaj %20 üzerinden hesaplanmaktadır.")
+        
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            hesap_tipi = st.selectbox("Anlaşma Tipi", ["Netten Brüte (KDV Hariç Anlaşma)", "Brütten Nete"])
+            tutar = st.number_input("Tutar (₺)", min_value=0.0, value=10000.0, step=500.0)
+            
+            if st.button("Makbuzu Hesapla", type="primary"):
+                sonuc = HesapEngine.smm_hesapla(tutar, hesap_tipi)
+                
+                st.divider()
+                st.markdown("### 📊 Hesaplama Sonucu")
+                
+                c_brut, c_kdv, c_stopaj = st.columns(3)
+                c_brut.metric("Brüt Ücret", f"₺{sonuc['Brüt Ücret']:,.2f}")
+                c_kdv.metric("KDV (%20)", f"₺{sonuc['KDV (%20)']:,.2f}")
+                c_stopaj.metric("Stopaj (%20)", f"₺{sonuc['Stopaj (%20)']:,.2f}")
+                
+                st.success(f"**Avukata Kalan Net:** ₺{sonuc['Avukata Kalan Net']:,.2f}")
+                st.warning(f"**Müvekkilden Tahsil Edilecek Toplam:** ₺{sonuc['Müvekkilden Tahsil Edilecek Toplam (Net + KDV)']:,.2f}")
+
+    # --- 2. FAİZ HESAPLAYICI ---
+    with tab_faiz:
+        st.subheader("Gün Bazlı Faiz Hesaplayıcı")
+        
+        col_anapara, col_oran = st.columns(2)
+        with col_anapara:
+            anapara = st.number_input("Anapara (₺)", min_value=0.0, value=50000.0, step=1000.0)
+        with col_oran:
+            faiz_orani = st.number_input("Yıllık Faiz Oranı (%)", min_value=0.0, value=9.0, step=1.0, help="Yasal faiz %9, Avans faizi değişkenlik gösterir.")
+            
+        col_bas, col_bit = st.columns(2)
+        with col_bas:
+            import datetime
+            baslangic = st.date_input("Başlangıç (Temerrüt) Tarihi", value=datetime.date(2023, 1, 1))
+        with col_bit:
+            bitis = st.date_input("Bitiş (Hesap) Tarihi", value=datetime.date.today())
+            
+        if st.button("Faizi Hesapla", type="primary"):
+            gun, faiz_miktari, toplam = HesapEngine.faiz_hesapla(anapara, faiz_orani, baslangic, bitis)
+            
+            if gun < 0:
+                st.error("Bitiş tarihi, başlangıç tarihinden önce olamaz!")
+            else:
+                st.divider()
+                st.markdown(f"Geçen Süre: **{gun} Gün**")
+                
+                c_ana, c_faiz, c_top = st.columns(3)
+                c_ana.metric("Anapara", f"₺{anapara:,.2f}")
+                c_faiz.metric("İşleyen Faiz", f"₺{faiz_miktari:,.2f}")
+                c_top.metric("Toplam Alacak", f"₺{toplam:,.2f}")
 
 # ==========================================
 # 🧹 RAM TEMİZLİĞİ 
