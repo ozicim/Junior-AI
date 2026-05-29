@@ -622,8 +622,6 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     AgEngine.arka_planda_mesaj_gonder(aktif_ekip_id, st.session_state.aktif_kullanici, yeni_mesaj)
                     
                     st.rerun()
-                    with alt_tab_gorevler:
-                st.subheader("📌 Ekip İş ve Duruşma Takibi")
             with alt_tab_gorevler:
                 st.subheader("📌 Ekip İş ve Duruşma Takibi")
                 
