@@ -650,7 +650,8 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     
                     if st.button("Görevi Kaydet", use_container_width=True, type="primary"):
                         if g_baslik:
-                            AgEngine.gorev_ekle(db_fs, aktif_ekip_id, g_baslik, g_aciklama, g_atanan, st.session_state.aktif_kullanici)
+                            # GÜNCELLEME: Bildirim atabilmesi için uyeler_mail eklendi
+                            AgEngine.gorev_ekle(db_fs, aktif_ekip_id, g_baslik, g_aciklama, g_atanan, st.session_state.aktif_kullanici, aktif_ekip.get('uyeler_mail', []))
                             st.success("Görev başarıyla eklendi!")
                             st.rerun()
                         else:
@@ -682,7 +683,8 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                                         st.markdown(kart_icerik)
                                         c1, c2 = st.columns(2)
                                         if c1.button("Başla ➡️", key=f"basla_{g['id']}", use_container_width=True):
-                                            AgEngine.gorev_durumu_guncelle(db_fs, g['id'], "Devam Ediyor")
+                                            # GÜNCELLEME: Bildirim parametreleri eklendi
+                                            AgEngine.gorev_durumu_guncelle(db_fs, g['id'], "Devam Ediyor", g.get('baslik'), st.session_state.aktif_kullanici, aktif_ekip.get('uyeler_mail', []))
                                             st.rerun()
                                         if c2.button("🗑️ Sil", key=f"sil_yap_{g['id']}", use_container_width=True):
                                             AgEngine.gorev_sil(db_fs, g['id'])
@@ -694,10 +696,12 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                                         st.markdown(kart_icerik)
                                         c1, c2 = st.columns(2)
                                         if c1.button("Bitti ✅", key=f"bitir_{g['id']}", use_container_width=True):
-                                            AgEngine.gorev_durumu_guncelle(db_fs, g['id'], "Tamamlandı")
+                                            # GÜNCELLEME: Bildirim parametreleri eklendi
+                                            AgEngine.gorev_durumu_guncelle(db_fs, g['id'], "Tamamlandı", g.get('baslik'), st.session_state.aktif_kullanici, aktif_ekip.get('uyeler_mail', []))
                                             st.rerun()
                                         if c2.button("Geri ⬅️", key=f"geri_{g['id']}", use_container_width=True):
-                                            AgEngine.gorev_durumu_guncelle(db_fs, g['id'], "Yapılacak")
+                                            # GÜNCELLEME: Bildirim parametreleri eklendi
+                                            AgEngine.gorev_durumu_guncelle(db_fs, g['id'], "Yapılacak", g.get('baslik'), st.session_state.aktif_kullanici, aktif_ekip.get('uyeler_mail', []))
                                             st.rerun()
                                             
                             elif durum == "Tamamlandı":
