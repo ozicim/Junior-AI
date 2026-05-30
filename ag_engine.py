@@ -160,6 +160,17 @@ class AgEngine:
             "mesaj": mesaj,
             "tarih": firestore.SERVER_TIMESTAMP
         })
+    @staticmethod
+    def evrak_yukle(db_fs, ekip_id, baslik, metin, kullanici):
+        """Ekip arşivine yeni evrak ekler."""
+        db_fs.collection("junilex_arsiv").add({
+            "ekip_id": ekip_id,
+            "baslik": baslik,
+            "metin": metin,
+            "kullanici": kullanici,
+            "kategori": "Ortak Evrak",
+            "tarih": firestore.SERVER_TIMESTAMP
+        })
 
     @staticmethod
     def bildirimleri_getir(db_fs, benim_mailim):
