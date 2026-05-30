@@ -34,23 +34,46 @@ def get_db():
     return firestore.client()
 
 # ==========================================
-# 🎨 CSS VE TASARIM
+# 🎨 CSS VE TASARIM (PREMIUM SAAS)
 # ==========================================
 if st.session_state.get("aktif_ekran", "🏠 Ana Ekran") == "🏠 Ana Ekran":
     st.markdown("""<style>[data-testid="stSidebar"] { display: none; }</style>""", unsafe_allow_html=True)
 
 st.markdown("""
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        html, body, [class*="css"] { font-family: 'Lora', serif; }
+        html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
+        
+        /* Buton Hover ve Soft Shadow Efektleri */
+        button[kind="secondary"] { transition: all 0.3s ease !important; border-radius: 8px !important; }
+        button[kind="secondary"]:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; border-color: #C5A059 !important; color: #C5A059 !important; }
+        
+        button[kind="primary"] { transition: all 0.3s ease !important; border-radius: 8px !important; background-color: #1A1A1A !important; }
+        button[kind="primary"]:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(26,26,26,0.3) !important; background-color: #C5A059 !important; border-color: #C5A059 !important; color: white !important; }
+
+        /* Konteyner (Kutu) Tasarımları */
+        [data-testid="stVerticalBlockBorderWrapper"] { border-radius: 12px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.04) !important; border: 1px solid rgba(0,0,0,0.05) !important; transition: all 0.3s ease; background-color: #ffffff; }
+        [data-testid="stVerticalBlockBorderWrapper"]:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08) !important; }
+        
+        /* Expander Tasarımı */
+        [data-testid="stExpander"] { border-radius: 12px !important; border: 1px solid rgba(0,0,0,0.05) !important; box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important; }
+
+        /* Input Alanları */
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] { border-radius: 8px !important; border: 1px solid #e2e8f0 !important; transition: all 0.2s ease; }
+        .stTextInput input:focus, .stTextArea textarea:focus { border-color: #C5A059 !important; box-shadow: 0 0 0 1px #C5A059 !important; }
+
+        /* Üst Başlıklar */
         .header-container { text-align: center; padding: 20px 0; }
-        .header-logo-svg { width: 100px; height: auto; margin: 0 auto 10px auto; display: block; }
-        .main-title { font-size: 52px; font-weight: 800; color: #1A1A1A; letter-spacing: 6px; margin: 0; text-transform: uppercase; }
-        .sub-title { color: #C5A059; font-weight: 600; letter-spacing: 4px; font-size: 14px; text-align: center; margin-bottom: 20px; }
-        .madde-kutusu { background-color: #121212 !important; color: #FFFFFF !important; padding: 35px; border-radius: 12px; border: 2px solid #C5A059; background-image: radial-gradient(#2a2a2a 2px, transparent 2px) !important; background-size: 25px 25px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin: 25px 0; line-height: 1.8; }
-        .madde-baslik { color: #C5A059 !important; font-weight: 700; font-size: 24px; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; text-align: left; }
-        .madde-icerik p { margin-bottom: 15px; color: #f0f0f0 !important; }
-        .hoca-anlatim-kutusu { background-color: #fdf6e3; padding: 25px; border-radius: 12px; border-left: 8px solid #C5A059; color: #2c3e50; line-height: 1.7; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 20px; }
+        .header-logo-svg { width: 90px; height: auto; margin: 0 auto 10px auto; display: block; transition: transform 0.5s ease; }
+        .header-logo-svg:hover { transform: scale(1.05); }
+        .main-title { font-size: 48px; font-weight: 800; color: #1A1A1A; letter-spacing: 5px; margin: 0; text-transform: uppercase; }
+        .sub-title { color: #C5A059; font-weight: 600; letter-spacing: 3px; font-size: 13px; text-align: center; margin-bottom: 20px; }
+        
+        /* İçerik Kutuları */
+        .madde-kutusu { background-color: #121212 !important; color: #FFFFFF !important; padding: 30px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin: 20px 0; line-height: 1.8; }
+        .madde-baslik { color: #C5A059 !important; font-weight: 700; font-size: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px; text-align: left; }
+        .madde-icerik p { margin-bottom: 10px; color: #e2e8f0 !important; font-size: 15px; }
+        .hoca-anlatim-kutusu { background-color: #faf8f5; padding: 25px; border-radius: 12px; border-left: 6px solid #C5A059; color: #2d3748; line-height: 1.7; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-top: 20px; font-size: 15px; }
     </style>
 """, unsafe_allow_html=True)
 
