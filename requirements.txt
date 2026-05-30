@@ -18,3 +18,5 @@ sentence-transformers
 langchain-huggingface
 torchvision
 torch
+streamlit-lottie
+requests
