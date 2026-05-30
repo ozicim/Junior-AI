@@ -85,14 +85,21 @@ SERPER_API_KEY = st.secrets["SERPER_API_KEY"]
 DB_DOSYASI = "kullanicilar.json"
 
 def veritabani_yukle():
+    baslangic_verisi = {"ozan@junilex.com": {"sifre": "123456", "isim": "Ozan Şahin Sicim", "id": "#00001", "arkadaslar": [], "gelen_istekler": []}}
+    
     if not os.path.exists(DB_DOSYASI):
-        baslangic_verisi = {"ozan@junilex.com": {"sifre": "123456", "isim": "Ozan Şahin Sicim", "id": "#00001", "arkadaslar": [], "gelen_istekler": []}}
         with open(DB_DOSYASI, "w", encoding="utf-8") as f:
             json.dump(baslangic_verisi, f, ensure_ascii=False, indent=4)
         return baslangic_verisi
         
-    with open(DB_DOSYASI, "r", encoding="utf-8") as f:
-        db = json.load(f)
+    try:
+        with open(DB_DOSYASI, "r", encoding="utf-8") as f:
+            db = json.load(f)
+    except json.JSONDecodeError:
+        # HATA YAKALANDI: Dosya var ama içi boş/bozuk. Dosyayı sıfırlıyoruz.
+        with open(DB_DOSYASI, "w", encoding="utf-8") as f:
+            json.dump(baslangic_verisi, f, ensure_ascii=False, indent=4)
+        return baslangic_verisi
         
     # YAMA: Eski kullanıcıların veritabanına otomatik ID ve arkadaş listesi ekler
     degisiklik = False
