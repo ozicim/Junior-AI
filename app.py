@@ -11,6 +11,8 @@ import datetime
 import google.generativeai as genai
 from fpdf import FPDF
 import gc
+import requests
+from streamlit_lottie import st_lottie
 
 # Engine'ler
 from akademik_engine import AkademikEngine
@@ -21,6 +23,13 @@ from ictihat_engine import IctihatEngine
 from chat_engine import ChatEngine
 from ag_engine import AgEngine
 from hesap_engine import HesapEngine
+
+@st.cache_data
+def lottie_yukle(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
 
 # ==========================================
 # ⚙️ AYARLAR VE BELLEK YÖNETİMİ
@@ -629,8 +638,13 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                 ortak_evraklar = AgEngine.ekip_ortak_arsiv_getir(db_fs, aktif_ekip.get('uyeler_isim', []))
                 
                 if not ortak_evraklar:
+                    # Büyüteç / Boş Kutu Animasyonu
+                    animasyon_arsiv = lottie_yukle("https://lottie.host/2117fc04-5801-447a-ba92-b4ea4e84b7f0/L58u8rK7fD.json")
+                    if animasyon_arsiv:
+                        st_lottie(animasyon_arsiv, height=200, key="lottie_arsiv")
                     st.info("Bu ekibin üyeleri arşive henüz bir belge işlememiş.")
                 else:
+                    # ... (Buradaki eski for evrak in ortak_evraklar: kodu aynen kalacak)
                     for evrak in ortak_evraklar:
                         e_data = evrak.to_dict()
                         with st.expander(f"📄 {e_data.get('baslik')} | 👤 {e_data.get('kullanici')}"):
@@ -667,7 +681,12 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                                     mesaj_var_mi = True
                                     with st.chat_message("user", avatar="⏳"): st.markdown(f"**Sen:** {son_mesaj}")
                                         
+                            # ... (Önceki for m_data in db_mesajlari döngüsü bittikten sonra)
                             if not mesaj_var_mi:
+                                # Konuşma Balonları Animasyonu
+                                animasyon_chat = lottie_yukle("https://lottie.host/d4692795-46f9-4d89-9430-80a56828b4d8/6bWylN6e6w.json")
+                                if animasyon_chat:
+                                    st_lottie(animasyon_chat, height=180, key="lottie_chat")
                                 st.info("Bu ekipte henüz hiç mesaj yok. İlk mesajı sen gönder!")
                     except Exception as e:
                         if "index" not in str(e).lower():
@@ -708,7 +727,11 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     gorevler = AgEngine.gorevleri_getir(db_fs, aktif_ekip_id)
                     
                     if not gorevler:
-                        st.info("Şu an ekibe atanmış aktif bir görev veya duruşma bulunmuyor.")
+                        # YENİ EKLENEN LOTTIE ANİMASYON KISMI (KAHVE İÇEN KARAKTER)
+                        animasyon_kahve = lottie_yukle("https://lottie.host/8f09ce98-e7d6-4441-aa60-c44bb28cd766/iQkKqPcl5Z.json")
+                        if animasyon_kahve:
+                            st_lottie(animasyon_kahve, height=220, key="lottie_gorev")
+                        st.info("Şu an ekibe atanmış aktif bir görev veya duruşma bulunmuyor. Kahvenin tadını çıkar! ☕")
                     else:
                         col_yap, col_devam, col_bit = st.columns(3)
                         
