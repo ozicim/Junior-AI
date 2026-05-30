@@ -640,20 +640,33 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
             alt_tab_arsiv, alt_tab_sohbet, alt_tab_gorevler = st.tabs(["🗂️ Ortak Arşiv", "💬 Ekip İçi Sohbet", "📅 Görev ve Duruşmalar"])
             
             with alt_tab_arsiv:
+                # 1. Yükleme Alanı
+                with st.expander("➕ Belge Yükle / Paylaş"):
+                    y_baslik = st.text_input("Belge Başlığı")
+                    y_metin = st.text_area("Belge İçeriği / Notlar")
+                    if st.button("Belgeyi Arşive Ekle", use_container_width=True, type="primary"):
+                        if y_baslik and y_metin:
+                            AgEngine.evrak_yukle(db_fs, aktif_ekip_id, y_baslik, y_metin, st.session_state.aktif_kullanici)
+                            st.success("Belge ekibe başarıyla yüklendi!")
+                            st.rerun()
+                        else:
+                            st.warning("Başlık ve içerik boş olamaz.")
+
+                st.divider()
+
+                # 2. Mevcut Evrak Listesi
                 ortak_evraklar = AgEngine.ekip_ortak_arsiv_getir(db_fs, aktif_ekip.get('uyeler_isim', []))
                 
                 if not ortak_evraklar:
-                    # Arşiv Boş Durum Tasarımı
                     st.markdown("""
                     <div style="text-align: center; padding: 50px 20px; background-color: #fcfcfc; border-radius: 12px; border: 1px solid #eee; margin: 20px 0;">
                         <div style="font-size: 50px; margin-bottom: 15px;">🗄️</div>
                         <h3 style="color: #4b5563; margin-bottom: 5px;">Arşiv Henüz Boş</h3>
-                        <p style="color: #9ca3af; font-size: 15px;">Ekip arkadaşlarınla paylaştığın ilk belgeyi yükle, <br>burada güvenle saklayalım.</p>
+                        <p style="color: #9ca3af; font-size: 15px;">İlk belgeni yukarıdan yükle, ekibinle paylaş.</p>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
                     st.markdown("### 📂 Ortak Çalışma Belgeleri")
-                    # Evrakları daha modern kartlar şeklinde gösteriyoruz
                     for evrak in ortak_evraklar:
                         e_data = evrak.to_dict()
                         with st.container(border=True):
@@ -662,12 +675,11 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                                 st.markdown("### 📄")
                             with col_info:
                                 st.markdown(f"**{e_data.get('baslik')}**")
-                                st.caption(f"Yükleyen: {e_data.get('kullanici')} • Ekip Arşivi")
+                                st.caption(f"Yükleyen: {e_data.get('kullanici')} • Ortak Arşiv")
                             with col_btn:
                                 if st.download_button("📥 İndir", data=e_data.get("metin", ""), file_name=f"{e_data.get('baslik')}.txt", key=f"dl_{evrak.id}", use_container_width=True):
                                     pass
                             
-                            # İstersen metin içeriğini expander içinde gizleyebilirsin
                             with st.expander("Metni İncele"):
                                 st.text(e_data.get("metin"))
 
