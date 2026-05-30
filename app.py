@@ -14,6 +14,16 @@ import gc
 import requests
 from streamlit_lottie import st_lottie
 
+@st.cache_data
+def lottie_yukle(url: str):
+    try:
+        r = requests.get(url)
+        if r.status_code != 200:
+            return None
+        return r.json()
+    except:
+        return None
+
 # Engine'ler
 from akademik_engine import AkademikEngine
 from mevzuat_engine import MevzuatBulutEngine, YASAL_UYARI
@@ -24,12 +34,7 @@ from chat_engine import ChatEngine
 from ag_engine import AgEngine
 from hesap_engine import HesapEngine
 
-@st.cache_data
-def lottie_yukle(url: str):
-    r = requests.get(url)
-    if r.status_code != 200:
-        return None
-    return r.json()
+
 
 # ==========================================
 # ⚙️ AYARLAR VE BELLEK YÖNETİMİ
