@@ -686,13 +686,18 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                                     mesaj_var_mi = True
                                     with st.chat_message("user", avatar="⏳"): st.markdown(f"**Sen:** {son_mesaj}")
                                         
-                            # ... (Önceki for m_data in db_mesajlari döngüsü bittikten sonra)
+                            # Sohbet boşsa gösterilecek modern arayüz
                             if not mesaj_var_mi:
-                                # Konuşma Balonları Animasyonu
-                                animasyon_chat = lottie_yukle("https://lottie.host/d4692795-46f9-4d89-9430-80a56828b4d8/6bWylN6e6w.json")
-                                if animasyon_chat:
-                                    st_lottie(animasyon_chat, height=180, key="lottie_chat")
-                                st.info("Bu ekipte henüz hiç mesaj yok. İlk mesajı sen gönder!")
+                                st.markdown("""
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; text-align: center; color: #9ca3af; padding: 20px;">
+                                    <div style="font-size: 60px; margin-bottom: 20px;">💬</div>
+                                    <h3 style="color: #374151; margin-bottom: 10px;">Henüz Sohbet Başlamadı</h3>
+                                    <p style="max-width: 300px; font-size: 14px;">Ekibinle dosya detayları, duruşma notları veya stratejiler üzerine konuşmak için bir mesaj gönder.</p>
+                                    <div style="margin-top: 15px; padding: 10px 20px; background: #f3f4f6; border-radius: 20px; font-size: 12px; font-weight: 500;">
+                                        🚀 İlk adımı sen at!
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
                     except Exception as e:
                         if "index" not in str(e).lower():
                             st.error(f"Sohbet yüklenemedi: {e}")
