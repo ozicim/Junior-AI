@@ -732,12 +732,27 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     gorevler = AgEngine.gorevleri_getir(db_fs, aktif_ekip_id)
                     
                     if not gorevler:
-                        # YENİ EKLENEN LOTTIE ANİMASYON KISMI (KAHVE İÇEN KARAKTER)
-                        animasyon_kahve = lottie_yukle("https://lottie.host/8f09ce98-e7d6-4441-aa60-c44bb28cd766/iQkKqPcl5Z.json")
-                        if animasyon_kahve:
-                            st_lottie(animasyon_kahve, height=220, key="lottie_gorev")
-                        st.info("Şu an ekibe atanmış aktif bir görev veya duruşma bulunmuyor. Kahvenin tadını çıkar! ☕")
-                    else:
+                        # NOTION TARZI MİNİMALİST BOŞ DURUM
+                        st.markdown("""
+                        <div style="text-align: center; padding: 40px 20px; background-color: #fafafa; border-radius: 12px; border: 2px dashed #e5e7eb; margin: 20px 0;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">🗂️</div>
+                            <h3 style="color: #374151; margin-bottom: 5px; font-weight: 600;">Masa Tertemiz!</h3>
+                            <p style="color: #6b7280; font-size: 15px; margin-bottom: 0px;">Şu an ekibe atanmış aktif bir görev veya duruşma bulunmuyor.</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # HIZLI ŞABLON BUTONLARI (Kullanıcı dostu özellik)
+                        st.caption("⚡ Hızlı Şablonlarla Görev Oluştur:")
+                        c_h1, c_h2, c_h3 = st.columns(3)
+                        if c_h1.button("⚖️ Duruşma Ekle", use_container_width=True):
+                            AgEngine.gorev_ekle(db_fs, aktif_ekip_id, "Yaklaşan Duruşma Hazırlığı", "Duruşma tarihi, saati ve dosya numarası:", st.session_state.aktif_kullanici, st.session_state.aktif_kullanici, aktif_ekip.get('uyeler_mail', []))
+                            st.rerun()
+                        if c_h2.button("📄 Sözleşme İncele", use_container_width=True):
+                            AgEngine.gorev_ekle(db_fs, aktif_ekip_id, "Sözleşme İncelemesi", "Müvekkilden gelen sözleşmenin risk analizi yapılacak.", st.session_state.aktif_kullanici, st.session_state.aktif_kullanici, aktif_ekip.get('uyeler_mail', []))
+                            st.rerun()
+                        if c_h3.button("🤝 Müvekkil Görüşmesi", use_container_width=True):
+                            AgEngine.gorev_ekle(db_fs, aktif_ekip_id, "Müvekkil Toplantısı", "Toplantı notları ve talep edilen evraklar hazırlanacak.", st.session_state.aktif_kullanici, st.session_state.aktif_kullanici, aktif_ekip.get('uyeler_mail', []))
+                            st.rerun()
                         col_yap, col_devam, col_bit = st.columns(3)
                         
                         with col_yap: st.markdown("### 🔴 Yapılacaklar")
