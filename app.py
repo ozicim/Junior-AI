@@ -1339,29 +1339,25 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
                                 st.info(f"**Hoca'nın Değerlendirmesi:**\n\n{puan_sonucu['gercekce']}")
                     st.write("---")
 # ==========================================
-# 📝 ARZUHAL MODÜLÜ
+# ARZUHAL MODÜLÜ
 # ==========================================
 elif st.session_state.aktif_ekran == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
-    st.header("⚖️ Dilekçe Marketi")
-    st.markdown("""
-        <style>
-        div[data-testid="stForm"] { background-color: #161616; padding: 25px; border-radius: 12px; border: 1px solid #333; }
-        </style>
-    """, unsafe_allow_html=True)
+    st.subheader("Dilekçe Marketi")
+    st.markdown("UYAP formatına uygun, yapay zeka destekli profesyonel dilekçe ve sözleşme taslakları oluşturun.")
     
     col_a, col_b = st.columns(2)
     with col_a:
-        kategori = st.selectbox("Kategori Seçin:", list(DilekceEngine.DILEKCE_KATALOGU.keys()))
+        kategori = st.selectbox("Hukuk Dalı Seçin", list(DilekceEngine.DILEKCE_KATALOGU.keys()))
     with col_b:
-        tur = st.selectbox("Dilekçe Türü:", list(DilekceEngine.DILEKCE_KATALOGU[kategori].keys()))
+        tur = st.selectbox("Dilekçe Türü Seçin", list(DilekceEngine.DILEKCE_KATALOGU[kategori].keys()))
     
-    st.markdown("---")
+    st.write("---")
     
     gerekli_alanlar = DilekceEngine.DILEKCE_KATALOGU[kategori][tur]
     form_verileri = {}
     
     with st.form("arzuhal_form"):
-        st.subheader(f"📋 {tur} Detayları")
+        st.markdown(f"**{tur} Detayları**")
         cols = st.columns(2)
         for i, alan in enumerate(gerekli_alanlar):
             col = cols[i % 2]
@@ -1371,11 +1367,12 @@ elif st.session_state.aktif_ekran == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
                 elif "Sayısı" in alan or "Miktarı" in alan:
                     form_verileri[alan] = str(st.number_input(f"{alan}", min_value=0, step=1))
                 elif "Detay" in alan or "Özeti" in alan or "Gerekçe" in alan:
-                    form_verileri[alan] = st.text_area(f"{alan}:", height=120)
+                    form_verileri[alan] = st.text_area(f"{alan}", height=120)
                 else:
-                    form_verileri[alan] = st.text_input(f"{alan}:")
+                    form_verileri[alan] = st.text_input(f"{alan}")
         
-        submitted = st.form_submit_button("🚀 Dilekçeyi Hazırla", use_container_width=True)
+        st.write("##")
+        submitted = st.form_submit_button("Taslağı Oluştur", type="primary", use_container_width=True)
     
     if submitted:
         if all(form_verileri.values()):
@@ -1384,27 +1381,29 @@ elif st.session_state.aktif_ekran == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
                 st.session_state.son_dilekce = taslak_metin
                 st.session_state.son_dilekce_turu = tur
         else:
-            st.warning("Lütfen tüm alanları doldurunuz ustam!")
+            st.warning("Lütfen taslağın doğru üretilebilmesi için tüm alanları doldurun.")
 
     if "son_dilekce" in st.session_state:
-        st.markdown("### 📄 JUNILEX Dilekçe Taslağı:")
-        st.text_area("Taslak Metin", value=st.session_state.son_dilekce, height=400)
+        st.write("---")
+        st.markdown("### Hazırlanan Dilekçe Taslağı")
+        st.text_area("Düzenleme Alanı", value=st.session_state.son_dilekce, height=400, label_visibility="collapsed")
+        
         word_data = DilekceEngine.word_dosyasi_yap(st.session_state.son_dilekce)
         
         c1, c2 = st.columns(2)
         with c1:
             st.download_button(
-                "📥 Word Dosyası Olarak Kaydet", 
+                label="Word (.docx) Olarak İndir", 
                 data=word_data, 
                 file_name=f"{st.session_state.son_dilekce_turu}_taslak.docx", 
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
                 use_container_width=True
             )
         with c2:
-            if st.button("💾 Dilekçeyi Arşive Kaydet", use_container_width=True):
-                basarili, mesaj = junilex_arsive_kaydet("📝 Dilekçe", st.session_state.son_dilekce_turu, st.session_state.son_dilekce)
+            if st.button("Arşive Kaydet", use_container_width=True):
+                basarili, mesaj = junilex_arsive_kaydet("Dilekçe", st.session_state.son_dilekce_turu, st.session_state.son_dilekce)
                 if basarili:
-                    st.success("✅ Dilekçe arşive kaydedildi! Chat kısmından seçip üzerinde çalışmaya devam edebilirsin.")
+                    st.success("Dilekçe arşive eklendi. Chat ekranından çağırarak üzerinde çalışabilirsiniz.")
 
 # ==========================================
 # ⚖️ İÇTİHAT MODÜLÜ
