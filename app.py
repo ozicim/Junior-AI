@@ -325,7 +325,7 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
             "Adliye (Mevzuat Sorgu)", 
             "Akademik Asistan", 
             "Dilekçe Merkezi", 
-            "⚖️ İçtihat Sorgulama",
+            "İçtihat Sorgulama",
             "🧮 Pratik Hesaplamalar", 
             "💬 JUNILEX Chat", 
             "👥 Junilex Ağı"
