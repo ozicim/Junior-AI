@@ -1691,7 +1691,8 @@ elif st.session_state.aktif_ekran == "🧮 Pratik Hesaplamalar":
         with c_tev:
             tevkifat = st.checkbox("KDV Tevkifatı", help="5/10 tevkifat uygulanır.")
             
-        if st.button("Hesapla", type="primary"):
+        # "Hesapla" yerine key ekle:
+        if st.button("Makbuzu Hesapla", type="primary", key="btn_smm_hesapla"):
             sonuc = HesapEngine.smm_hesapla(tutar, hesap_tipi) # Gerekirse tevkifat parametresini buraya ekle
             st.divider()
             c1, c2, c3, c4 = st.columns(4)
@@ -1712,7 +1713,8 @@ elif st.session_state.aktif_ekran == "🧮 Pratik Hesaplamalar":
             faiz_orani = st.number_input("Yıllık Faiz Oranı (%)", min_value=0.0, value=9.0, step=1.0)
             bitis = st.date_input("Hesap Tarihi", value=datetime.date.today())
             
-        if st.button("Faizi Hesapla", type="primary"):
+        # "Faiz Hesapla" butonuna key ekle:
+        if st.button("Faizi Hesapla", type="primary", key="btn_faiz_hesapla"):
             gun, faiz_miktari, toplam = HesapEngine.faiz_hesapla(anapara, faiz_orani, baslangic, bitis)
             st.divider()
             st.markdown(f"Geçen Süre: **{gun} Gün**")
@@ -1732,7 +1734,8 @@ elif st.session_state.aktif_ekran == "🧮 Pratik Hesaplamalar":
             kidem_tavani = st.number_input("Kıdem Tavanı (₺)", value=35058.58, step=1000.0)
             isten_cikis = st.date_input("İşten Çıkış Tarihi", value=datetime.date.today())
             
-        if st.button("Tazminatları Hesapla", type="primary", use_container_width=True):
+        # "Tazminatları Hesapla" butonuna key ekle:
+        if st.button("Tazminatları Hesapla", type="primary", use_container_width=True, key="btn_isci_hesapla"):
             sonuc = HesapEngine.iscil_alacaklar_hesapla(brut_maas, kidem_tavani, ise_giris, isten_cikis)
             if "Hata" in sonuc: st.error(sonuc["Hata"])
             else:
@@ -1746,7 +1749,8 @@ elif st.session_state.aktif_ekran == "🧮 Pratik Hesaplamalar":
     with tabs[3]:
         st.subheader("Peşin Harç Hesaplayıcı")
         dava_degeri = st.number_input("Dava Değeri (₺)", value=100000.0, step=10000.0)
-        if st.button("Hesapla", type="primary"):
+        # "Hesapla" butonuna key ekle:
+        if st.button("Harç Hesapla", type="primary", key="btn_harc_hesapla"):
             toplam, pesin = HesapEngine.nispi_harc_hesapla(dava_degeri)
             st.metric("Yatırılacak Peşin Harç (1/4)", f"₺{pesin:,.2f}")
             st.caption(f"Toplam Karar ve İlam Harcı: ₺{toplam:,.2f}")
@@ -1755,7 +1759,8 @@ elif st.session_state.aktif_ekran == "🧮 Pratik Hesaplamalar":
     with tabs[4]:
         st.subheader("Nispi Vekalet Ücreti Hesaplayıcı")
         vekalet_tutari = st.number_input("Dava/İcra Tutarı (₺)", value=500000.0, step=50000.0)
-        if st.button("Hesapla", type="primary"):
+        # "Hesapla" butonuna key ekle:
+        if st.button("Vekalet Ücreti Hesapla", type="primary", key="btn_aaut_hesapla"):
             aaut_dilimler = [{"limit": 200000, "oran": 0.16}, {"limit": 200000, "oran": 0.15}, {"limit": 400000, "oran": 0.14}, {"limit": 600000, "oran": 0.11}, {"limit": 1200000, "oran": 0.08}, {"limit": 1600000, "oran": 0.05}, {"limit": 1600000, "oran": 0.03}, {"limit": 8000000, "oran": 0.02}, {"limit": None, "oran": 0.01}]
             ucret, detay = HesapEngine.kademeli_tarife_hesapla(vekalet_tutari, aaut_dilimler)
             st.metric("Hesaplanan Vekalet Ücreti", f"₺{ucret:,.2f}")
