@@ -1507,21 +1507,34 @@ elif st.session_state.aktif_ekran == "İçtihat Sorgulama":
                     st.success("Arşive kaydedildi! JUNILEX Chat menüsünden ulaşıp üzerinde konuşabilirsiniz.")
 
     with tab2:
-        st.subheader("Yargıtay Yönelim Analizi ve Emsal Bulucu")
+        st.subheader("Yargıtay ve Danıştay Emsal Bulucu")
+        st.markdown("Somut uyuşmazlığınıza en uygun güncel içtihatları filtreleyerek arayın.")
         
+        # 1. Yönlendirici Filtreler
+        col_alan, col_kavram = st.columns([1, 2])
+        with col_alan:
+            secilen_alan = st.selectbox("Hukuk Dalı", ["Seçiniz...", "Ceza Hukuku", "Ticaret Hukuku", "İdare Hukuku", "İş Hukuku", "Özel Hukuk"])
+        with col_kavram:
+            anahtar_kavram = st.text_input("Kritik Hukuki Kavram (Örn: Zamanaşımı, Temerrüt, İptal)", key="emsal_kavram")
+
+        # 2. Ana Olay Örgüsü
         olay_input = st.text_area(
-            "Hukuki Olayı Detaylıca Anlatın", 
+            "Uyuşmazlığın Özeti ve Aranan Hüküm", 
             height=150, 
-            placeholder="Örn: Banka hesabından rıza dışı para çekilmesi durumunda ispat yükü ve bankanın sorumluluğu...", 
+            placeholder="Örn: Tacirler arası haksız rekabet davasında, ihtarname çekilmeden açılan tazminat talebinin usulden reddi ihtimali...", 
             key="emsal_olay_girdisi_v4" 
         )
         
+        # 3. Hizalanmış Arama Butonu
         st.write("##")
-        if st.button("Emsal Ara ve Analiz Et", use_container_width=True, type="primary", key="btn_emsal_bul_v4"):
-            if olay_input: 
-                with st.spinner("Junilex kütüphaneleri tarıyor ve analiz ediyor..."):
+        if st.button("İçtihat Havuzunda Ara ve Analiz Et", use_container_width=True, type="primary", key="btn_emsal_bul_v4"):
+            if olay_input and secilen_alan != "Seçiniz...": 
+                with st.spinner("Junilex kütüphaneleri taranıyor, ilgili emsaller çekiliyor..."):
                     try:
-                        sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, olay_input)
+                        # Arka plana gönderilen veriyi zenginleştiriyoruz
+                        zengin_prompt = f"[{secilen_alan}] Odak Kavram: {anahtar_kavram}. Olay: {olay_input}"
+                        sonuc = IctihatEngine.emsal_ara(MY_API_KEY, SERPER_API_KEY, zengin_prompt)
+                        
                         if sonuc:
                             st.session_state.kitap_sayfalari = metni_sayfalara_bol(sonuc, 1200)
                             st.session_state.aktif_sayfa = 0
@@ -1531,8 +1544,9 @@ elif st.session_state.aktif_ekran == "İçtihat Sorgulama":
                     except Exception as e:
                         st.error(f"Teknik bir hata oluştu: {e}")
             else:
-                st.warning("Lütfen önce bir olay anlatın.")
+                st.warning("Lütfen Hukuk Dalı seçin ve uyuşmazlık özetini girin.")
 
+        # 4. Çıktı Ekranı (Mevcut Tasarım Korundu)
         if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
             st.write("---")
             sayfalar_emsal = st.session_state.kitap_sayfalari
@@ -1540,7 +1554,7 @@ elif st.session_state.aktif_ekran == "İçtihat Sorgulama":
             
             st.markdown(f"""
             <div style="background-color: #0F172A; padding: 30px; border-left: 4px solid #C5A059; border-radius: 6px; color: #E2E8F0; font-family: 'Georgia', serif;">
-                <div style="font-size: 13px; text-transform: uppercase; color: #94A3B8; margin-bottom: 15px; font-weight: bold;">Yargıtay Yönelim Şerhi - Sayfa {aktif_emsal + 1} / {len(sayfalar_emsal)}</div>
+                <div style="font-size: 13px; text-transform: uppercase; color: #94A3B8; margin-bottom: 15px; font-weight: bold;">Emsal Analiz Raporu - Sayfa {aktif_emsal + 1} / {len(sayfalar_emsal)}</div>
                 <div style="font-size: 16px; line-height: 1.8; text-align: justify;">{sayfalar_emsal[aktif_emsal].replace("\n", "<br>")}</div>
             </div>
             <br>
@@ -1564,7 +1578,6 @@ elif st.session_state.aktif_ekran == "İçtihat Sorgulama":
                 basarili, mesaj = junilex_arsive_kaydet("Emsal Yönelim", "Emsal Analizi", tam_metin)
                 if basarili:
                     st.success("Arşive kaydedildi! JUNILEX Chat menüsünden ulaşıp kullanabilirsiniz.")
-
 # ==========================================
 # 💬 CHAT MODÜLÜ
 # ==========================================
