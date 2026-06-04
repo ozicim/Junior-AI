@@ -1579,23 +1579,21 @@ elif st.session_state.aktif_ekran == "İçtihat Sorgulama":
                 if basarili:
                     st.success("Arşive kaydedildi! JUNILEX Chat menüsünden ulaşıp kullanabilirsiniz.")
 # ==========================================
-# 💬 CHAT MODÜLÜ
+# 💬 JUNILEX CHAT MODÜLÜ
 # ==========================================
 elif st.session_state.aktif_ekran == "💬 JUNILEX Chat":
     st.header("💬 JUNILEX Chat")
     
     col_chat, col_context = st.columns([3, 1])
 
+    # --- SAĞ SÜTUN: BAĞLAM YÖNETİMİ ---
     with col_context:
         st.markdown("### 🗂️ Bağlam Arşivi")
-        
         db = get_db()
-        
-        kategori_secim = st.selectbox("Kategori Seçin:", ["Seçiniz...", "🏛️ Adliye (Mevzuat)", "🎓 Akademi (PDF)", "📝 Dilekçe", "⚖️ İçtihat"])
+        kategori_secim = st.selectbox("Kategori:", ["Seçiniz...", "🏛️ Adliye (Mevzuat)", "🎓 Akademi (PDF)", "📝 Dilekçe", "⚖️ İçtihat"])
         
         if kategori_secim != "Seçiniz...":
             arsiv_secenekleri = {}
-            
             try:
                 if kategori_secim == "🎓 Akademi (PDF)":
                     notlar_ref = db.collection("ders_notlari").get()
@@ -1605,53 +1603,72 @@ elif st.session_state.aktif_ekran == "💬 JUNILEX Chat":
                 else:
                     kategori_map = {"🏛️ Adliye (Mevzuat)": "🏛️ Mevzuat Şerhi", "📝 Dilekçe": "📝 Dilekçe", "⚖️ İçtihat": "⚖️ İçtihat Şerhi"}
                     filtre = kategori_map.get(kategori_secim)
-                    
                     if st.session_state.aktif_kullanici:
                         docs = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).where("kategori", "==", filtre).get()
                         for doc in docs:
                             d = doc.to_dict()
                             arsiv_secenekleri[d.get('baslik', 'Adsız Başlık')] = d.get('metin')
             except Exception as e:
-                st.error("Arşiv yüklenirken hata.")
+                st.error("Arşiv yüklenemedi.")
 
             if arsiv_secenekleri:
                 secilen_belge = st.selectbox("Belgeyi Seç:", list(arsiv_secenekleri.keys()))
-                if st.button("📌 Masaya Koy", use_container_width=True):
+                if st.button("📌 Masaya Koy", use_container_width=True, type="primary"):
                     st.session_state.aktif_dosya = f"{kategori_secim} | {secilen_belge}"
                     st.session_state.islenmis_not = arsiv_secenekleri[secilen_belge]
                     st.rerun()
-            else:
-                st.warning("Bu kategoride kayıt bulunamadı.")
-            
+
+        # Aktif Dosya Göstergesi (Şık Kart)
         if st.session_state.get('aktif_dosya'):
-            st.divider()
-            st.success(f"**Aktif:** {st.session_state.aktif_dosya}")
+            st.markdown(f"""
+            <div style="background-color: #1E293B; padding: 15px; border-radius: 8px; border-left: 4px solid #C5A059; margin-top: 20px;">
+                <small style="color: #94A3B8;">AKTİF BAĞLAM</small><br>
+                <strong>{st.session_state.aktif_dosya}</strong>
+            </div>
+            """, unsafe_allow_html=True)
             if st.button("🗑️ Masayı Temizle", use_container_width=True):
                 st.session_state.aktif_dosya = None
                 st.session_state.islenmis_not = None
                 st.rerun()
 
+    # --- SOL SÜTUN: CHAT ARAYÜZÜ ---
     with col_chat:
+        # Sohbet Geçmişi
         for message in st.session_state.chat_messages:
-            simge = "https://api.dicebear.com/9.x/micah/png?seed=OzanSahinSicim&backgroundColor=transparent" if message["role"] == "user" else "https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"
-            with st.chat_message(message["role"], avatar=simge):
+            avatar = "👤" if message["role"] == "user" else "⚖️"
+            with st.chat_message(message["role"], avatar=avatar):
                 st.markdown(message["content"])
 
-        st.markdown("---")
-        with st.popover(f"🧠 Mod: {st.session_state.chat_mode}", use_container_width=True):
-            secilen_mod = st.radio("Zeka Yapılandırması:", ["Özet", "⚖️ Detaylı Analiz"])
+        # Mod Seçimi
+        with st.expander("⚙️ Zeka Yapılandırması"):
+            secilen_mod = st.radio("İletişim Modu:", ["Özet", "⚖️ Detaylı Analiz"], horizontal=True)
             if secilen_mod != st.session_state.chat_mode:
                 st.session_state.chat_mode = secilen_mod
-                st.rerun()
 
-        if prompt := st.chat_input("Mesajınızı yazın..."):
+        # Hızlı Aksiyonlar
+        cols_q = st.columns(3)
+        if cols_q[0].button("📄 Dokümanı Özetle"):
+            st.session_state.pending_prompt = "Lütfen bu dosyayı benim için özetle."
+        if cols_q[1].button("🔍 Hukuki Hata Denetimi"):
+            st.session_state.pending_prompt = "Bu dokümanda hukuki bir hata veya eksiklik var mı?"
+        if cols_q[2].button("📝 Karşı Argüman Üret"):
+            st.session_state.pending_prompt = "Bu dokümandaki argümanlara karşı etkili bir karşı argüman üret."
+
+        # Mesaj Girişi
+        prompt = st.chat_input("Mesajınızı yazın...")
+        
+        # Pending Prompt Tetikleyicisi
+        if st.session_state.get("pending_prompt"):
+            prompt = st.session_state.pending_prompt
+            st.session_state.pending_prompt = None
+
+        if prompt:
             st.session_state.chat_messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"): st.markdown(prompt)
+            with st.chat_message("user", avatar="👤"): st.markdown(prompt)
             
-            with st.chat_message("assistant", avatar="https://api.dicebear.com/9.x/bottts-neutral/png?seed=Junilex&backgroundColor=0f172a"):
+            with st.chat_message("assistant", avatar="⚖️"):
                 message_placeholder = st.empty()
                 full_response = ""
-                
                 try:
                     response = ChatEngine.yanit_uret(
                         MY_API_KEY, 
@@ -1660,13 +1677,11 @@ elif st.session_state.aktif_ekran == "💬 JUNILEX Chat":
                         mod=st.session_state.chat_mode,
                         aktif_belge_metni=st.session_state.get('islenmis_not', None)
                     )
-                    
                     for chunk in response:
                         if hasattr(chunk, "text") and chunk.text:
                             full_response += chunk.text
                             message_placeholder.markdown(full_response + " ▌")
                     message_placeholder.markdown(full_response)
-                    
                     st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
                 except Exception as e:
                     st.error(f"Sistem Hatası: {e}")
