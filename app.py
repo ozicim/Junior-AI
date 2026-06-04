@@ -1064,10 +1064,11 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
                     st.error(f"Hoca yanıt verirken bir hata oluştu: {e}")
         elif (btn_ozetle or btn_pratik or btn_sinav or btn_standart) and not ogrenci_sorusu:
             st.warning("⚠️ Lütfen hocaya sormak veya çalışmak istediğiniz bir konu yazın.")
-    with tab_notlar:
-        st.header("📥 Not Yükleme Alanı")
-        st.info("💡 Burası sadece senin dışarıdan yüklediğin PDF ders notlarını barındırır. Ürettiğin diğer analizler doğrudan Chat menüsündeki arşivine düşer.")
+    with akademi_sekmeleri[1]: # tab_notlar
+        st.subheader("İçe Aktarma ve Dijital Arşiv")
+        st.info("Bu alana yüklediğin PDF ders notları, yapay zeka analizleri için kalıcı arşivine eklenir.")
         
+        # 1. YÜKLEME ALANI
         uploaded_file = st.file_uploader("Notunu Buraya Yükle (PDF)", type="pdf", key="main_uploader")
         
         if uploaded_file is not None:
@@ -1083,31 +1084,32 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
                     })
                     st.session_state.islenmis_not = cikarilan_metin
                     st.session_state.aktif_dosya = dosya_ismi
-                    st.success(f"✅ {dosya_ismi} başarıyla okundu ve arşive eklendi!")
+                    st.success(f"{dosya_ismi} başarıyla okundu ve arşive eklendi!")
                 except Exception as e:
                     st.error(f"Veritabanına işlenirken hata: {e}")
 
-        st.markdown("---") 
-        st.subheader("📚 Dijital Arşivim")
-        with st.expander("Daha Önce Tarattığın PDF Metinleri Yönet", expanded=True):
+        st.write("---") 
+        
+        # 2. ARŞİV YÖNETİMİ
+        with st.expander("Kayıtlı Ders Notlarımı Yönet", expanded=True):
             mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
             
             if mevcut_notlar: 
                 for not_adi in mevcut_notlar:
-                    col_isim, col_sec, col_sil = st.columns([3, 1, 1])
+                    col_isim, col_sec, col_sil = st.columns([4, 1, 1])
                     with col_isim:
-                        st.markdown(f"📄 **{not_adi}**")
+                        st.markdown(f"**{not_adi}**")
                     with col_sec:
-                        if st.button("✅ Seç", key=f"sec_{not_adi}"):
+                        if st.button("Seç", key=f"sec_{not_adi}", use_container_width=True):
                             eski_metin = AkademikEngine.not_icerigi_getir(not_adi)
                             if eski_metin:
                                 st.session_state.islenmis_not = eski_metin
                                 st.session_state.aktif_dosya = not_adi
-                                st.success(f"📌 '{not_adi}' masaya koyuldu, Chat kısmından çalışabilirsin!")
+                                st.success(f"'{not_adi}' aktif masaya alındı.")
                             else:
-                                st.warning("Bu dosyanın metni yok! (Eski, hatalı yükleme olabilir.)")
+                                st.warning("Bu dosyanın metni bulunamadı.")
                     with col_sil:
-                        if st.button("🗑️ Sil", key=f"sil_{not_adi}"):
+                        if st.button("Sil", key=f"sil_{not_adi}", use_container_width=True, type="secondary"):
                             basarili = AkademikEngine.not_sil(not_adi)
                             if basarili:
                                 st.success("Arşivden silindi!")
@@ -1115,23 +1117,29 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
                             else:
                                 st.error("Silinemedi.")
             else:
-                st.info("Henüz yüklü notun yok.")
+                st.caption("Henüz yüklü notun bulunmuyor.")
 
-        st.markdown("---")
+        st.write("---")
         
-        st.subheader("❓ Notlardan Soru Sor")
+        # 3. YAPAY ZEKA ETKİLEŞİMİ (Soru/Cevap)
+        st.subheader("Notlar Üzerinden Soru Sor")
         aktif_not_ismi = st.session_state.get('aktif_dosya', 'Hiçbiri (Genel Hukuk Bilgisi)')
-        st.info(f"🔎 **Şu an incelenen evrak:** {aktif_not_ismi}")
+        st.markdown(f"**Aktif Evrak:** `{aktif_not_ismi}`")
         
         not_icerigi = st.session_state.get('islenmis_not', "")
         
-        soru_input = st.text_input(
-            "Hocaya sormak istediğin soru nedir?", 
-            placeholder="Örn: Butlan ve İptal farkı", 
-            key="hoca_not_soru_input" 
-        )
+        giriş_col, buton_col = st.columns([4, 1])
+        with giriş_col:
+            soru_input = st.text_input(
+                "Hocaya sormak istediğin soru nedir?", 
+                placeholder="Örn: Butlan ve İptal farkı bu notta nasıl anlatılmış?", 
+                key="hoca_not_soru_input",
+                label_visibility="collapsed"
+            )
+        with buton_col:
+            hoca_dinle_btn = st.button("Hocadan Dinle", key="btn_hoca_dinle_notlar", use_container_width=True, type="primary")
         
-        if st.button("Hocadan Dinle", key="btn_hoca_dinle_notlar"):
+        if hoca_dinle_btn:
             if not_icerigi:
                 with st.spinner("Hoca kürsüye çıkıyor, notları inceliyor..."):
                     try:
@@ -1159,19 +1167,23 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
                     except Exception as e:
                         st.error(f"Hoca anlatırken bir usul hatası oluştu: {e}")
             else:
-                st.warning("Lütfen önce bir not yükleyin ustam.")
+                st.warning("Lütfen önce bir not yükleyin veya arşivden seçin.")
 
+        # 4. ÇIKTI EKRANI VE PDF ÜRETİMİ
         if "hoca_sayfalar" in st.session_state and st.session_state.hoca_sayfalar:
-            st.markdown("---")
+            st.write("---")
             col_baslik, col_indir = st.columns([3, 1])
             with col_baslik:
-                st.markdown("### 📖 Hoca'nın Notu")
+                st.markdown("### Hoca'nın Değerlendirmesi")
                 
             with col_indir:
                 tam_metin = "\n\n".join(st.session_state.hoca_sayfalar)
                 font_reg = "Roboto-Regular.ttf"
                 font_bold = "Roboto-Bold.ttf"
                 
+                import urllib.request
+                from fpdf import FPDF
+
                 if not os.path.exists(font_reg):
                     urllib.request.urlretrieve("https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Regular.ttf", font_reg)
                 if not os.path.exists(font_bold):
@@ -1201,7 +1213,6 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
                 pdf.cell(0, 6, f"İncelenen Evrak: {aktif_not_ismi}", ln=True, align='C')
                 
                 pdf.set_font("Roboto", "", size=10)
-                pdf.cell(0, 6, f"İncelenen Evrak: {aktif_not_ismi}", ln=True, align='C')
                 pdf.cell(0, 6, "Hazırlayan: Ozan Şahin Sicim (Çankırı Karatekin Üniversitesi Hukuk Fakültesi)", ln=True, align='C')
                 pdf.ln(10)
                 
@@ -1210,7 +1221,7 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
                 
                 pdf_bytes = bytes(pdf.output())
                 st.download_button(
-                    label="📥 PDF Olarak İndir",
+                    label="PDF Olarak İndir",
                     data=pdf_bytes,
                     file_name=f"Junilex_Mutaala_{aktif_not_ismi}.pdf",
                     mime="application/pdf",
@@ -1221,26 +1232,28 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
             sayfalar = st.session_state.hoca_sayfalar
             icerik = sayfalar[aktif]
             
+            # Okuma Modu Tasarımı
             st.markdown(f"""
-            <div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; color: #2c3e50;">
-                <div style="font-size: 12px; color: #2e7d32; font-weight: bold; margin-bottom: 20px;">
-                    🎓 NOT ANALİZİ - Sayfa {aktif + 1} / {len(sayfalar)}
+            <div style="background-color: #0F172A; padding: 30px; border: 1px solid #1E293B; border-left: 4px solid #C5A059; border-radius: 6px; color: #E2E8F0;">
+                <div style="font-size: 13px; color: #94A3B8; font-weight: bold; margin-bottom: 15px; text-transform: uppercase;">
+                    Sayfa {aktif + 1} / {len(sayfalar)}
                 </div>
-                <div style="font-size: 18px; line-height: 1.8;">
-                    {icerik.replace("\n", "<br>")}
+                <div style="font-size: 16px; line-height: 1.7;">
+                    {icerik.replace(chr(10), '<br>')}
                 </div>
             </div>
+            <br>
             """, unsafe_allow_html=True)
         
             col_sol, col_orta, col_sag = st.columns([1, 2, 1])
             with col_sol:
                 if aktif > 0:
-                    if st.button("⬅️ Önceki", key="hoca_geri"):
+                    if st.button("⬅️ Önceki Sayfa", key="hoca_geri", use_container_width=True):
                         st.session_state.hoca_aktif_sayfa -= 1
                         st.rerun()
             with col_sag:
                 if aktif < len(sayfalar) - 1:
-                    if st.button("Sonraki ➡️", key="hoca_ileri"):
+                    if st.button("Sonraki Sayfa ➡️", key="hoca_ileri", use_container_width=True):
                         st.session_state.hoca_aktif_sayfa += 1
                         st.rerun()
 
