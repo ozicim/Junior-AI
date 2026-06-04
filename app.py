@@ -1257,23 +1257,24 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
                         st.session_state.hoca_aktif_sayfa += 1
                         st.rerun()
 
-    with tab_sinav:
-        st.markdown("#### 📝 Pratik Çalışma ve Sınav")
+    with akademi_sekmeleri[2]:
+        st.subheader("Pratik Çalışma ve Sınav Simülasyonu")
+        st.info("Yaklaşan finallerdeki (Ceza, Ticaret, İdari Yargılama) hukuki niteleme ve pratik eksiklerini kapatmak için yapay zeka ile olay çöz veya test oluştur.")
         
         col_r1, col_r2 = st.columns([2, 1])
         with col_r1:
-            sinav_kaynagi = st.radio("Sınav Kaynağı:", ["📚 AI Kütüphane", "📂 Kişisel Notlarım"], horizontal=True)
+            sinav_kaynagi = st.radio("Sınav Kaynağı:", ["AI Kütüphanesi", "Kişisel Notlarım"], horizontal=True)
         with col_r2:
             sinav_tipi = st.selectbox("Sınav Tipi", ["Çoktan Seçmeli", "Klasik (Açık Uçlu)"])
             soru_sayisi = st.slider("Soru Sayısı", 1, 10, 3)
 
-        st.markdown("---")
+        st.write("---")
 
         baslat_tiklandi = False
         aktif_konu = ""
         aktif_not = ""
 
-        if sinav_kaynagi == "📚 AI Kütüphane":
+        if sinav_kaynagi == "AI Kütüphanesi":
             mufredat = AkademikEngine.get_akademik_mufredat()
             col1, col2 = st.columns(2)
             with col1:
@@ -1281,16 +1282,16 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
             with col2:
                 secilen_ders = st.selectbox("Ders", [d['isim'] for d in mufredat[secilen_sinif]], key="s_ders")
             aktif_konu = secilen_ders
-            if st.button("🔥 Sınavı Başlat", use_container_width=True):
+            if st.button("Sınavı Başlat", use_container_width=True, type="primary"):
                 baslat_tiklandi = True
         else:
             mevcut_notlar = AkademikEngine.yuklenen_notlari_getir()
             if not mevcut_notlar:
-                st.warning("⚠️ Not bulunamadı.")
+                st.warning("Arşivde taranmış not bulunamadı. Lütfen 'Notlarım' sekmesinden PDF yükleyin.")
             else:
-                secilen_not_adi = st.selectbox("Not Seçiniz:", options=mevcut_notlar)
-                aktif_konu = st.text_input("Konu (İsteğe Bağlı):", placeholder="Örn: Kusurluluk")
-                if st.button("🔥 Sınavı Başlat", use_container_width=True):
+                secilen_not_adi = st.selectbox("Kaynak Not Seçiniz:", options=mevcut_notlar)
+                aktif_konu = st.text_input("Spesifik Konu (İsteğe Bağlı):", placeholder="Örn: Kusurluluk veya Ticari İşletme Devri")
+                if st.button("Sınavı Başlat", use_container_width=True, type="primary"):
                     aktif_not = AkademikEngine.not_icerigi_getir(secilen_not_adi)
                     baslat_tiklandi = True
 
@@ -1298,33 +1299,45 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
             with st.spinner("Hoca sınavı hazırlıyor..."):
                 sonuc = AkademikSinavEngine.pratik_calisma_uret(MY_API_KEY, aktif_konu, aktif_not, sinav_tipi, soru_sayisi)
                 if "hata" in sonuc:
-                    st.error(f"Hata: {sonuc['hata']}")
+                    st.error(f"Sınav Hazırlama Hatası: {sonuc['hata']}")
                 else:
                     st.session_state.su_anki_sinav = sonuc
                     st.rerun()
 
         if st.session_state.get('su_anki_sinav'):
+            st.write("---")
             sinav = st.session_state.su_anki_sinav
-            st.info(f"📖 OLAY: {sinav['olay_kurgusu']}")
+            
+            st.markdown(f"""
+            <div style="background-color: #0F172A; padding: 20px; border-left: 4px solid #C5A059; border-radius: 4px; margin-bottom: 20px;">
+                <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase; margin-bottom: 8px;">Olay Kurgusu</div>
+                <div style="color: #E2E8F0; font-size: 15px; line-height: 1.6;">{sinav['olay_kurgusu']}</div>
+            </div>
+            """, unsafe_allow_html=True)
             
             for i, soru_data in enumerate(sinav.get('sorular', [])):
                 st.markdown(f"**Soru {i+1}:** {soru_data['soru']}")
                 
                 if sinav_tipi == "Çoktan Seçmeli":
-                    secim_cvp = st.radio("Seçenekler:", soru_data['secenekler'], key=f"q_{i}")
-                    if st.button(f"Kontrol Et {i+1}", key=f"b_{i}"):
+                    secim_cvp = st.radio("Seçenekler:", soru_data['secenekler'], key=f"q_{i}", label_visibility="collapsed")
+                    if st.button(f"Yanıtı Kontrol Et", key=f"b_{i}"):
                         if secim_cvp == soru_data['cevap']:
-                            st.success("✅ Doğru!")
+                            st.success("Doğru!")
                         else:
-                            st.error(f"❌ Yanlış! Doğrusu: {soru_data['cevap']}")
+                            st.error(f"Yanlış! Doğru Cevap: {soru_data['cevap']}")
+                    st.write("##")
                 else:
-                    cevap = st.text_area("Cevabını yaz:", key=f"ans_{i}")
-                    if st.button("Hoca Puanlasın!", key=f"puan_{i}"):
-                        with st.spinner("Hoca kağıdı okuyor..."):
+                    cevap = st.text_area("Hukuki Nitelemenizi Yazın:", key=f"ans_{i}", height=150)
+                    if st.button("Hocaya Teslim Et", key=f"puan_{i}"):
+                        with st.spinner("Hoca kağıdı okuyor ve puanlıyor..."):
                             puan_sonucu = AkademikSinavEngine.sinav_degerlendir(MY_API_KEY, soru_data['soru'], cevap, soru_data['analiz'])
-                            st.metric("Puan", f"{puan_sonucu['puan']}/100")
-                            st.write(f"**Hoca'nın Yorumu:** {puan_sonucu['gercekce']}")
-
+                            
+                            col_puan, col_yorum = st.columns([1, 3])
+                            with col_puan:
+                                st.metric("Puan", f"{puan_sonucu['puan']} / 100")
+                            with col_yorum:
+                                st.info(f"**Hoca'nın Değerlendirmesi:**\n\n{puan_sonucu['gercekce']}")
+                    st.write("---")
 # ==========================================
 # 📝 ARZUHAL MODÜLÜ
 # ==========================================
