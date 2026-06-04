@@ -925,6 +925,7 @@ elif st.session_state.aktif_ekran == "Adliye (Mevzuat Sorgu)":
                         with st.spinner("Madde analiz ediliyor..."):
                             akış = MevzuatBulutEngine.madde_analiz_et(MY_API_KEY, secilen_kanun['kisaAd'], m['no'], m['metin'])
                             if akış: st.write_stream(akış)
+
     if "aktif_madde" in st.session_state:
         madde = st.session_state.aktif_madde
         st.markdown("---")
