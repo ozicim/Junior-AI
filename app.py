@@ -50,7 +50,7 @@ def get_db():
 # ==========================================
 # 🎨 CSS VE TASARIM (PREMIUM SAAS)
 # ==========================================
-if st.session_state.get("aktif_ekran", "🏠 Ana Ekran") == "🏠 Ana Ekran":
+if st.session_state.get("aktif_ekran", "Ana Ekran") == "Ana Ekran":
     st.markdown("""<style>[data-testid="stSidebar"] { display: none; }</style>""", unsafe_allow_html=True)
 
 st.markdown("""
@@ -309,24 +309,24 @@ try:
 except Exception as e:
     pass
 
-if st.session_state.aktif_ekran != "🏠 Ana Ekran":
+if st.session_state.aktif_ekran != "Ana Ekran":
     with st.sidebar:
         st.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.aktif_kullanici}")
         st.caption(f"Senin ID'n: **{st.session_state.aktif_kullanici_id}**")
         
         if st.button("🏠 Ana Menüye Dön", use_container_width=True):
-            st.session_state.aktif_ekran = "🏠 Ana Ekran"
+            st.session_state.aktif_ekran = "Ana Ekran"
             st.rerun()
         st.divider()
         
         # GÜNCELLEME: "🧮 Pratik Hesaplamalar" listeye eklendi
         secenekler = [
-            "🏠 Ana Ekran", 
+            "Ana Ekran", 
             "Adliye (Mevzuat Sorgu)", 
             "Akademik Asistan", 
             "Dilekçe Merkezi", 
             "İçtihat Sorgulama",
-            "🧮 Pratik Hesaplamalar", 
+            "Pratik Hesaplamalar", 
             "💬 JUNILEX Chat", 
             "👥 Junilex Ağı"
             
@@ -364,7 +364,7 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
 # ==========================================
 # 🏠 DASHBOARD (ANA EKRAN)
 # ==========================================
-if st.session_state.aktif_ekran == "🏠 Ana Ekran":
+if st.session_state.aktif_ekran == "Ana Ekran":
     spacer_sol, ana_kolon, spacer_sag = st.columns([1, 2, 1])
     
     with ana_kolon:
@@ -386,12 +386,12 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
         st.write("---")
         
         üst_satir_1, üst_satir_2 = st.columns(2)
-        if üst_satir_1.button("🏛️ Adliye", use_container_width=True): st.session_state.aktif_ekran = "🏛️ Adliye (Mevzuat Sorgu)"; st.rerun()
-        if üst_satir_2.button("🎓 Akademi", use_container_width=True): st.session_state.aktif_ekran = "🎓 Akademi (Ders Notları)"; st.rerun()
+        if üst_satir_1.button("Adliye", use_container_width=True): st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"; st.rerun()
+        if üst_satir_2.button("Akademi", use_container_width=True): st.session_state.aktif_ekran = "Akademik Asistan"; st.rerun()
             
         alt_satir_1, alt_satir_2 = st.columns(2)
-        if alt_satir_1.button("📝 Arzuhal", use_container_width=True): st.session_state.aktif_ekran = "📝 Arzuhal(Dilekçe Yazım Merkezi)"; st.rerun()
-        if alt_satir_2.button("⚖️ İçtihat", use_container_width=True): st.session_state.aktif_ekran = "⚖️ İçtihat Sorgulama"; st.rerun()
+        if alt_satir_1.button("Dilekçe Merkezi", use_container_width=True): st.session_state.aktif_ekran = "Dilekçe Merkezi"; st.rerun()
+        if alt_satir_2.button("İçtihat Sorgulama", use_container_width=True): st.session_state.aktif_ekran = "İçtihat Sorgulama"; st.rerun()
         
         st.write("<br>", unsafe_allow_html=True)
         
@@ -399,7 +399,7 @@ if st.session_state.aktif_ekran == "🏠 Ana Ekran":
         col_chat, col_ag, col_hesap = st.columns(3)
         if col_chat.button("💬 JUNILEX Chat", use_container_width=True, type="primary"): st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
         if col_ag.button("👥 Junilex Ağı", use_container_width=True): st.session_state.aktif_ekran = "👥 Junilex Ağı"; st.rerun()
-        if col_hesap.button("🧮 Hesaplayıcılar", use_container_width=True): st.session_state.aktif_ekran = "🧮 Pratik Hesaplamalar"; st.rerun()
+        if col_hesap.button("Pratik Hesaplamalar", use_container_width=True): st.session_state.aktif_ekran = "Pratik Hesaplamalar"; st.rerun()
 
         st.write("---")
         
@@ -1673,7 +1673,7 @@ elif st.session_state.aktif_ekran == "💬 JUNILEX Chat":
 # ==========================================
 # 🧮 PRATİK HESAPLAMALAR
 # ==========================================
-elif st.session_state.aktif_ekran == "🧮 Pratik Hesaplamalar":
+elif st.session_state.aktif_ekran == "Pratik Hesaplamalar":
     st.title("Pratik Hesaplamalar")
     st.markdown("Hukuki iş süreçlerinde kullanılan hızlı hesaplama araçları.")
     
