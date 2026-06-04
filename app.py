@@ -324,7 +324,7 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
             "🏠 Ana Ekran", 
             "Adliye (Mevzuat Sorgu)", 
             "Akademik Asistan", 
-            "📝 Arzuhal(Dilekçe Yazım Merkezi)", 
+            "Dilekçe Merkezi", 
             "⚖️ İçtihat Sorgulama",
             "🧮 Pratik Hesaplamalar", 
             "💬 JUNILEX Chat", 
@@ -1341,7 +1341,7 @@ elif st.session_state.aktif_ekran == "Akademik Asistan":
 # ==========================================
 # ARZUHAL MODÜLÜ
 # ==========================================
-elif st.session_state.aktif_ekran == "📝 Arzuhal(Dilekçe Yazım Merkezi)":
+elif st.session_state.aktif_ekran == "Dilekçe Merkezi":
     st.subheader("Dilekçe Marketi")
     st.markdown("UYAP formatına uygun, yapay zeka destekli profesyonel dilekçe ve sözleşme taslakları oluşturun.")
     
