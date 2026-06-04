@@ -323,7 +323,7 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
         secenekler = [
             "🏠 Ana Ekran", 
             "Adliye (Mevzuat Sorgu)", 
-            "Akademi (Ders Notları)", 
+            "Akademik Asistan", 
             "📝 Arzuhal(Dilekçe Yazım Merkezi)", 
             "⚖️ İçtihat Sorgulama",
             "🧮 Pratik Hesaplamalar", 
