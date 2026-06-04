@@ -21,31 +21,40 @@ class ChatEngine:
         return metin
 
     @staticmethod
+    def _uslup_analiz_et(mesaj_gecmisi):
+        """Kullanıcının üslubunu analiz eder."""
+        if not mesaj_gecmisi: return "Nötr"
+        # Son 3 mesajın içeriğine bak
+        son_mesajlar = " ".join([m["content"] for m in mesaj_gecmisi[-3:]]).lower()
+        if any(kelime in son_mesajlar for kelime in ["hukuki", "içtihat", "doktrin", "müvekkil"]):
+            return "Akademik ve Resmi"
+        elif any(kelime in son_mesajlar for kelime in ["basit", "özetle", "anlat", "nedir"]):
+            return "Pratik ve Açıklayıcı"
+        return "Nötr"
+
+    @staticmethod
     def _rag_baglami_getir(soru, max_sonuc=3):
         try:
             soru_vektoru = embedding_model.encode(soru).tolist()
-            sonuclar = collection.query(
-                query_embeddings=[soru_vektoru],
-                n_results=max_sonuc
-            )
+            sonuclar = collection.query(query_embeddings=[soru_vektoru], n_results=max_sonuc)
             
             baglam_metni = ""
             if sonuclar and 'documents' in sonuclar and sonuclar['documents'][0]:
                 for i in range(len(sonuclar['documents'][0])):
-                    kanun = sonuclar['metadatas'][0][i].get('kanun', 'Bilinmeyen Kanun')
+                    kanun = sonuclar['metadatas'][0][i].get('kanun', 'Bilinmeyen')
                     madde = sonuclar['metadatas'][0][i].get('madde', '')
                     icerik = sonuclar['documents'][0][i]
-                    baglam_metni += f"- {kanun} Madde {madde}: {icerik}\n"
+                    baglam_metni += f"- [{kanun} Madde {madde}]: {icerik}\n"
             return baglam_metni
         except Exception as e:
-            print(f"RAG Hatası: {e}")
             return ""
 
     @classmethod
-    def yanit_uret(cls, api_key, mesaj_gecmisi, yeni_mesaj, mod="Özet", aktif_belge_metni=None):
+    def yanit_uret(cls, api_key, mesaj_gecmisi, yeni_mesaj, mod="Özet", aktif_belge_metni=None, manuel_uslup=None):
         try:
             genai.configure(api_key=api_key)
             
+            # KVKK ve Güvenlik
             guvenlik_ayarlari = {
                 HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
                 HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -56,20 +65,28 @@ class ChatEngine:
             guvenli_mesaj = cls.kvkk_maskele(yeni_mesaj)
             ilgili_mevzuat = cls._rag_baglami_getir(guvenli_mesaj)
             
-            sistem_talimati = "Sen JUNILEX'sin. Sadece Türk Hukuk Sistemine göre cevap veren kıdemli bir yapay zeka asistanısın."
+            # Üslup Belirleme (Manuel seçilmediyse otomatik algıla)
+            uslup = manuel_uslup if manuel_uslup and manuel_uslup != "Nötr" else cls._uslup_analiz_et(mesaj_gecmisi)
+            
+            sistem_talimati = f"""
+            Sen JUNILEX'sin. Kıdemli bir hukuk asistanısın. 
+            ÜSLUP TERCİHİ: {uslup}. 
+            (Eğer Akademik: Resmi dil kullan, kavramsal derinlik kat. Eğer Pratik: Sade, anlaşılır ve eylem odaklı ol.)
+            
+            GÖREVİN VE KURALLAR:
+            1. Sadece Türk Hukuk Sistemine göre cevap ver.
+            2. Her bilginin yanına mutlaka köşeli parantez içinde kaynak göster [Örn: TMK Madde 1].
+            3. Bilmediğin konularda asla uydurma, "Hukuki olarak net bir düzenleme bulunmamaktadır" de.
+            4. Karar numarası veya spesifik emsal uydurma.
+            """
             
             if aktif_belge_metni:
-                sistem_talimati += f"\n📌 AKTİF İNCELENEN BELGE İÇERİĞİ:\n{aktif_belge_metni}\n"
-            
+                sistem_talimati += f"\n📌 AKTİF İNCELENEN BELGE:\n{aktif_belge_metni}\n"
             if ilgili_mevzuat:
-                sistem_talimati += f"\n📌 İLGİLİ MEVZUAT BAĞLAMI:\n{ilgili_mevzuat}\n"
+                sistem_talimati += f"\n📌 İLGİLİ MEVZUAT:\n{ilgili_mevzuat}\n"
 
-            if mod == "Özet":
-                sistem_talimati += "\nCevabını 1. Olayın Hukuki Niteliği, 2. İlgili Kanun Maddeleri, 3. Muhtemel Sonuç şeklinde ver."
-            elif mod == "⚖️ Detaylı Analiz":
-                sistem_talimati += "\nKonuyu detaylı hukuki analize tabi tut. Yargıtay'ın yerleşik içtihat yönelimlerini ele al."
-
-            yapilandirma = genai.types.GenerationConfig(max_output_tokens=8192, temperature=0.7)
+            # Temperature 0.2: Hukuki tutarlılık için düşük sıcaklık
+            yapilandirma = genai.types.GenerationConfig(max_output_tokens=8192, temperature=0.2)
             
             model = genai.GenerativeModel(
                 model_name='gemini-2.0-flash',
@@ -79,8 +96,8 @@ class ChatEngine:
             )
             
             gecmis_formatli = [{"role": ("user" if m["role"] == "user" else "model"), "parts": [m["content"]]} for m in mesaj_gecmisi]
-            
             chat = model.start_chat(history=gecmis_formatli)
+            
             return chat.send_message(guvenli_mesaj, stream=True)
             
         except Exception as e:
