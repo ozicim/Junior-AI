@@ -325,10 +325,11 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
             "🏛️ Adliye (Mevzuat Sorgu)", 
             "🎓 Akademi (Ders Notları)", 
             "📝 Arzuhal(Dilekçe Yazım Merkezi)", 
-            "⚖️ İçtihat Sorgulama", 
+            "⚖️ İçtihat Sorgulama",
+            "🧮 Pratik Hesaplamalar", 
             "💬 JUNILEX Chat", 
-            "👥 Junilex Ağı",
-            "🧮 Pratik Hesaplamalar"
+            "👥 Junilex Ağı"
+            
         ]
         
         if st.session_state.aktif_ekran not in secenekler:
