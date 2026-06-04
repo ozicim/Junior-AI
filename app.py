@@ -323,7 +323,7 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
         secenekler = [
             "🏠 Ana Ekran", 
             "Adliye (Mevzuat Sorgu)", 
-            "🎓 Akademi (Ders Notları)", 
+            "Akademi (Ders Notları)", 
             "📝 Arzuhal(Dilekçe Yazım Merkezi)", 
             "⚖️ İçtihat Sorgulama",
             "🧮 Pratik Hesaplamalar", 
@@ -989,96 +989,81 @@ elif st.session_state.aktif_ekran == "Adliye (Mevzuat Sorgu)":
                         st.error(f"Vektörleştirme Hatası: {str(e)}")
 
 # ==========================================
-# 🎓 AKADEMİ MODÜLÜ
+# AKADEMİK ASİSTAN MODÜLÜ
 # ==========================================
-elif st.session_state.aktif_ekran == "🎓 Akademi (Ders Notları)":
-    st.header("🎓 Akademik Asistan")
-    
-    tab_mufredat, tab_notlar, tab_sinav = st.tabs(["📚 Müfredat", "📄 Notlarım", "📝 Sınav Modu"])
-    mufredat_sozlugu = AkademikEngine.get_akademik_mufredat()
-    ders_listesi = [f"{ders['ikon']} {ders['isim']}" for sinif_adi, dersler in mufredat_sozlugu.items() for ders in dersler]
-            
-    with tab_mufredat:
-        st.subheader("📚 Ders Seçimi ve Soru")
-        
-        mufredat = AkademikEngine.get_akademik_mufredat()
-        sinif_listesi = list(mufredat.keys())
+elif st.session_state.aktif_ekran == "Akademik Asistan":
+    st.title("Junilex Akademik Asistan")
+    st.markdown("Hukuk fakültesi öğrencileri için yapay zeka destekli çalışma ve pratik platformu.")
+
+    akademi_sekmeleri = st.tabs(["Müfredat", "Notlarım", "Sınav Modu"])
+
+    # --- 1. SEKMELER: MÜFREDAT ---
+    with akademi_sekmeleri[0]:
+        st.subheader("Ders Seçimi ve Çalışma Masası")
         
         col1, col2 = st.columns(2)
         with col1:
-            secilen_sinif = st.selectbox("Sınıf Seçiniz", options=sinif_listesi, key="akademi_sinif_v3")
+            secilen_sinif = st.selectbox("Sınıf Seçiniz", ["1. Sınıf", "2. Sınıf", "3. Sınıf", "4. Sınıf"])
+        
         with col2:
-            secilen_sinifa_ait_dersler = [ders["isim"] for ders in mufredat[secilen_sinif]]
-            secilen_ders = st.selectbox("Ders Seçiniz", options=secilen_sinifa_ait_dersler, key="akademi_ders_v3")
-            
-        akademik_input = st.text_area("Bu dersle ilgili sorunuzu veya öğrenmek istediğiniz konuyu yazın:", height=100, key="akademi_text")
-
-        if st.button("📚 Soruyu Yanıtla / Anlat", use_container_width=True):
-            if not akademik_input.strip():
-                st.warning("Lütfen hocaya yöneltmek için bir soru veya konu girin.")
+            # Sınıfa göre dinamik ders listesi (Örnek liste, kendi müfredatına göre çoğaltabilirsin)
+            if secilen_sinif == "1. Sınıf":
+                ders_listesi = ["Hukuk Başlangıcı", "Anayasa Hukuku", "Medeni Hukuk (Kişiler/Aile)"]
+            elif secilen_sinif == "2. Sınıf":
+                ders_listesi = ["Borçlar Hukuku (Genel)", "Ceza Hukuku (Genel)", "İdare Hukuku"]
+            elif secilen_sinif == "3. Sınıf":
+                ders_listesi = ["Ticaret Hukuku", "Eşya Hukuku", "Medeni Usul Hukuku"]
             else:
-                try:
-                    st.info(f"🏛️ Profesör {secilen_ders} arşivini tarıyor...")
-                    cevap_generator = AkademikEngine.mufredat_hoca_anlat(MY_API_KEY, SERPER_API_KEY, secilen_ders, akademik_input)
-                    sonuc = st.write_stream(cevap_generator)
-                        
-                    if sonuc and not sonuc.startswith("⚠️"):
-                        st.session_state.akademi_notlari = metni_sayfalara_bol(sonuc, 800)
-                        st.session_state.akademi_aktif_sayfa = 0
-                        st.success("✅ Hoca yanıtladı! Cevabı aşağıdan okuyabilirsiniz.")
-                    else:
-                        st.error("AI bir sonuç döndürmedi.")
-                except Exception as e:
-                    st.error(f"Hoca derse giremedi: {e}")
-
-        if "akademi_notlari" in st.session_state and st.session_state.akademi_notlari:
-            import re
-            
-            sayfalar = st.session_state.akademi_notlari
-            aktif = st.session_state.get('akademi_aktif_sayfa', 0)
-            
-            icerik = sayfalar[aktif]
-            icerik = re.sub(r"#{3}\s+(.*?)(?=\n|$)", r"<h3 style='color:#1b5e20; font-family:Georgia; border-bottom: 2px solid #2e7d32; padding-bottom:5px; margin-top:20px; font-size:18px;'>\1</h3><br>", icerik)
-            icerik = re.sub(r"#{1,2}\s+(.*?)(?=\n|$)", r"<br><br><b style='color:#3e2723; font-size:16px;'>\1</b><br>", icerik)
-            icerik = re.sub(r"#{4,5}\s+(.*?)(?=\n|$)", r"<br><b style='color:#3e2723; font-size:15px;'>\1</b><br>", icerik)
-            icerik = re.sub(r"\n\s*\*\*(.*?)\*\*", r"<br><br><b>\1</b>", icerik)
-            icerik = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", icerik)
-            icerik = icerik.replace("🔍 GERÇEK EMSAL:", "<br><br><b style='color:#2e7d32;'>🔍 GERÇEK EMSAL:</b>")
-            icerik = icerik.replace("⚖️ HUKUKİ DAYANAK:", "<br><br><b style='color:#795548;'>⚖️ HUKUKİ DAYANAK:</b>")
-            icerik = icerik.replace("📢 SONUÇ:", "<br><br><b style='color:#1565c0;'>📢 SONUÇ:</b>")
-            icerik = icerik.replace("* ", "• ").replace("\n", "<br>")
-
-            st.markdown(f"""
-            <div style="background-color: #fcfaf5; padding: 40px; border: 1px solid #e0dcd0; border-top: 8px solid #2e7d32; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #2c3e50; font-family: 'Georgia', serif;">
-                <div style="font-size: 12px; color: #2e7d32; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 1px solid #e0dcd0; padding-bottom: 10px;">
-                    🎓 AKADEMİK ANALİZ - Sayfa {aktif + 1}
-                </div>
-                <div style="font-size: 18px; line-height: 1.8; text-align: justify;">
-                    {icerik.replace("\n", "<br>")}
-                </div>
-                <div style="text-align: right; font-size: 11px; color: #999; margin-top: 30px; font-style: italic;">
-                    Junilex Akademik Kaynaklarından derlenmiştir. Toplam {len(sayfalar)} sayfa.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            col1, col2, col3 = st.columns([1, 2, 1])
-    
-            with col1:
-                if aktif > 0:
-                    if st.button("⬅️ Geri"):
-                        st.session_state.akademi_aktif_sayfa -= 1
-                        st.rerun()
-            
-            with col2:
-                st.markdown(f"<center><b>{aktif + 1} . Sayfa</b></center>", unsafe_allow_html=True)
+                ders_listesi = ["Ceza Muhakemesi Hukuku", "İcra İflas Hukuku", "Miras Hukuku"]
                 
-            with col3:
-                if aktif < len(sayfalar) - 1:
-                    if st.button("İleri ➡️"):
-                        st.session_state.akademi_aktif_sayfa += 1
-                        st.rerun()
+            secilen_ders = st.selectbox("Ders Seçiniz", ders_listesi)
 
+        st.write("---")
+        
+        # Dinamik Çalışma Kutusu
+        ogrenci_sorusu = st.text_area("Bu dersle ilgili sorunuzu veya çalışmak istediğiniz konuyu yazın:", 
+                                      placeholder="Örn: Normlar hiyerarşisini anlayamıyorum, bana anlatır mısın?", 
+                                      height=100)
+
+        # Hızlı Aksiyon Butonları (Prompt Yönlendiriciler)
+        st.markdown("**Hızlı Çalışma Araçları:**")
+        btn_col1, btn_col2, btn_col3 = st.columns(3)
+        with btn_col1:
+            btn_ozetle = st.button("Bu Konuyu Özetle", use_container_width=True)
+        with btn_col2:
+            btn_pratik = st.button("Bana Pratik Çalışma Sor", use_container_width=True)
+        with btn_col3:
+            btn_sinav = st.button("Muhtemel Sınav Soruları", use_container_width=True)
+            
+        st.write("##")
+        btn_standart = st.button("Soruyu Yanıtla / Hoca ile Tartış", type="primary", use_container_width=True)
+
+        # AI Tetikleme ve Prompt Mühendisliği
+        aktif_prompt = None
+        
+        if ogrenci_sorusu:
+            if btn_ozetle:
+                aktif_prompt = f"""Sen zorlu ama öğretici bir {secilen_ders} profesörüsün. Öğrencinin şu sorusunu/konusunu ({ogrenci_sorusu}) doktrin ve mevzuat açısından özetle. Uzun paragraflar yerine maddeler kullan ve anlatımın sonunda öğrencinin konuyu kavrayıp kavramadığını test edecek tek bir kısa soru sor."""
+            elif btn_pratik:
+                aktif_prompt = f"""Sen bir {secilen_ders} profesörüsün. Öğrenciye '{ogrenci_sorusu}' konusuyla ilgili çok kısa (2-3 cümlelik) bir hukuki uyuşmazlık (pratik çalışma) olayı yaz. Soruyu sor ve öğrencinin hukuki niteleme yapması için bekle. Çözümü kesinlikle hemen verme!"""
+            elif btn_sinav:
+                aktif_prompt = f"""Sen bir {secilen_ders} profesörüsün. Vize veya finallerde '{ogrenci_sorusu}' konusuyla ilgili çıkabilecek en muhtemel 2 klasik (olay/metin) soruyu ve 3 test (çoktan seçmeli) sorusunu hazırla. Cevap anahtarını en sona gizle/ekle."""
+            elif btn_standart:
+                aktif_prompt = f"""Sen deneyimli bir {secilen_ders} hocasısın. Öğrenciye '{ogrenci_sorusu}' konusunda Sokratik yöntemle (soru sorarak düşündüren) bir cevap ver."""
+
+        if aktif_prompt:
+            with st.spinner("Hoca yanıtı hazırlıyor..."):
+                try:
+                    # Burada kendi genai / model çağırma kodunu kullan
+                    # Örnek: model = genai.GenerativeModel('models/gemini-2.5-flash')
+                    # response = model.generate_content(aktif_prompt)
+                    # st.markdown(response.text)
+                    
+                    st.info("🧠 AI Bağlantısı: Üstteki try bloğuna genai model.generate_content kodunu yerleştir.")
+                except Exception as e:
+                    st.error(f"Hoca yanıt verirken bir hata oluştu: {e}")
+        elif (btn_ozetle or btn_pratik or btn_sinav or btn_standart) and not ogrenci_sorusu:
+            st.warning("⚠️ Lütfen hocaya sormak veya çalışmak istediğiniz bir konu yazın.")
     with tab_notlar:
         st.header("📥 Not Yükleme Alanı")
         st.info("💡 Burası sadece senin dışarıdan yüklediğin PDF ders notlarını barındırır. Ürettiğin diğer analizler doğrudan Chat menüsündeki arşivine düşer.")
