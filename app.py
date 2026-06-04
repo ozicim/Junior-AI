@@ -1406,82 +1406,118 @@ elif st.session_state.aktif_ekran == "Dilekçe Merkezi":
                     st.success("Dilekçe arşive eklendi. Chat ekranından çağırarak üzerinde çalışabilirsiniz.")
 
 # ==========================================
-# ⚖️ İÇTİHAT MODÜLÜ
+# İÇTİHAT MODÜLÜ
 # ==========================================
 elif st.session_state.aktif_ekran == "⚖️ İçtihat Sorgulama":
-    st.header("⚖️ İçtihat ve Emsal Merkezi")
+    st.header("İçtihat ve Emsal Merkezi")
+    st.markdown("Yargıtay kararlarını inceleyin veya somut olayınıza uygun emsal arayın.")
     
-    tab1, tab2 = st.tabs(["🔍 Karar Analizi (Şerh)", "🔎 Emsal Karar Bulucu"])
+    tab1, tab2 = st.tabs(["Karar Analizi (Şerh)", "Emsal Karar Bulucu"])
     
     with tab1:
-        st.subheader("⚖️ Karar Analiz Modülü")
+        st.subheader("Karar Analiz Modülü")
         karar_metni = st.text_area("Yargıtay Karar Metnini Buraya Yapıştırın", height=250, key="karar_text_area")
-        soru_input = st.text_input("Bu kararla ilgili neyi merak ediyorsunuz?", placeholder="Örn: İspat yükü kime verilmiş?", key="karar_soru_input")
         
-        if st.button("⚖️ Analiz Et", use_container_width=True, key="btn_analiz_et"):
-            if karar_metni and soru_input:
-                with st.spinner("Hakim Junilex dosyayı inceliyor..."):
-                    response = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_metni, soru_input)
-                    tam_metn = ""
-                    if isinstance(response, str):
-                        tam_metn = response
-                    else:
-                        for chunk in response:
-                            try:
-                                if hasattr(chunk, "text") and chunk.text:
-                                    tam_metn += chunk.text
-                            except: continue
-                    
-                    if tam_metn:
-                        st.session_state.analiz_sayfalari = metni_sayfalara_bol(tam_metn, 1200)
-                        st.session_state.analiz_aktif_sayfa = 0
-                        st.rerun()
-                    else:
-                        st.error("Analiz sonucu boş döndü, lütfen tekrar deneyin.")
+        # HIZLI AKSİYON BUTONLARI
+        st.markdown("**Hızlı Analiz Araçları:**")
+        btn_col1, btn_col2, btn_col3 = st.columns(3)
+        with btn_col1:
+            btn_ozet = st.button("Kararı Özetle ve Hükmü Söyle", use_container_width=True)
+        with btn_col2:
+            btn_gerekce = st.button("Bozma/Onama Gerekçesini Çıkar", use_container_width=True)
+        with btn_col3:
+            btn_celiski = st.button("Mahkemeler Arası Çelişkiyi Bul", use_container_width=True)
+
+        st.write("---")
+        st.markdown("**Veya Özel Bir Soru Sorun:**")
+        
+        # HİZALANMIŞ ARAMA ÇUBUĞU (4'e 1 Oranı)
+        input_col, submit_col = st.columns([4, 1])
+        with input_col:
+            soru_input = st.text_input("Bu kararla ilgili neyi merak ediyorsunuz?", placeholder="Örn: İspat yükü kime verilmiş?", key="karar_soru_input", label_visibility="collapsed")
+        with submit_col:
+            btn_ozel_soru = st.button("Analiz Et", use_container_width=True, type="primary", key="btn_analiz_et")
+
+        # MANTIKSAL AKIŞ VE PROMPT YÖNLENDİRMESİ
+        aktif_soru = None
+        if karar_metni:
+            if btn_ozet:
+                aktif_soru = "Bu kararı en fazla 3 paragrafta özetle ve nihai hükmün (sonucun) ne olduğunu açıkça belirt."
+            elif btn_gerekce:
+                aktif_soru = "Bu karardaki Yargıtay'ın bozma veya onama gerekçesinin dayandığı temel hukuki argümanları ve kanun maddelerini listele."
+            elif btn_celiski:
+                aktif_soru = "İlk derece mahkemesi (veya istinaf) ile Yargıtay arasındaki hukuki uyuşmazlığın ve görüş ayrılığının temel noktasını tespit et."
+            elif btn_ozel_soru and soru_input:
+                aktif_soru = soru_input
+        elif btn_ozet or btn_gerekce or btn_celiski or btn_ozel_soru:
+            st.warning("Lütfen önce incelenecek Yargıtay karar metnini yapıştırın.")
+
+        if aktif_soru and karar_metni:
+            with st.spinner("Kıdemli Yargıtay Tetkik Hakimi dosyayı inceliyor..."):
+                response = IctihatEngine.karar_analiz_et(MY_API_KEY, karar_metni, aktif_soru)
+                tam_metn = ""
+                if isinstance(response, str):
+                    tam_metn = response
+                else:
+                    for chunk in response:
+                        try:
+                            if hasattr(chunk, "text") and chunk.text:
+                                tam_metn += chunk.text
+                        except: continue
+                
+                if tam_metn:
+                    st.session_state.analiz_sayfalari = metni_sayfalara_bol(tam_metn, 1200)
+                    st.session_state.analiz_aktif_sayfa = 0
+                    st.rerun()
+                else:
+                    st.error("Analiz sonucu boş döndü, lütfen tekrar deneyin.")
 
         if "analiz_sayfalari" in st.session_state and st.session_state.analiz_sayfalari:
+            st.write("##")
             sayfalar = st.session_state.analiz_sayfalari
             aktif = st.session_state.analiz_aktif_sayfa
             
             st.markdown(f"""
-            <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50; font-family: 'Georgia', serif;">
-                <div style="font-size: 12px; color: #8d6e63; font-weight: bold; text-transform: uppercase;">🏛️ Analiz Şerhi - Sayfa {aktif + 1} / {len(sayfalar)}</div>
-                <div style="font-size: 16px; line-height: 1.7; text-align: justify; margin-top: 15px;">
+            <div style="background-color: #0F172A; padding: 30px; border-left: 4px solid #C5A059; border-radius: 6px; color: #E2E8F0; font-family: 'Georgia', serif;">
+                <div style="font-size: 13px; color: #94A3B8; font-weight: bold; text-transform: uppercase; margin-bottom: 15px;">Karar Analiz Şerhi - Sayfa {aktif + 1} / {len(sayfalar)}</div>
+                <div style="font-size: 16px; line-height: 1.7; text-align: justify;">
                     {sayfalar[aktif].replace("\n", "<br>")}
                 </div>
             </div>
+            <br>
             """, unsafe_allow_html=True)
             
             c1, c2, c3 = st.columns([1, 2, 1])
             with c1:
                 if aktif > 0:
-                    if st.button("⬅️ Geri", key="analiz_geri_btn"):
+                    if st.button("⬅️ Önceki Sayfa", key="analiz_geri_btn", use_container_width=True):
                         st.session_state.analiz_aktif_sayfa -= 1
                         st.rerun()
             with c3:
                 if aktif < len(sayfalar) - 1:
-                    if st.button("İleri ➡️", key="analiz_ileri_btn"):
+                    if st.button("Sonraki Sayfa ➡️", key="analiz_ileri_btn", use_container_width=True):
                         st.session_state.analiz_aktif_sayfa += 1
                         st.rerun()
             
             st.markdown("---")
-            if st.button("💾 Bu Şerhi JUNILEX Arşivine Kaydet", key="btn_kaydet_serh"):
+            if st.button("💾 Bu Şerhi JUNILEX Arşivine Kaydet", use_container_width=True):
                 tam_metin = "\n".join(st.session_state.analiz_sayfalari)
-                basarili, mesaj = junilex_arsive_kaydet("⚖️ İçtihat Şerhi", "Karar Analizi", tam_metin)
+                basarili, mesaj = junilex_arsive_kaydet("İçtihat Şerhi", "Karar Analizi", tam_metin)
                 if basarili:
-                    st.success("✅ Arşive kaydedildi! JUNILEX Chat menüsünden ulaşıp üzerinde konuşabilirsiniz.")
+                    st.success("Arşive kaydedildi! JUNILEX Chat menüsünden ulaşıp üzerinde konuşabilirsiniz.")
 
     with tab2:
-        st.subheader("🔎 Yargıtay Yönelim Analizi")
+        st.subheader("Yargıtay Yönelim Analizi ve Emsal Bulucu")
         
         olay_input = st.text_area(
             "Hukuki Olayı Detaylıca Anlatın", 
             height=150, 
-            placeholder="Örn: Banka hesabından rıza dışı para çekilmesi...", 
+            placeholder="Örn: Banka hesabından rıza dışı para çekilmesi durumunda ispat yükü ve bankanın sorumluluğu...", 
             key="emsal_olay_girdisi_v4" 
         )
         
-        if st.button("🔎 Analiz Et", use_container_width=True, key="btn_emsal_bul_v4"):
+        st.write("##")
+        if st.button("Emsal Ara ve Analiz Et", use_container_width=True, type="primary", key="btn_emsal_bul_v4"):
             if olay_input: 
                 with st.spinner("Junilex kütüphaneleri tarıyor ve analiz ediyor..."):
                     try:
@@ -1491,42 +1527,43 @@ elif st.session_state.aktif_ekran == "⚖️ İçtihat Sorgulama":
                             st.session_state.aktif_sayfa = 0
                             st.rerun()
                         else:
-                            st.error("⚠️ Analiz sonucu boş döndü.")
+                            st.error("Analiz sonucu boş döndü.")
                     except Exception as e:
-                        st.error(f"⚠️ Teknik bir hata oluştu: {e}")
+                        st.error(f"Teknik bir hata oluştu: {e}")
             else:
-                st.warning("Ustam, önce bir olay anlatman lazım.")
+                st.warning("Lütfen önce bir olay anlatın.")
 
         if "kitap_sayfalari" in st.session_state and st.session_state.kitap_sayfalari:
-            st.markdown("---")
+            st.write("---")
             sayfalar_emsal = st.session_state.kitap_sayfalari
             aktif_emsal = st.session_state.aktif_sayfa
             
             st.markdown(f"""
-            <div style="background-color: #fdfaf1; padding: 30px; border-left: 10px solid #5d4037; border-radius: 5px; color: #2c3e50; font-family: 'Georgia', serif;">
-                <div style="font-size: 12px; text-transform: uppercase; color: #8d6e63; margin-bottom: 10px; font-weight: bold;">🏛️ Yargıtay Yönelim Şerhi - Sayfa {aktif_emsal + 1} / {len(sayfalar_emsal)}</div>
+            <div style="background-color: #0F172A; padding: 30px; border-left: 4px solid #C5A059; border-radius: 6px; color: #E2E8F0; font-family: 'Georgia', serif;">
+                <div style="font-size: 13px; text-transform: uppercase; color: #94A3B8; margin-bottom: 15px; font-weight: bold;">Yargıtay Yönelim Şerhi - Sayfa {aktif_emsal + 1} / {len(sayfalar_emsal)}</div>
                 <div style="font-size: 16px; line-height: 1.8; text-align: justify;">{sayfalar_emsal[aktif_emsal].replace("\n", "<br>")}</div>
             </div>
+            <br>
             """, unsafe_allow_html=True)
             
             c1, c2, c3 = st.columns([1, 2, 1])
             with c1:
                 if aktif_emsal > 0:
-                    if st.button("⬅️ Geri", key="emsal_nav_geri"):
+                    if st.button("⬅️ Önceki Sayfa", key="emsal_nav_geri", use_container_width=True):
                         st.session_state.aktif_sayfa -= 1
                         st.rerun()
             with c3:
                 if aktif_emsal < len(sayfalar_emsal) - 1:
-                    if st.button("İleri ➡️", key="emsal_nav_ileri"):
+                    if st.button("Sonraki Sayfa ➡️", key="emsal_nav_ileri", use_container_width=True):
                         st.session_state.aktif_sayfa += 1
                         st.rerun()
             
             st.markdown("---")
-            if st.button("💾 Bu Emsal Analizini Arşive Kaydet", key="btn_kaydet_emsal"):
+            if st.button("💾 Bu Emsal Analizini Arşive Kaydet", use_container_width=True, key="btn_kaydet_emsal"):
                 tam_metin = "\n".join(st.session_state.kitap_sayfalari)
-                basarili, mesaj = junilex_arsive_kaydet("🔎 Emsal Yönelim", "Emsal Analizi", tam_metin)
+                basarili, mesaj = junilex_arsive_kaydet("Emsal Yönelim", "Emsal Analizi", tam_metin)
                 if basarili:
-                    st.success("✅ Arşive kaydedildi! JUNILEX Chat menüsünden ulaşıp kullanabilirsiniz.")
+                    st.success("Arşive kaydedildi! JUNILEX Chat menüsünden ulaşıp kullanabilirsiniz.")
 
 # ==========================================
 # 💬 CHAT MODÜLÜ
