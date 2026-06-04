@@ -1639,11 +1639,30 @@ elif st.session_state.aktif_ekran == "💬 JUNILEX Chat":
             with st.chat_message(message["role"], avatar=avatar):
                 st.markdown(message["content"])
 
-        # Mod Seçimi
         with st.expander("⚙️ Zeka Yapılandırması"):
-            secilen_mod = st.radio("İletişim Modu:", ["Özet", "⚖️ Detaylı Analiz"], horizontal=True)
+            # İletişim Modu
+            secilen_mod = st.radio(
+                "İletişim Modu:", 
+                ["Özet", "⚖️ Detaylı Analiz"], 
+                horizontal=True, 
+                key="mod_secim"
+            )
             if secilen_mod != st.session_state.chat_mode:
                 st.session_state.chat_mode = secilen_mod
+                st.rerun()
+
+            st.divider()
+
+            # Üslup Seçimi
+            secilen_uslup = st.radio(
+                "Üslup Tercihi:", 
+                ["Nötr", "Akademik ve Resmi", "Pratik ve Açıklayıcı"], 
+                horizontal=True, 
+                key="uslup_secim"
+            )
+            if secilen_uslup != st.session_state.get('chat_style', 'Nötr'):
+                st.session_state.chat_style = secilen_uslup
+                st.rerun()
 
         # Hızlı Aksiyonlar
         cols_q = st.columns(3)
@@ -1669,19 +1688,24 @@ elif st.session_state.aktif_ekran == "💬 JUNILEX Chat":
             with st.chat_message("assistant", avatar="⚖️"):
                 message_placeholder = st.empty()
                 full_response = ""
+                # Chat modülündeki yanıt üretim bloğunu şu şekilde güncelle
                 try:
                     response = ChatEngine.yanit_uret(
                         MY_API_KEY, 
                         st.session_state.chat_messages[:-1], 
                         prompt, 
                         mod=st.session_state.chat_mode,
-                        aktif_belge_metni=st.session_state.get('islenmis_not', None)
+                        aktif_belge_metni=st.session_state.get('islenmis_not', None),
+                        manuel_uslup=st.session_state.get('chat_style', 'Nötr') # İşte buraya eklendi
                     )
+                    
+                    # Yanıtı stream olarak işleme...
                     for chunk in response:
                         if hasattr(chunk, "text") and chunk.text:
                             full_response += chunk.text
                             message_placeholder.markdown(full_response + " ▌")
                     message_placeholder.markdown(full_response)
+                    
                     st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
                 except Exception as e:
                     st.error(f"Sistem Hatası: {e}")
