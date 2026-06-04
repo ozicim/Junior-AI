@@ -322,7 +322,7 @@ if st.session_state.aktif_ekran != "🏠 Ana Ekran":
         # GÜNCELLEME: "🧮 Pratik Hesaplamalar" listeye eklendi
         secenekler = [
             "🏠 Ana Ekran", 
-            "🏛️ Adliye (Mevzuat Sorgu)", 
+            "Adliye (Mevzuat Sorgu)", 
             "🎓 Akademi (Ders Notları)", 
             "📝 Arzuhal(Dilekçe Yazım Merkezi)", 
             "⚖️ İçtihat Sorgulama",
