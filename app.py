@@ -1408,7 +1408,7 @@ elif st.session_state.aktif_ekran == "Dilekçe Merkezi":
 # ==========================================
 # İÇTİHAT MODÜLÜ
 # ==========================================
-elif st.session_state.aktif_ekran == "⚖️ İçtihat Sorgulama":
+elif st.session_state.aktif_ekran == "İçtihat Sorgulama":
     st.header("İçtihat ve Emsal Merkezi")
     st.markdown("Yargıtay kararlarını inceleyin veya somut olayınıza uygun emsal arayın.")
     
