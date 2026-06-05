@@ -542,15 +542,14 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
             </div>
             """
             
-            with c1:
-                st.markdown(vitrin_html.format(isim="Ahmet Yılmaz", unvan="Ankara Barosu | Avukat"), unsafe_allow_html=True)
-                st.button("Profili İncele", key="vitrin_1", use_container_width=True)
-            with c2:
-                st.markdown(vitrin_html.format(isim="Merve K.", unvan="Çankırı Karatekin Üniversitesi Hukuk Fakültesi"), unsafe_allow_html=True)
-                st.button("Profili İncele", key="vitrin_2", use_container_width=True)
-            with c3:
-                st.markdown(vitrin_html.format(isim="Caner D.", unvan="İstanbul | Stajyer Avukat"), unsafe_allow_html=True)
-                st.button("Profili İncele", key="vitrin_3", use_container_width=True)
+            onerilenler = AgEngine.onerilen_meslektaslari_getir()
+            kolonlar = [c1, c2, c3]
+            
+            for i, kisi in enumerate(onerilenler):
+                if i < len(kolonlar): # Maksimum 3 kolon sınırını korumak için
+                    with kolonlar[i]:
+                        st.markdown(vitrin_html.format(isim=kisi["isim"], unvan=kisi["unvan"]), unsafe_allow_html=True)
+                        st.button("Profili İncele", key=f"vitrin_btn_{i}", use_container_width=True)
     with tab_istekler:
         st.subheader("Gelen Bağlantı İstekleri")
         if not gelen_istekler:
