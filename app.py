@@ -442,8 +442,8 @@ if st.session_state.aktif_ekran == "Ana Ekran":
 # 👥 JUNILEX AĞI (SOSYAL AĞ VE EKİPLER)
 # ==========================================
 elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
-    st.title("👥 Junilex Ağı ve Ekipler")
-    st.markdown("Meslektaşlarınla bağlantı kur, ekipler oluştur ve ortak arşivde çalış.")
+    st.header("Junilex Ağı ve Ekipler")
+    st.markdown("Meslektaşlarınızla bağlantı kurun, ekipler oluşturun ve ortak arşivde çalışın.")
     
     benim_mailim = st.session_state.aktif_kullanici_email
     
@@ -481,27 +481,43 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
     
     with tab_ara:
         st.subheader("Hukukçu Bul")
-        aranan_id = st.text_input("Kullanıcının 5 Haneli ID'sini Girin (Örn: #12345)")
         
-        if st.button("Ara", use_container_width=True, type="primary"):
+        # 1. HİZALANMIŞ VE KOMPAKT ARAMA ÇUBUĞU
+        col_input, col_btn = st.columns([4, 1])
+        with col_input:
+            aranan_id = st.text_input("Arama", label_visibility="collapsed", placeholder="Kullanıcının 5 Haneli ID'sini Girin (Örn: #12345)")
+        with col_btn:
+            btn_ara = st.button("Ağda Ara", use_container_width=True, type="primary")
+
+        if btn_ara:
             st.session_state.son_aranan_id = aranan_id
             
         if st.session_state.get("son_aranan_id"):
+            st.write("---")
             bulunan_mail, bulunan_isim = AgEngine.kisi_ara(db_json, st.session_state.son_aranan_id)
             
             if bulunan_mail:
                 if bulunan_mail == benim_mailim:
-                    st.warning("Kendini ekleyemezsin ustam!")
+                    st.warning("Kendinizi ekleyemezsiniz.")
                 elif bulunan_mail in arkadaslar:
-                    st.info(f"✅ **{bulunan_isim}** zaten seninle bağlantılı.")
+                    st.info(f"✅ **{bulunan_isim}** zaten sizinle bağlantılı.")
                 else:
-                    st.success(f"👤 Kullanıcı Bulundu: **{bulunan_isim}**")
+                    # 2. ŞIK PROFİL KARTI İLE ARAMA SONUCU
+                    st.markdown(f"""
+                    <div style="background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 4px solid #C5A059; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 18px; font-weight: bold; color: #E2E8F0;">{bulunan_isim}</div>
+                            <div style="color: #94A3B8; font-size: 14px;">Junilex Kullanıcısı</div>
+                        </div>
+                    </div>
+                    <br>
+                    """, unsafe_allow_html=True)
                     
                     karsi_istekler = db_json[bulunan_mail].get("gelen_istekler", [])
                     if benim_mailim in karsi_istekler:
-                        st.info("⏳ Bu kullanıcıya zaten bağlantı isteği gönderdin. Yanıt bekleniyor...")
+                        st.info("⏳ Bu kullanıcıya zaten bağlantı isteği gönderdiniz. Yanıt bekleniyor...")
                     else:
-                        if st.button(f"➕ {bulunan_isim}'e İstek Gönder", key="btn_istek_at"):
+                        if st.button(f"➕ Bağlantı Kur", key="btn_istek_at"):
                             db_json = AgEngine.arkadaslik_istegi_gonder(db_json, benim_mailim, bulunan_mail)
                             veritabani_kaydet(db_json)
                             st.session_state.son_aranan_id = None
@@ -509,7 +525,32 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                             st.rerun()
             else:
                 st.error("Bu ID'ye ait bir Junilex kullanıcısı bulunamadı.")
-
+        
+        # 3. BOŞ SAYFA SENDROMUNU KIRAN "ÖNERİLENLER" VİTRİNİ
+        else:
+            st.write("##")
+            st.markdown("#### Önerilen Meslektaşlar")
+            st.caption("Ağınızı genişletmek için size önerilen profiller:")
+            
+            c1, c2, c3 = st.columns(3)
+            
+            vitrin_html = """
+            <div style="background-color: #0F172A; padding: 20px; border-radius: 8px; border: 1px solid #334155; text-align: center; margin-bottom: 10px;">
+                <div style="font-size: 32px; margin-bottom: 10px;">👤</div>
+                <div style="font-weight: bold; color: #F8FAFC; font-size: 16px;">{isim}</div>
+                <div style="color: #94A3B8; font-size: 12px; margin-top: 5px;">{unvan}</div>
+            </div>
+            """
+            
+            with c1:
+                st.markdown(vitrin_html.format(isim="Ahmet Yılmaz", unvan="Ankara Barosu | Avukat"), unsafe_allow_html=True)
+                st.button("Profili İncele", key="vitrin_1", use_container_width=True)
+            with c2:
+                st.markdown(vitrin_html.format(isim="Merve K.", unvan="Çankırı Karatekin Üniversitesi Hukuk Fakültesi"), unsafe_allow_html=True)
+                st.button("Profili İncele", key="vitrin_2", use_container_width=True)
+            with c3:
+                st.markdown(vitrin_html.format(isim="Caner D.", unvan="İstanbul | Stajyer Avukat"), unsafe_allow_html=True)
+                st.button("Profili İncele", key="vitrin_3", use_container_width=True)
     with tab_istekler:
         st.subheader("Gelen Bağlantı İstekleri")
         if not gelen_istekler:
