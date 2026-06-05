@@ -243,6 +243,26 @@ if not st.session_state.logged_in:
                 kayit_email = st.text_input("E-Posta Adresi", key="kayit_email")
                 kayit_sifre = st.text_input("Yeni Şifre", type="password", key="kayit_sifre")
                 kayit_sifre_tekrar = st.text_input("Şifre Tekrar", type="password", key="kayit_sifre_tekrar")
+                
+                # --- YENİ EKLENEN PROFİL BİLGİLERİ ---
+                st.markdown("---")
+                st.markdown("**Ağ Profili (Gelişmiş Eşleşme İçin)**")
+                
+                sehirler = ["Seçiniz...", "Adana", "Ankara", "Antalya", "Bursa", "Çankırı", "Diyarbakır", "Erzurum", "Gaziantep", "İstanbul", "İzmir", "Konya", "Diğer"]
+                secilen_sehir = st.selectbox("İkamet Ettiğiniz Şehir", sehirler, key="kayit_sehir")
+                
+                meslekler = ["Seçiniz...", "Avukat", "Stajyer Avukat", "Hukuk Fakültesi Öğrencisi", "Hakim / Savcı", "Diğer"]
+                secilen_meslek = st.selectbox("Mesleki Durumunuz", meslekler, key="kayit_meslek")
+                
+                alt_bilgi = ""
+                if secilen_meslek in ["Avukat", "Stajyer Avukat"]:
+                    barolar = ["Belirtmek İstemiyorum", "Ankara Barosu", "Antalya Barosu", "Çankırı Barosu", "İstanbul Barosu", "İzmir Barosu", "Diğer"]
+                    alt_bilgi = st.selectbox("Bağlı Olduğunuz Baro (İsteğe Bağlı)", barolar, key="kayit_baro")
+                elif secilen_meslek == "Hukuk Fakültesi Öğrencisi":
+                    universiteler = ["Belirtmek İstemiyorum", "Ankara Üniversitesi", "Çankırı Karatekin Üniversitesi", "Dokuz Eylül Üniversitesi", "İstanbul Üniversitesi", "Marmara Üniversitesi", "Diğer"]
+                    alt_bilgi = st.selectbox("Üniversiteniz (İsteğe Bağlı)", universiteler, key="kayit_uni")
+                # -------------------------------------
+
                 if st.button("Kayıt Ol", use_container_width=True):
                     st.session_state.kullanici_veritabani = veritabani_yukle()
                     if len(kayit_isim.strip()) < 3: st.warning("⚠️ Lütfen geçerli bir İsim Soyisim giriniz!")
@@ -250,12 +270,22 @@ if not st.session_state.logged_in:
                     elif kayit_email in st.session_state.kullanici_veritabani: st.warning("Bu e-posta adresi zaten sisteme kayıtlı!")
                     elif kayit_sifre != kayit_sifre_tekrar: st.error("Şifreler uyuşmuyor!")
                     elif len(kayit_sifre) < 6: st.warning("Şifre en az 6 karakter olmalıdır.")
+                    elif secilen_sehir == "Seçiniz..." or secilen_meslek == "Seçiniz...": st.warning("⚠️ Lütfen Şehir ve Meslek bilgilerinizi seçiniz!")
                     else:
                         uretilen_kod = str(random.randint(100000, 999999))
                         with st.spinner("Onay kodu e-postanıza gönderiliyor..."):
                             basarili_mi, hata_mesaji = onay_kodu_gonder(kayit_email, uretilen_kod)
                         if basarili_mi:
-                            st.session_state.onay_bekleyen = {"isim": kayit_isim.title(), "email": kayit_email, "sifre": kayit_sifre, "kod": uretilen_kod}
+                            # Onay bekleyene yeni bilgileri de ekliyoruz
+                            st.session_state.onay_bekleyen = {
+                                "isim": kayit_isim.title(), 
+                                "email": kayit_email, 
+                                "sifre": kayit_sifre, 
+                                "kod": uretilen_kod,
+                                "sehir": secilen_sehir,
+                                "unvan": secilen_meslek,
+                                "kurum": alt_bilgi
+                            }
                             st.success("✅ Kod gönderildi! Lütfen e-postanızı kontrol edin.")
                             st.rerun()
                         else: st.error(f"E-posta gönderilemedi! Teknik detay: {hata_mesaji}")
@@ -267,17 +297,21 @@ if not st.session_state.logged_in:
                 with col_onay1:
                     if st.button("✅ Kodu Doğrula", use_container_width=True):
                         if girilen_kod == st.session_state.onay_bekleyen["kod"]:
-                            import datetime  # Tarihi almak için eklendi
+                            import datetime  
                             bugun = datetime.date.today().strftime("%d.%m.%Y")
                             
                             yeni_mail = st.session_state.onay_bekleyen["email"]
                             yeni_id = benzersiz_id_uret(st.session_state.kullanici_veritabani)
                             
+                            # Veritabanına yazarken yeni alanları da ekliyoruz
                             st.session_state.kullanici_veritabani[yeni_mail] = {
                                 "sifre": st.session_state.onay_bekleyen["sifre"], 
                                 "isim": st.session_state.onay_bekleyen["isim"],
                                 "id": yeni_id,
-                                "kayit_tarihi": bugun,  # 🔥 KAYIT TARİHİ BURADA EKLENİYOR
+                                "sehir": st.session_state.onay_bekleyen["sehir"],
+                                "unvan": st.session_state.onay_bekleyen["unvan"],
+                                "kurum": st.session_state.onay_bekleyen["kurum"],
+                                "kayit_tarihi": bugun,  
                                 "arkadaslar": [],
                                 "gelen_istekler": []
                             }
@@ -300,7 +334,6 @@ if not st.session_state.logged_in:
                         st.session_state.onay_bekleyen = None
                         st.rerun()
     st.stop()
-
 # ==========================================
 # 🧭 SIDEBAR (SADECE MODÜLLERDE GÖRÜNÜR)
 # ==========================================
