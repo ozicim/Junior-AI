@@ -18,6 +18,18 @@ class AgEngine:
         return db_json
 
     @staticmethod
+    def onerilen_meslektaslari_getir():
+        """
+        Şimdilik sadece arayüz testleri için statik vitrin verisi döndürür.
+        Gelecekte veritabanından ortak bağlara göre dinamik veri çekecek şekilde güncellenmelidir.
+        """
+        return [
+            {"isim": "Ahmet Yılmaz", "unvan": "Ankara Barosu | Avukat"},
+            {"isim": "Merve K.", "unvan": "Çankırı Karatekin Üniversitesi Hukuk Fakültesi"},
+            {"isim": "Caner D.", "unvan": "İstanbul | Stajyer Avukat"}
+        ]
+
+    @staticmethod
     def istek_kabul_et(db_json, benim_mailim, karsi_mail):
         """İsteği kabul eder ve karşılıklı arkadaş olarak ekler."""
         db_json[benim_mailim].setdefault("arkadaslar", []).append(karsi_mail)
