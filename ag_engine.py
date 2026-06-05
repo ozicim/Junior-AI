@@ -18,17 +18,43 @@ class AgEngine:
         return db_json
 
     @staticmethod
-    def onerilen_meslektaslari_getir():
-        """
-        Şimdilik sadece arayüz testleri için statik vitrin verisi döndürür.
-        Gelecekte veritabanından ortak bağlara göre dinamik veri çekecek şekilde güncellenmelidir.
-        """
-        return [
-            {"isim": "Ahmet Yılmaz", "unvan": "Ankara Barosu | Avukat"},
-            {"isim": "Merve K.", "unvan": "Çankırı Karatekin Üniversitesi Hukuk Fakültesi"},
-            {"isim": "Caner D.", "unvan": "İstanbul | Stajyer Avukat"}
-        ]
+    def onerilen_meslektaslari_getir(db_json, benim_mailim, limit=3):
+        """Kullanıcının ağındaki ortak bağlantı sayısına göre öneriler sunar."""
+        benim_verim = db_json.get(benim_mailim, {})
+        benim_arkadaslarim = set(benim_verim.get("arkadaslar", []))
+        oneriler = []
 
+        for mail, data in db_json.items():
+            # Kendimi veya zaten arkadaşım olanları atla
+            if mail == benim_mailim or mail in benim_arkadaslarim:
+                continue
+
+            aday_arkadaslar = set(data.get("arkadaslar", []))
+            # Kesişim kümesi ile ortak arkadaşları bul
+            ortaklar = benim_arkadaslarim.intersection(aday_arkadaslar)
+            ortak_sayisi = len(ortaklar)
+
+            oneriler.append({
+                "mail": mail,
+                "isim": data.get("isim", "İsimsiz Hukukçu"),
+                "unvan": data.get("unvan", "Junilex Kullanıcısı"), 
+                "ortak_sayisi": ortak_sayisi
+            })
+
+        # Ortak arkadaş sayısına göre en yüksekten en düşüğe sırala
+        oneriler.sort(key=lambda x: x["ortak_sayisi"], reverse=True)
+
+        # Arayüze gönderilecek formata çevir
+        sonuclar = []
+        for o in oneriler[:limit]:
+            # Eğer ortak bağlantı varsa ünvan yerine bunu vurgula
+            alt_metin = f"🔗 {o['ortak_sayisi']} Ortak Bağlantı" if o['ortak_sayisi'] > 0 else o['unvan']
+            sonuclar.append({
+                "isim": o["isim"],
+                "unvan": alt_metin
+            })
+
+        return sonuclar
     @staticmethod
     def istek_kabul_et(db_json, benim_mailim, karsi_mail):
         """İsteği kabul eder ve karşılıklı arkadaş olarak ekler."""
