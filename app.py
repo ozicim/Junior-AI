@@ -550,6 +550,20 @@ elif st.session_state.aktif_ekran == "👥 Junilex Ağı":
                     with kolonlar[i]:
                         st.markdown(vitrin_html.format(isim=kisi["isim"], unvan=kisi["unvan"]), unsafe_allow_html=True)
                         st.button("Profili İncele", key=f"vitrin_btn_{i}", use_container_width=True)
+                        # ... vitrin_html tanımından hemen sonraki kısım ...
+            
+                        # Dinamik önerileri getir
+                        onerilenler = AgEngine.onerilen_meslektaslari_getir(db_json, benim_mailim)
+                        kolonlar = [c1, c2, c3]
+                        
+                        if not onerilenler:
+                            st.info("Ağ henüz çok yeni. Profilinize meslektaşlarınızı davet edin!")
+                        else:
+                            for i, kisi in enumerate(onerilenler):
+                                if i < len(kolonlar): 
+                                    with kolonlar[i]:
+                                        st.markdown(vitrin_html.format(isim=kisi["isim"], unvan=kisi["unvan"]), unsafe_allow_html=True)
+                                        st.button("Profili İncele", key=f"vitrin_btn_{i}", use_container_width=True)
     with tab_istekler:
         st.subheader("Gelen Bağlantı İstekleri")
         if not gelen_istekler:
