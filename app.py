@@ -34,27 +34,22 @@ from chat_engine import ChatEngine
 from ag_engine import AgEngine
 from hesap_engine import HesapEngine
 
-import os
 from firebase_admin import credentials
-
-
 
 @st.cache_resource
 def get_db():
+    # Zaten başlatılmışsa tekrar başlatma
     if not firebase_admin._apps:
-        # 1. Secrets içindeki [firebase] bölümünü bir sözlüğe (dict) çeviriyoruz
-        firebase_config = dict(st.secrets["firebase"])
+        # 1. JSON anahtarını dict olarak al
+        cred_dict = dict(st.secrets["firebase"])
         
-        # 2. Firebase, GOOGLE_CLOUD_PROJECT değerini JSON'un içinde 'project_id' olarak arar.
-        # Senin secrets'ında GOOGLE_CLOUD_PROJECT yazıyor, 
-        # kütüphanenin bunu tanıması için bunu JSON'un içine 'project_id' olarak da kopyalıyoruz.
-        if "project_id" not in firebase_config and "GOOGLE_CLOUD_PROJECT" in firebase_config:
-            firebase_config["project_id"] = firebase_config["GOOGLE_CLOUD_PROJECT"]
+        # 2. Firebase kütüphanesinin GOOGLE_CLOUD_PROJECT hatasını almaması için
+        # JSON'un içine 'project_id' anahtarını zorla ekle
+        if "project_id" not in cred_dict:
+            cred_dict["project_id"] = cred_dict.get("GOOGLE_CLOUD_PROJECT", "junior-ai-1bab0")
             
-        # 3. Kimlik bilgisini oluştur
-        cred = credentials.Certificate(firebase_config)
-        
-        # 4. Uygulamayı başlat
+        # 3. Kimlik oluştur ve başlat
+        cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
         
     return firestore.client()
