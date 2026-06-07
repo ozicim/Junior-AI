@@ -35,9 +35,6 @@ from ag_engine import AgEngine
 from hesap_engine import HesapEngine
 
 @st.cache_resource
-from firebase_admin import credentials # Eğer yukarıda import edilmediyse bunu da ekle
-
-@st.cache_resource
 def get_db():
     if not firebase_admin._apps:
         # 1. Yöntem: Sadece Project ID'yi options olarak vermek
