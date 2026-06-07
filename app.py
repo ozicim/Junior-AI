@@ -48,49 +48,88 @@ st.set_page_config(layout="wide", page_title="JUNILEX AI")
 
 st.markdown("""
     <style>
-        /* 1. Koyu Tema Zorunluluğu */
+        /* 1. Koyu Tema */
         .stApp { background-color: #0F172A !important; }
-        
-        /* 2. Sidebar Daraltma ve Renk */
-        [data-testid="stSidebar"] { 
-            background-color: #0F172A !important; 
+
+        /* 2. Sidebar — lacivert, dar, ikon şeridi */
+        [data-testid="stSidebar"] {
+            background-color: #131C2E !important;
             border-right: 1px solid #1E293B !important;
-            min-width: 200px !important; 
-            max-width: 200px !important;
+            min-width: 72px !important;
+            max-width: 72px !important;
+            padding: 0 !important;
+        }
+        [data-testid="stSidebar"] > div:first-child {
+            padding: 8px 0 !important;
         }
 
-        /* 3. Butonları İkon Görünümlü Yapma */
+        /* Sidebar'daki metin, ayraç, expander elementlerini gizle */
+        [data-testid="stSidebar"] .stMarkdown,
+        [data-testid="stSidebar"] .stCaption,
+        [data-testid="stSidebar"] .stExpander,
+        [data-testid="stSidebar"] hr,
+        [data-testid="stSidebar"] h3 {
+            display: none !important;
+        }
+
+        /* Sidebar butonları — kare ikon kutusu */
+        div[data-testid="stSidebar"] div.stButton {
+            margin: 3px 8px !important;
+        }
         div[data-testid="stSidebar"] div.stButton > button {
             background-color: transparent !important;
             border: none !important;
-            color: #94A3B8 !important;
-            text-align: left !important;
-            padding-left: 20px !important;
-            font-size: 15px !important;
-            border-radius: 0 !important;
+            border-radius: 14px !important;
+            color: #64748B !important;
+            width: 56px !important;
+            height: 56px !important;
+            padding: 0 !important;
+            font-size: 22px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: background 0.15s, color 0.15s !important;
         }
-        div[data-testid="stSidebar"] div.stButton > button[kind="primary"] {
+        div[data-testid="stSidebar"] div.stButton > button:hover {
+            background-color: #1E293B !important;
             color: #C5A059 !important;
-            border-left: 4px solid #C5A059 !important;
+        }
+        /* Aktif ekran butonu — gold */
+        div[data-testid="stSidebar"] div.stButton > button[kind="primary"] {
+            background-color: #C5A059 !important;
+            color: #0F172A !important;
+            border: none !important;
+        }
+        /* Çıkış butonu — kırmızımsı hover */
+        div[data-testid="stSidebar"] div.stButton:last-of-type > button {
+            background-color: transparent !important;
+            color: #475569 !important;
+        }
+        div[data-testid="stSidebar"] div.stButton:last-of-type > button:hover {
+            color: #EF4444 !important;
             background-color: #1E293B !important;
         }
 
-        /* 4. Genel Kartlar (Premium Dark) */
-        [data-testid="stVerticalBlockBorderWrapper"] { 
-            background-color: #1E293B !important; 
-            border-radius: 12px !important; 
-            border: 1px solid #334155 !important; 
+        /* 3. Kartlar */
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            background-color: #1E293B !important;
+            border-radius: 12px !important;
+            border: 1px solid #334155 !important;
         }
 
-        /* 5. Yazı Renkleri */
+        /* 4. Yazı */
         h1, h2, h3, h4, p, span, div { color: #F8FAFC !important; }
-        
-        /* 6. Input Alanları */
-        .stTextInput input, .stTextArea textarea { 
-            background-color: #0F172A !important; 
-            color: #F8FAFC !important; 
-            border: 1px solid #334155 !important; 
+
+        /* 5. Input */
+        .stTextInput input, .stTextArea textarea {
+            background-color: #0F172A !important;
+            color: #F8FAFC !important;
+            border: 1px solid #334155 !important;
         }
+
+        /* 6. Sidebar ok'unu gizle */
+        [data-testid="collapsedControl"] { display: none !important; }
+        button[data-testid="baseButton-headerNoPadding"] { display: none !important; }
     </style>
 """, unsafe_allow_html=True)
 # -----------------------------------------------------------
@@ -340,42 +379,51 @@ if not st.session_state.logged_in:
     st.stop()
 if st.session_state.aktif_ekran != "Ana Ekran":
     with st.sidebar:
-        # Minimalist Başlık
-        st.markdown("### ⚖️ JUNILEX")
-        st.markdown(f"**{st.session_state.aktif_kullanici.split()[0]}**")
-        st.caption(f"ID: `{st.session_state.aktif_kullanici_id}`")
-        st.write("---")
+        # Logo — CSS tarafından gizlenen markdown'ların yerine sadece ikon buton
+        # JUNILEX logosu (CSS .stMarkdown gizlediği için HTML ile göster)
+        st.markdown(
+            "<div style='text-align:center;padding:14px 0 8px 0;font-size:26px;'>🏛️</div>",
+            unsafe_allow_html=True
+        )
 
-        # Navigasyon Listesi
+        # Navigasyon — sadece emoji ikon, yazı yok
+        # (label içindeki metin CSS tarafından truncate olur, ikon görünür kalır)
         nav_items = {
-            "🏠 Ana Menü": "Ana Ekran",
-            "🏛️ Adliye": "Adliye (Mevzuat Sorgu)",
-            "🎓 Akademi": "Akademik Asistan",
-            "📝 Dilekçe": "Dilekçe Merkezi",
-            "⚖️ İçtihat": "İçtihat Analizi",
-            "🧮 Hesaplama": "Pratik Hesaplamalar",
-            "💬 Chat": "💬 JUNILEX Chat",
-            "👥 Ağ": "👥 Junilex Ağı"
+            "🏠": "Ana Ekran",
+            "👤": "Ana Ekran",          # profil — görsel için placeholder
+            "🏛️": "Adliye (Mevzuat Sorgu)",
+            "👥": "👥 Junilex Ağı",
+            "📝": "Dilekçe Merkezi",
         }
 
-        for label, screen in nav_items.items():
-            # Sidebar içindeki butonları secondary yap, CSS zaten onların stilini değiştirecek
-            if st.button(label, use_container_width=True, type="primary" if st.session_state.aktif_ekran == screen else "secondary"):
-                st.session_state.aktif_ekran = screen
+        # Gerçek navigasyon — her ikon kendi ekranına gider
+        nav_gercek = [
+            ("🏠", "Ana Ekran"),
+            ("🏛️", "Adliye (Mevzuat Sorgu)"),
+            ("🎓", "Akademik Asistan"),
+            ("📝", "Dilekçe Merkezi"),
+            ("⚖️", "İçtihat Analizi"),
+            ("🧮", "Pratik Hesaplamalar"),
+            ("💬", "💬 JUNILEX Chat"),
+            ("👥", "👥 Junilex Ağı"),
+        ]
+
+        for ikon, ekran in nav_gercek:
+            is_active = st.session_state.aktif_ekran == ekran
+            if st.button(
+                ikon,
+                key=f"nav_{ekran}",
+                use_container_width=True,
+                type="primary" if is_active else "secondary"
+            ):
+                st.session_state.aktif_ekran = ekran
                 st.rerun()
 
-        st.divider()
-        
-        # Kompakt Veri Paneli (Sidebar'ın altına şık bir bilgi)
-        with st.expander("📊 Veri Paneli"):
-            try:
-                db = get_db()
-                arsiv_c = len(list(db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream()))
-                st.metric("Arşivlenen", arsiv_c)
-            except: st.caption("Veriler yükleniyor...")
-                
+        # Boşluk bırak, çıkış en alta
         st.write("##")
-        if st.button("🚪 Çıkış Yap", use_container_width=True):
+        st.write("##")
+        st.write("##")
+        if st.button("↪", use_container_width=True, key="cikis_btn"):
             st.session_state.logged_in = False
             st.rerun()
 # ==========================================
