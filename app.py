@@ -35,9 +35,16 @@ from ag_engine import AgEngine
 from hesap_engine import HesapEngine
 
 @st.cache_resource
+from firebase_admin import credentials # Eğer yukarıda import edilmediyse bunu da ekle
+
+@st.cache_resource
 def get_db():
     if not firebase_admin._apps:
-        firebase_admin.initialize_app()
+        # 1. Yöntem: Sadece Project ID'yi options olarak vermek
+        # (Secrets'taki değişken adının GOOGLE_CLOUD_PROJECT olduğunu varsayıyoruz)
+        firebase_admin.initialize_app(options={
+            'projectId': st.secrets["GOOGLE_CLOUD_PROJECT"]
+        })
     return firestore.client()
 
 # ==========================================
