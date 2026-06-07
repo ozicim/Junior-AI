@@ -48,7 +48,7 @@ def get_db():
     return firestore.client()
 
 # ==========================================
-# 🎨 CSS VE TASARIM (PREMIUM SAAS)
+# 🎨 CSS VE TASARIM (PREMIUM DARK SAAS)
 # ==========================================
 if st.session_state.get("aktif_ekran", "Ana Ekran") == "Ana Ekran":
     st.markdown("""<style>[data-testid="stSidebar"] { display: none; }</style>""", unsafe_allow_html=True)
@@ -56,38 +56,44 @@ if st.session_state.get("aktif_ekran", "Ana Ekran") == "Ana Ekran":
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
+        /* Ana Renkler */
+        :root {
+            --bg-color: #0F172A;
+            --card-bg: #1E293B;
+            --text-color: #F8FAFC;
+            --accent-color: #C5A059;
+        }
         
-        /* Buton Hover ve Soft Shadow Efektleri */
-        button[kind="secondary"] { transition: all 0.3s ease !important; border-radius: 8px !important; }
-        button[kind="secondary"]:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; border-color: #C5A059 !important; color: #C5A059 !important; }
+        html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; background-color: var(--bg-color) !important; color: var(--text-color) !important; }
         
-        button[kind="primary"] { transition: all 0.3s ease !important; border-radius: 8px !important; background-color: #1A1A1A !important; }
-        button[kind="primary"]:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(26,26,26,0.3) !important; background-color: #C5A059 !important; border-color: #C5A059 !important; color: white !important; }
-
-        /* Konteyner (Kutu) Tasarımları */
-        [data-testid="stVerticalBlockBorderWrapper"] { border-radius: 12px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.04) !important; border: 1px solid rgba(0,0,0,0.05) !important; transition: all 0.3s ease; background-color: #ffffff; }
-        [data-testid="stVerticalBlockBorderWrapper"]:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08) !important; }
+        /* Kart Tasarımları */
+        [data-testid="stVerticalBlockBorderWrapper"] { 
+            background-color: var(--card-bg) !important; 
+            border-radius: 12px !important; 
+            border: 1px solid #334155 !important; 
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important; 
+        }
         
-        /* Expander Tasarımı */
-        [data-testid="stExpander"] { border-radius: 12px !important; border: 1px solid rgba(0,0,0,0.05) !important; box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important; }
+        /* Butonlar */
+        button[kind="primary"] { background-color: var(--accent-color) !important; color: #000 !important; border: none !important; }
+        button[kind="secondary"] { background-color: #334155 !important; color: white !important; border: none !important; }
+        button:hover { filter: brightness(1.2); }
 
         /* Input Alanları */
-        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] { border-radius: 8px !important; border: 1px solid #e2e8f0 !important; transition: all 0.2s ease; }
-        .stTextInput input:focus, .stTextArea textarea:focus { border-color: #C5A059 !important; box-shadow: 0 0 0 1px #C5A059 !important; }
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] { 
+            background-color: #0F172A !important; 
+            color: white !important; 
+            border: 1px solid #334155 !important; 
+            border-radius: 8px !important; 
+        }
 
-        /* Üst Başlıklar */
-        .header-container { text-align: center; padding: 20px 0; }
-        .header-logo-svg { width: 90px; height: auto; margin: 0 auto 10px auto; display: block; transition: transform 0.5s ease; }
-        .header-logo-svg:hover { transform: scale(1.05); }
-        .main-title { font-size: 48px; font-weight: 800; color: #1A1A1A; letter-spacing: 5px; margin: 0; text-transform: uppercase; }
-        .sub-title { color: #C5A059; font-weight: 600; letter-spacing: 3px; font-size: 13px; text-align: center; margin-bottom: 20px; }
+        /* Başlıklar */
+        h1, h2, h3, h4 { color: #F8FAFC !important; }
         
         /* İçerik Kutuları */
-        .madde-kutusu { background-color: #121212 !important; color: #FFFFFF !important; padding: 30px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin: 20px 0; line-height: 1.8; }
-        .madde-baslik { color: #C5A059 !important; font-weight: 700; font-size: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px; text-align: left; }
-        .madde-icerik p { margin-bottom: 10px; color: #e2e8f0 !important; font-size: 15px; }
-        .hoca-anlatim-kutusu { background-color: #faf8f5; padding: 25px; border-radius: 12px; border-left: 6px solid #C5A059; color: #2d3748; line-height: 1.7; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-top: 20px; font-size: 15px; }
+        .madde-kutusu { background-color: #0F172A !important; padding: 30px; border-radius: 12px; border: 1px solid #334155; margin: 20px 0; }
+        .madde-baslik { color: var(--accent-color) !important; font-weight: 700; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px; }
+        .hoca-anlatim-kutusu { background-color: #1E293B !important; padding: 25px; border-radius: 12px; border-left: 6px solid var(--accent-color); color: #E2E8F0 !important; }
     </style>
 """, unsafe_allow_html=True)
 
