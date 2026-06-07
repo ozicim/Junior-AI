@@ -130,6 +130,63 @@ st.markdown("""
         /* 6. Sidebar ok'unu gizle */
         [data-testid="collapsedControl"] { display: none !important; }
         button[data-testid="baseButton-headerNoPadding"] { display: none !important; }
+
+        /* 7. İkinci Panel (Fly-out Menü) */
+        .flyout-panel {
+            background-color: #1a2540;
+            border-right: 1px solid #263354;
+            padding: 20px 12px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+        .flyout-baslik {
+            color: #C5A059 !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 2px !important;
+            text-transform: uppercase !important;
+            margin-bottom: 16px !important;
+            padding-bottom: 10px !important;
+            border-bottom: 1px solid #263354 !important;
+        }
+        .flyout-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 4px;
+            transition: background 0.15s;
+            color: #94A3B8 !important;
+            font-size: 14px !important;
+            text-decoration: none;
+        }
+        .flyout-item:hover { background-color: #263354; color: #E2E8F0 !important; }
+        .flyout-item.aktif {
+            background-color: rgba(197,160,89,0.15);
+            color: #C5A059 !important;
+            font-weight: 600;
+        }
+        .flyout-ikon { font-size: 18px; width: 24px; text-align: center; }
+        .flyout-label { font-size: 14px; }
+        .flyout-kullanici {
+            background: rgba(197,160,89,0.08);
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+        .flyout-kullanici-isim {
+            color: #E2E8F0 !important;
+            font-weight: 700 !important;
+            font-size: 15px !important;
+        }
+        .flyout-kullanici-id {
+            color: #C5A059 !important;
+            font-size: 12px !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 # -----------------------------------------------------------
@@ -236,6 +293,7 @@ if "aktif_kullanici_id" not in st.session_state: st.session_state.aktif_kullanic
 if "kullanici_veritabani" not in st.session_state: st.session_state.kullanici_veritabani = veritabani_yukle() 
 if "onay_bekleyen" not in st.session_state: st.session_state.onay_bekleyen = None 
 if 'aktif_ekran' not in st.session_state: st.session_state.aktif_ekran = '🏠 Ana Ekran'
+if 'menu_panel_acik' not in st.session_state: st.session_state.menu_panel_acik = True
 if 'secili_kanun' not in st.session_state: st.session_state.secili_kanun = None
 if 'bulunan_madde' not in st.session_state: st.session_state.bulunan_madde = None
 if 'arama_sonuclari' not in st.session_state: st.session_state.arama_sonuclari = []
@@ -377,26 +435,14 @@ if not st.session_state.logged_in:
                         st.session_state.onay_bekleyen = None
                         st.rerun()
     st.stop()
-if st.session_state.aktif_ekran != "Ana Ekran":
+if st.session_state.aktif_ekran != "Ana Ekran" or True:  # Her zaman göster
     with st.sidebar:
-        # Logo — CSS tarafından gizlenen markdown'ların yerine sadece ikon buton
-        # JUNILEX logosu (CSS .stMarkdown gizlediği için HTML ile göster)
+        # Logo
         st.markdown(
             "<div style='text-align:center;padding:14px 0 8px 0;font-size:26px;'>🏛️</div>",
             unsafe_allow_html=True
         )
 
-        # Navigasyon — sadece emoji ikon, yazı yok
-        # (label içindeki metin CSS tarafından truncate olur, ikon görünür kalır)
-        nav_items = {
-            "🏠": "Ana Ekran",
-            "👤": "Ana Ekran",          # profil — görsel için placeholder
-            "🏛️": "Adliye (Mevzuat Sorgu)",
-            "👥": "👥 Junilex Ağı",
-            "📝": "Dilekçe Merkezi",
-        }
-
-        # Gerçek navigasyon — her ikon kendi ekranına gider
         nav_gercek = [
             ("🏠", "Ana Ekran"),
             ("🏛️", "Adliye (Mevzuat Sorgu)"),
@@ -410,16 +456,28 @@ if st.session_state.aktif_ekran != "Ana Ekran":
 
         for ikon, ekran in nav_gercek:
             is_active = st.session_state.aktif_ekran == ekran
-            if st.button(
-                ikon,
-                key=f"nav_{ekran}",
-                use_container_width=True,
-                type="primary" if is_active else "secondary"
-            ):
-                st.session_state.aktif_ekran = ekran
-                st.rerun()
+            # Ana Menü butonu paneli toggle eder
+            if ekran == "Ana Ekran":
+                panel_active = st.session_state.menu_panel_acik
+                if st.button(
+                    ikon,
+                    key=f"nav_{ekran}",
+                    use_container_width=True,
+                    type="primary" if panel_active else "secondary"
+                ):
+                    st.session_state.menu_panel_acik = not st.session_state.menu_panel_acik
+                    st.rerun()
+            else:
+                if st.button(
+                    ikon,
+                    key=f"nav_{ekran}",
+                    use_container_width=True,
+                    type="primary" if is_active else "secondary"
+                ):
+                    st.session_state.aktif_ekran = ekran
+                    st.session_state.menu_panel_acik = False
+                    st.rerun()
 
-        # Boşluk bırak, çıkış en alta
         st.write("##")
         st.write("##")
         st.write("##")
@@ -427,81 +485,137 @@ if st.session_state.aktif_ekran != "Ana Ekran":
             st.session_state.logged_in = False
             st.rerun()
 # ==========================================
+# 🗂️ FLY-OUT PANEL + İÇERİK LAYOUT
+# ==========================================
+
+# Fly-out menü tanımları
+flyout_menu = [
+    {"ikon": "🏛️", "label": "Adliye",            "ekran": "Adliye (Mevzuat Sorgu)"},
+    {"ikon": "🎓", "label": "Akademi",            "ekran": "Akademik Asistan"},
+    {"ikon": "📝", "label": "Arzuhal",            "ekran": "Dilekçe Merkezi"},
+    {"ikon": "⚖️", "label": "İçtihat",            "ekran": "İçtihat Analizi"},
+    {"ikon": "🧮", "label": "Hesaplamalar",       "ekran": "Pratik Hesaplamalar"},
+    {"ikon": "💬", "label": "JUNILEX Chat",       "ekran": "💬 JUNILEX Chat"},
+    {"ikon": "👥", "label": "Junilex Ağı",        "ekran": "👥 Junilex Ağı"},
+]
+
+panel_acik = st.session_state.menu_panel_acik
+
+if panel_acik:
+    # Fly-out açıkken: [panel | içerik]
+    col_flyout, col_icerik = st.columns([1, 4])
+else:
+    # Fly-out kapalıyken: tek kolon içerik
+    col_flyout = None
+    col_icerik = st.container()
+
+# --- FLY-OUT PANEL ---
+if panel_acik and col_flyout is not None:
+    with col_flyout:
+        # Kullanıcı kartı
+        st.markdown(f"""
+        <div class="flyout-panel">
+            <div class="flyout-kullanici">
+                <div class="flyout-kullanici-isim">
+                    {st.session_state.aktif_kullanici.split()[0]}
+                </div>
+                <div class="flyout-kullanici-id">
+                    {st.session_state.aktif_kullanici_id}
+                </div>
+            </div>
+            <div class="flyout-baslik">MODÜLLER</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        for item in flyout_menu:
+            is_active = st.session_state.aktif_ekran == item["ekran"]
+            btn_style = "primary" if is_active else "secondary"
+            if st.button(
+                f"{item['ikon']}  {item['label']}",
+                key=f"flyout_{item['ekran']}",
+                use_container_width=True,
+                type=btn_style
+            ):
+                st.session_state.aktif_ekran = item["ekran"]
+                st.session_state.menu_panel_acik = False
+                st.rerun()
+
+# ==========================================
 # 🏠 DASHBOARD (ANA EKRAN)
 # ==========================================
 if st.session_state.aktif_ekran == "Ana Ekran":
-    spacer_sol, ana_kolon, spacer_sag = st.columns([1, 2, 1])
-    
-    with ana_kolon:
-        st.markdown("""
-            <div class="header-container">
-                <svg class="header-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="45" stroke="#C5A059" stroke-width="2" fill="none"/>
-                    <path d="M30 45C30 45 35 60 50 60C65 60 70 45 70 45" stroke="#C5A059" stroke-width="2" fill="none"/>
-                    <path d="M50 20V80" stroke="#C5A059" stroke-width="2"/>
-                    <path d="M25 35H75" stroke="#1A1A1A" stroke-width="4"/>
-                </svg>
-                <h1 class="main-title">JUNILEX AI</h1>
-                <p class="sub-title">LEGAL INTELLIGENCE & ACADEMY</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        st.title(f"Selam {st.session_state.aktif_kullanici.split(' ')[0]},")
-        st.markdown("Bugün hangi hukuk sahasında derinleşelim?")
-        st.write("---")
-        
-        üst_satir_1, üst_satir_2 = st.columns(2)
-        if üst_satir_1.button("Adliye", use_container_width=True): st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"; st.rerun()
-        if üst_satir_2.button("Akademi", use_container_width=True): st.session_state.aktif_ekran = "Akademik Asistan"; st.rerun()
-            
-        alt_satir_1, alt_satir_2 = st.columns(2)
-        if alt_satir_1.button("Dilekçe Merkezi", use_container_width=True): st.session_state.aktif_ekran = "Dilekçe Merkezi"; st.rerun()
-        if alt_satir_2.button("İçtihat Sorgulama", use_container_width=True): st.session_state.aktif_ekran = "İçtihat Sorgulama"; st.rerun()
-        
-        st.write("<br>", unsafe_allow_html=True)
-        
-        # GÜNCELLEME: Hesaplamalar Butonu eklendi (Artık 3 Kolon)
-        col_chat, col_ag, col_hesap = st.columns(3)
-        if col_chat.button("💬 JUNILEX Chat", use_container_width=True, type="primary"): st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
-        if col_ag.button("👥 Junilex Ağı", use_container_width=True): st.session_state.aktif_ekran = "👥 Junilex Ağı"; st.rerun()
-        if col_hesap.button("Pratik Hesaplamalar", use_container_width=True): st.session_state.aktif_ekran = "Pratik Hesaplamalar"; st.rerun()
+    with col_icerik:
+        spacer_sol, ana_kolon, spacer_sag = st.columns([1, 4, 1])
 
-        st.write("---")
-        
-        st.subheader("📊 Aktivite Özeti")
-        try:
-            db_fs = get_db()
-            tum_kayitlar = list(db_fs.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
-            
-            toplam_islem = len(tum_kayitlar)
-            mevzuat_sayisi = sum(1 for d in tum_kayitlar if "Mevzuat" in d.to_dict().get("kategori", ""))
-            dilekce_sayisi = sum(1 for d in tum_kayitlar if "Dilekçe" in d.to_dict().get("kategori", ""))
-            ictihat_sayisi = sum(1 for d in tum_kayitlar if "İçtihat" in d.to_dict().get("kategori", ""))
-            
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Toplam Kayıt", toplam_islem)
-            m2.metric("Mevzuat Şerhi", mevzuat_sayisi)
-            m3.metric("Dilekçe Taslağı", dilekce_sayisi)
-            m4.metric("İçtihat Analizi", ictihat_sayisi)
-            
-        except Exception as e:
-            st.caption("Aktivite verileri yüklenemedi.")
+        with ana_kolon:
+            st.markdown("""
+                <div class="header-container">
+                    <svg class="header-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="45" stroke="#C5A059" stroke-width="2" fill="none"/>
+                        <path d="M30 45C30 45 35 60 50 60C65 60 70 45 70 45" stroke="#C5A059" stroke-width="2" fill="none"/>
+                        <path d="M50 20V80" stroke="#C5A059" stroke-width="2"/>
+                        <path d="M25 35H75" stroke="#1A1A1A" stroke-width="4"/>
+                    </svg>
+                    <h1 class="main-title">JUNILEX AI</h1>
+                    <p class="sub-title">LEGAL INTELLIGENCE & ACADEMY</p>
+                </div>
+            """, unsafe_allow_html=True)
 
-        st.write("---")
-        st.subheader("🕒 Son 3 İşlem")
-        try:
-            recent = db_fs.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
-            found = False
-            for doc in recent:
-                d = doc.to_dict()
-                with st.container(border=True):
-                    col_i, col_b = st.columns([1, 8])
-                    col_i.markdown("📄")
-                    col_b.markdown(f"**{d.get('baslik')}** \n *Kategori: {d.get('kategori')}*")
-                    found = True
-            if not found: st.info("Henüz geçmiş işlem yok.")
-        except Exception as e:
-            st.error(f"Veri çekilemedi: {e}")
+            st.title(f"Selam {st.session_state.aktif_kullanici.split(' ')[0]},")
+            st.markdown("Bugün hangi hukuk sahasında derinleşelim?")
+            st.write("---")
+
+            üst_satir_1, üst_satir_2 = st.columns(2)
+            if üst_satir_1.button("Adliye", use_container_width=True): st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"; st.rerun()
+            if üst_satir_2.button("Akademi", use_container_width=True): st.session_state.aktif_ekran = "Akademik Asistan"; st.rerun()
+
+            alt_satir_1, alt_satir_2 = st.columns(2)
+            if alt_satir_1.button("Dilekçe Merkezi", use_container_width=True): st.session_state.aktif_ekran = "Dilekçe Merkezi"; st.rerun()
+            if alt_satir_2.button("İçtihat Sorgulama", use_container_width=True): st.session_state.aktif_ekran = "İçtihat Sorgulama"; st.rerun()
+
+            st.write("<br>", unsafe_allow_html=True)
+
+            col_chat, col_ag, col_hesap = st.columns(3)
+            if col_chat.button("💬 JUNILEX Chat", use_container_width=True, type="primary"): st.session_state.aktif_ekran = "💬 JUNILEX Chat"; st.rerun()
+            if col_ag.button("👥 Junilex Ağı", use_container_width=True): st.session_state.aktif_ekran = "👥 Junilex Ağı"; st.rerun()
+            if col_hesap.button("Pratik Hesaplamalar", use_container_width=True): st.session_state.aktif_ekran = "Pratik Hesaplamalar"; st.rerun()
+
+            st.write("---")
+
+            st.subheader("📊 Aktivite Özeti")
+            try:
+                db_fs = get_db()
+                tum_kayitlar = list(db_fs.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
+
+                toplam_islem = len(tum_kayitlar)
+                mevzuat_sayisi = sum(1 for d in tum_kayitlar if "Mevzuat" in d.to_dict().get("kategori", ""))
+                dilekce_sayisi = sum(1 for d in tum_kayitlar if "Dilekçe" in d.to_dict().get("kategori", ""))
+                ictihat_sayisi = sum(1 for d in tum_kayitlar if "İçtihat" in d.to_dict().get("kategori", ""))
+
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("Toplam Kayıt", toplam_islem)
+                m2.metric("Mevzuat Şerhi", mevzuat_sayisi)
+                m3.metric("Dilekçe Taslağı", dilekce_sayisi)
+                m4.metric("İçtihat Analizi", ictihat_sayisi)
+
+            except Exception as e:
+                st.caption("Aktivite verileri yüklenemedi.")
+
+            st.write("---")
+            st.subheader("🕒 Son 3 İşlem")
+            try:
+                recent = db_fs.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).order_by("tarih", direction=firestore.Query.DESCENDING).limit(3).stream()
+                found = False
+                for doc in recent:
+                    d = doc.to_dict()
+                    with st.container(border=True):
+                        col_i, col_b = st.columns([1, 8])
+                        col_i.markdown("📄")
+                        col_b.markdown(f"**{d.get('baslik')}** \n *Kategori: {d.get('kategori')}*")
+                        found = True
+                if not found: st.info("Henüz geçmiş işlem yok.")
+            except Exception as e:
+                st.error(f"Veri çekilemedi: {e}")
 
 # ==========================================
 # 👥 JUNILEX AĞI (SOSYAL AĞ VE EKİPLER)
