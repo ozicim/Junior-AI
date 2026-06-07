@@ -48,203 +48,130 @@ st.set_page_config(layout="wide", page_title="JUNILEX AI")
 
 st.markdown("""
     <style>
-        /* 1. Koyu Tema */
-        .stApp { background-color: #0F172A !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        * { font-family: 'Inter', sans-serif !important; }
 
-        /* 2. Sidebar — lacivert, dar, ikon şeridi */
+        /* ── GENEL TEMA ── */
+        .stApp { background-color: #0B1120 !important; }
+        .block-container { padding-top: 1.5rem !important; }
+
+        /* ── SIDEBAR (ikon şeridi) ── */
         [data-testid="stSidebar"] {
-            background-color: #131C2E !important;
-            border-right: 1px solid #1E293B !important;
-            min-width: 72px !important;
-            max-width: 72px !important;
-            padding: 0 !important;
+            background: linear-gradient(180deg, #0D1526 0%, #0B1120 100%) !important;
+            border-right: 1px solid rgba(255,255,255,0.06) !important;
+            min-width: 68px !important;
+            max-width: 68px !important;
         }
-        [data-testid="stSidebar"] > div:first-child {
-            padding: 8px 0 !important;
-        }
-
-        /* Sidebar'daki metin, ayraç, expander elementlerini gizle */
+        [data-testid="stSidebar"] > div:first-child { padding: 12px 0 !important; }
         [data-testid="stSidebar"] .stMarkdown,
         [data-testid="stSidebar"] .stCaption,
         [data-testid="stSidebar"] .stExpander,
-        [data-testid="stSidebar"] hr,
-        [data-testid="stSidebar"] h3 {
-            display: none !important;
-        }
+        [data-testid="stSidebar"] hr { display: none !important; }
 
-        /* Sidebar butonları — SADECE sidebar içindeki dar butonlar */
-        [data-testid="stSidebar"] div.stButton {
-            margin: 3px 8px !important;
-        }
+        /* Sidebar buton — ikon kutusu */
+        [data-testid="stSidebar"] div.stButton { margin: 2px 6px !important; }
         [data-testid="stSidebar"] div.stButton > button {
-            background-color: transparent !important;
+            background: transparent !important;
             border: none !important;
-            border-radius: 14px !important;
-            color: #64748B !important;
+            border-radius: 12px !important;
+            color: #3D5166 !important;
             width: 56px !important;
             height: 56px !important;
             padding: 0 !important;
-            font-size: 22px !important;
+            font-size: 20px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            transition: background 0.15s, color 0.15s !important;
+            transition: all 0.2s ease !important;
         }
         [data-testid="stSidebar"] div.stButton > button:hover {
-            background-color: #1E293B !important;
+            background: rgba(197,160,89,0.1) !important;
             color: #C5A059 !important;
         }
-        /* Aktif ekran butonu — gold */
         [data-testid="stSidebar"] div.stButton > button[kind="primary"] {
-            background-color: #C5A059 !important;
-            color: #0F172A !important;
-            border: none !important;
-        }
-        /* Çıkış butonu — kırmızımsı hover */
-        [data-testid="stSidebar"] div.stButton:last-of-type > button {
-            background-color: transparent !important;
-            color: #475569 !important;
-        }
-        [data-testid="stSidebar"] div.stButton:last-of-type > button:hover {
-            color: #EF4444 !important;
-            background-color: #1E293B !important;
+            background: #C5A059 !important;
+            color: #0B1120 !important;
         }
 
-        /* Fly-out panel butonları — sidebar stilini ezmez */
-        div[data-testid="stColumn"] div.stButton > button {
-            background-color: #1a2540 !important;
-            border: 1px solid #263354 !important;
-            border-radius: 10px !important;
-            color: #94A3B8 !important;
-            text-align: left !important;
-            justify-content: flex-start !important;
-            padding: 10px 16px !important;
-            font-size: 14px !important;
-            width: 100% !important;
-            height: auto !important;
-            min-height: 44px !important;
+        /* ── FLY-OUT PANEL (saf HTML div'i) ── */
+        .fo-panel {
+            background: #0F1B2D;
+            border-right: 1px solid rgba(255,255,255,0.07);
+            min-height: 100vh;
+            padding: 16px 12px;
+            margin-top: -1.5rem;
         }
-        div[data-testid="stColumn"] div.stButton > button:hover {
-            background-color: #263354 !important;
-            color: #E2E8F0 !important;
-            border-color: #C5A059 !important;
+        .fo-user-card {
+            background: rgba(197,160,89,0.07);
+            border: 1px solid rgba(197,160,89,0.18);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 20px;
         }
-        div[data-testid="stColumn"] div.stButton > button[kind="primary"] {
-            background-color: rgba(197,160,89,0.15) !important;
-            border: 1px solid rgba(197,160,89,0.5) !important;
-            color: #C5A059 !important;
-            font-weight: 700 !important;
-        }
-
-        /* 3. Kartlar */
-        [data-testid="stVerticalBlockBorderWrapper"] {
-            background-color: #1E293B !important;
-            border-radius: 12px !important;
-            border: 1px solid #334155 !important;
+        .fo-user-name { color: #E8EAED !important; font-weight: 700; font-size: 15px; margin: 0; }
+        .fo-user-id   { color: #C5A059 !important; font-size: 12px; margin: 4px 0 0 0; }
+        .fo-section   {
+            color: #3D5166 !important;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            margin: 0 0 10px 4px;
         }
 
-        /* 4. Yazı */
-        h1, h2, h3, h4, p, span, div { color: #F8FAFC !important; }
-
-        /* 5. Input */
-        .stTextInput input, .stTextArea textarea {
-            background-color: #0F172A !important;
-            color: #F8FAFC !important;
-            border: 1px solid #334155 !important;
-        }
-
-        /* 6. Sidebar ok'unu gizle */
-        [data-testid="collapsedControl"] { display: none !important; }
-        button[data-testid="baseButton-headerNoPadding"] { display: none !important; }
-
-        /* 7. Fly-out panel butonları — sidebar butonlarından BAĞIMSIZ */
-        /* Fly-out kolonundaki butonlar için özel stil */
-        div[data-testid="stHorizontalBlock"] div.stButton > button,
-        div[data-testid="stVerticalBlock"] div.stButton > button {
-            /* Ana içerik alanındaki butonlar — sidebar override'ını engelle */
-        }
-
-        /* Fly-out'a özel: column içindeki secondary butonlar */
-        .flyout-wrapper div.stButton > button {
-            background-color: transparent !important;
-            border: 1px solid #263354 !important;
-            border-radius: 10px !important;
-            color: #94A3B8 !important;
-            text-align: left !important;
-            padding: 10px 14px !important;
-            font-size: 14px !important;
-            width: 100% !important;
-            height: auto !important;
-            justify-content: flex-start !important;
-        }
-        .flyout-wrapper div.stButton > button:hover {
-            background-color: #263354 !important;
-            color: #E2E8F0 !important;
-            border-color: #C5A059 !important;
-        }
-        .flyout-wrapper div.stButton > button[kind="primary"] {
-            background-color: rgba(197,160,89,0.15) !important;
-            border: 1px solid rgba(197,160,89,0.4) !important;
-            color: #C5A059 !important;
-        }
-        .flyout-panel {
-            background-color: #1a2540;
-            border-right: 1px solid #263354;
-            padding: 20px 12px;
-            height: 100vh;
-            position: sticky;
-            top: 0;
-        }
-        .flyout-baslik {
-            color: #C5A059 !important;
-            font-size: 11px !important;
-            font-weight: 700 !important;
-            letter-spacing: 2px !important;
-            text-transform: uppercase !important;
-            margin-bottom: 16px !important;
-            padding-bottom: 10px !important;
-            border-bottom: 1px solid #263354 !important;
-        }
-        .flyout-item {
+        /* Fly-out menü öğesi (div tıklanamaz, altındaki butonla yönetiyoruz) */
+        .fo-item {
             display: flex;
             align-items: center;
             gap: 12px;
             padding: 11px 14px;
             border-radius: 10px;
+            margin-bottom: 3px;
             cursor: pointer;
-            margin-bottom: 4px;
             transition: background 0.15s;
-            color: #94A3B8 !important;
-            font-size: 14px !important;
-            text-decoration: none;
+            color: #8899AA !important;
+            font-size: 14px;
+            font-weight: 500;
         }
-        .flyout-item:hover { background-color: #263354; color: #E2E8F0 !important; }
-        .flyout-item.aktif {
-            background-color: rgba(197,160,89,0.15);
+        .fo-item:hover { background: rgba(255,255,255,0.05); color: #D4DCE8 !important; }
+        .fo-item.active {
+            background: rgba(197,160,89,0.12);
             color: #C5A059 !important;
             font-weight: 600;
         }
-        .flyout-ikon { font-size: 18px; width: 24px; text-align: center; }
-        .flyout-label { font-size: 14px; }
-        .flyout-kullanici {
-            background: rgba(197,160,89,0.08);
-            border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 20px;
+        .fo-item-icon { font-size: 17px; width: 22px; text-align: center; flex-shrink: 0; }
+
+        /* Fly-out içindeki GERÇEK butonları gizle — sadece div görünsün */
+        .fo-btn-hidden { position: absolute; opacity: 0; pointer-events: none; height: 0; overflow: hidden; }
+
+        /* ── KARTLAR ── */
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            background: #111D2E !important;
+            border-radius: 14px !important;
+            border: 1px solid rgba(255,255,255,0.07) !important;
         }
-        .flyout-kullanici-isim {
-            color: #E2E8F0 !important;
-            font-weight: 700 !important;
-            font-size: 15px !important;
+
+        /* ── YAZI ── */
+        h1, h2, h3, h4, p { color: #E8EAED !important; }
+        .stMarkdown p, .stMarkdown span { color: #94A3B8 !important; }
+
+        /* ── INPUT ── */
+        .stTextInput input, .stTextArea textarea {
+            background: #0F1B2D !important;
+            color: #E8EAED !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            border-radius: 10px !important;
         }
-        .flyout-kullanici-id {
-            color: #C5A059 !important;
-            font-size: 12px !important;
+        .stTextInput input:focus, .stTextArea textarea:focus {
+            border-color: #C5A059 !important;
+            box-shadow: 0 0 0 2px rgba(197,160,89,0.15) !important;
         }
+
+        /* ── SIDEBAR OKU GİZLE ── */
+        [data-testid="collapsedControl"],
+        button[data-testid="baseButton-headerNoPadding"] { display: none !important; }
     </style>
 """, unsafe_allow_html=True)
-# -----------------------------------------------------------
 
 # ==========================================
 # 🔐 API VE MOTORLAR
@@ -490,120 +417,127 @@ if not st.session_state.logged_in:
                         st.session_state.onay_bekleyen = None
                         st.rerun()
     st.stop()
-if st.session_state.aktif_ekran != "Ana Ekran" or True:  # Her zaman göster
-    with st.sidebar:
-        # Logo
-        st.markdown(
-            "<div style='text-align:center;padding:14px 0 8px 0;font-size:26px;'>🏛️</div>",
-            unsafe_allow_html=True
-        )
-
-        nav_gercek = [
-            ("🏠", "Ana Ekran"),
-            ("🏛️", "Adliye (Mevzuat Sorgu)"),
-            ("🎓", "Akademik Asistan"),
-            ("📝", "Dilekçe Merkezi"),
-            ("⚖️", "İçtihat Analizi"),
-            ("🧮", "Pratik Hesaplamalar"),
-            ("💬", "💬 JUNILEX Chat"),
-            ("👥", "👥 Junilex Ağı"),
-        ]
-
-        for ikon, ekran in nav_gercek:
-            is_active = st.session_state.aktif_ekran == ekran
-            # Ana Menü butonu paneli toggle eder
-            if ekran == "Ana Ekran":
-                panel_active = st.session_state.menu_panel_acik
-                if st.button(
-                    ikon,
-                    key=f"nav_{ekran}",
-                    use_container_width=True,
-                    type="primary" if panel_active else "secondary"
-                ):
-                    st.session_state.menu_panel_acik = not st.session_state.menu_panel_acik
-                    st.rerun()
-            else:
-                if st.button(
-                    ikon,
-                    key=f"nav_{ekran}",
-                    use_container_width=True,
-                    type="primary" if is_active else "secondary"
-                ):
-                    st.session_state.aktif_ekran = ekran
-                    st.session_state.menu_panel_acik = False
-                    st.rerun()
-
-        st.write("##")
-        st.write("##")
-        st.write("##")
-        if st.button("↪", use_container_width=True, key="cikis_btn"):
-            st.session_state.logged_in = False
-            st.rerun()
 # ==========================================
-# 🗂️ FLY-OUT PANEL + İÇERİK LAYOUT
+# 🗂️ SIDEBAR + FLY-OUT PANEL
 # ==========================================
 
-# Fly-out menü tanımları
 flyout_menu = [
-    {"ikon": "🏛️", "label": "Adliye",            "ekran": "Adliye (Mevzuat Sorgu)"},
-    {"ikon": "🎓", "label": "Akademi",            "ekran": "Akademik Asistan"},
-    {"ikon": "📝", "label": "Arzuhal",            "ekran": "Dilekçe Merkezi"},
-    {"ikon": "⚖️", "label": "İçtihat",            "ekran": "İçtihat Analizi"},
-    {"ikon": "🧮", "label": "Hesaplamalar",       "ekran": "Pratik Hesaplamalar"},
-    {"ikon": "💬", "label": "JUNILEX Chat",       "ekran": "💬 JUNILEX Chat"},
-    {"ikon": "👥", "label": "Junilex Ağı",        "ekran": "👥 Junilex Ağı"},
+    {"ikon": "🏛️", "label": "Adliye",         "ekran": "Adliye (Mevzuat Sorgu)"},
+    {"ikon": "🎓", "label": "Akademi",         "ekran": "Akademik Asistan"},
+    {"ikon": "📝", "label": "Arzuhal",         "ekran": "Dilekçe Merkezi"},
+    {"ikon": "⚖️", "label": "İçtihat",         "ekran": "İçtihat Analizi"},
+    {"ikon": "🧮", "label": "Hesaplamalar",    "ekran": "Pratik Hesaplamalar"},
+    {"ikon": "💬", "label": "JUNILEX Chat",    "ekran": "💬 JUNILEX Chat"},
+    {"ikon": "👥", "label": "Junilex Ağı",     "ekran": "👥 Junilex Ağı"},
 ]
 
+# ── SIDEBAR ──────────────────────────────────────────
+with st.sidebar:
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # Logo
+    st.markdown("""
+    <div style='text-align:center;margin-bottom:12px;'>
+        <span style='font-size:24px;'>🏛️</span>
+    </div>""", unsafe_allow_html=True)
+
+    panel_acik = st.session_state.menu_panel_acik
+
+    # Ana menü (toggle)
+    if st.button("🏠", key="nav_ana", use_container_width=True,
+                 type="primary" if panel_acik else "secondary"):
+        st.session_state.menu_panel_acik = not panel_acik
+        st.rerun()
+
+    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+
+    # Diğer ikonlar
+    nav_ikonlar = [
+        ("🏛️", "Adliye (Mevzuat Sorgu)"),
+        ("🎓", "Akademik Asistan"),
+        ("📝", "Dilekçe Merkezi"),
+        ("⚖️", "İçtihat Analizi"),
+        ("🧮", "Pratik Hesaplamalar"),
+        ("💬", "💬 JUNILEX Chat"),
+        ("👥", "👥 Junilex Ağı"),
+    ]
+    for ikon, ekran in nav_ikonlar:
+        aktif = st.session_state.aktif_ekran == ekran
+        if st.button(ikon, key=f"nav_{ekran}", use_container_width=True,
+                     type="primary" if aktif else "secondary"):
+            st.session_state.aktif_ekran = ekran
+            st.session_state.menu_panel_acik = False
+            st.rerun()
+
+    # Boşluk + çıkış
+    for _ in range(4):
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+    if st.button("⬅️", key="cikis_btn", use_container_width=True):
+        st.session_state.logged_in = False
+        st.rerun()
+
+# ── FLY-OUT PANEL + İÇERİK LAYOUT ───────────────────
 panel_acik = st.session_state.menu_panel_acik
 
 if panel_acik:
-    # Fly-out açıkken: [panel | içerik]
-    col_flyout, col_icerik = st.columns([1, 4])
+    col_flyout, col_icerik = st.columns([3, 9], gap="small")
 else:
-    # Fly-out kapalıyken: tek kolon içerik
-    col_flyout = None
-    col_icerik = st.container()
+    col_flyout  = None
+    col_icerik  = st.container()
 
-# --- FLY-OUT PANEL ---
 if panel_acik and col_flyout is not None:
     with col_flyout:
-        # Kullanıcı kartı
+        isim  = st.session_state.aktif_kullanici.split()[0]
+        uid   = st.session_state.aktif_kullanici_id
+        ekran = st.session_state.aktif_ekran
+
+        # Menü öğelerini HTML olarak oluştur
+        items_html = ""
+        for item in flyout_menu:
+            aktif_cls = "active" if ekran == item["ekran"] else ""
+            items_html += f"""
+            <div class="fo-item {aktif_cls}">
+                <span class="fo-item-icon">{item['ikon']}</span>
+                <span>{item['label']}</span>
+            </div>"""
+
         st.markdown(f"""
-        <div style="
-            background: rgba(197,160,89,0.08);
-            border: 1px solid rgba(197,160,89,0.25);
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
-            margin-top: 8px;
-        ">
-            <div style="color:#E2E8F0;font-weight:700;font-size:16px;">
-                {st.session_state.aktif_kullanici.split()[0]}
+        <div class="fo-panel">
+            <div class="fo-user-card">
+                <p class="fo-user-name">{isim}</p>
+                <p class="fo-user-id">{uid}</p>
             </div>
-            <div style="color:#C5A059;font-size:12px;margin-top:2px;">
-                {st.session_state.aktif_kullanici_id}
-            </div>
+            <p class="fo-section">Modüller</p>
+            {items_html}
         </div>
-        <div style="
-            color:#C5A059;
-            font-size:11px;
-            font-weight:700;
-            letter-spacing:2px;
-            text-transform:uppercase;
-            margin-bottom:12px;
-            padding-bottom:8px;
-            border-bottom:1px solid #263354;
-        ">MODÜLLER</div>
         """, unsafe_allow_html=True)
 
-        # Modül butonları
+        # Tıklanabilir şeffaf Streamlit butonları — HTML div'lerin üstüne
+        # CSS ile gizlenmez, ama negatif margin ile div'lerin altına hizalanır
+        st.markdown("""
+        <style>
+        /* Flyout kolonundaki st butonları: şeffaf, soldan hizalı, div yüksekliğiyle eşleşir */
+        [data-testid="stColumn"]:first-child div.stButton > button {
+            background: transparent !important;
+            border: none !important;
+            color: transparent !important;
+            width: 100% !important;
+            height: 44px !important;
+            margin-top: -48px !important;
+            border-radius: 10px !important;
+            cursor: pointer !important;
+        }
+        [data-testid="stColumn"]:first-child div.stButton > button:hover {
+            background: rgba(255,255,255,0.04) !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
         for item in flyout_menu:
-            is_active = st.session_state.aktif_ekran == item["ekran"]
             if st.button(
-                f"{item['ikon']}  {item['label']}",
-                key=f"flyout_{item['ekran']}",
+                item["label"],
+                key=f"fo_{item['ekran']}",
                 use_container_width=True,
-                type="primary" if is_active else "secondary"
             ):
                 st.session_state.aktif_ekran = item["ekran"]
                 st.session_state.menu_panel_acik = False
@@ -611,6 +545,7 @@ if panel_acik and col_flyout is not None:
 
 # ==========================================
 # 🏠 DASHBOARD (ANA EKRAN)
+
 # ==========================================
 if st.session_state.aktif_ekran == "Ana Ekran":
     with col_icerik:
