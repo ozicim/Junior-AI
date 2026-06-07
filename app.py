@@ -34,28 +34,32 @@ from chat_engine import ChatEngine
 from ag_engine import AgEngine
 from hesap_engine import HesapEngine
 
-
-
-# ==========================================
-# ⚙️ AYARLAR VE BELLEK YÖNETİMİ
-# ==========================================
-st.set_page_config(layout="wide", page_title="JUNILEX AI")
-
 @st.cache_resource
 def get_db():
     if not firebase_admin._apps:
         firebase_admin.initialize_app()
     return firestore.client()
 
+# ==========================================
+# ⚙️ AYARLAR VE BELLEK YÖNETİMİ
+# ==========================================
+st.set_page_config(layout="wide", page_title="JUNILEX AI")
+
+
 st.markdown("""
     <style>
-        /* Sidebar Genişliği ve Renk */
+        /* 1. Koyu Tema Zorunluluğu */
+        .stApp { background-color: #0F172A !important; }
+        
+        /* 2. Sidebar Daraltma ve Renk */
         [data-testid="stSidebar"] { 
             background-color: #0F172A !important; 
-            border-right: 1px solid #1E293B;
+            border-right: 1px solid #1E293B !important;
+            min-width: 200px !important; 
+            max-width: 200px !important;
         }
-        
-        /* Menü Butonlarını Flat (Düz) Yap */
+
+        /* 3. Butonları İkon Görünümlü Yapma */
         div[data-testid="stSidebar"] div.stButton > button {
             background-color: transparent !important;
             border: none !important;
@@ -63,32 +67,33 @@ st.markdown("""
             text-align: left !important;
             padding-left: 20px !important;
             font-size: 15px !important;
-            font-weight: 500 !important;
             border-radius: 0 !important;
-            transition: all 0.2s ease !important;
         }
-        
-        /* Aktif Menü Ögesi */
         div[data-testid="stSidebar"] div.stButton > button[kind="primary"] {
-            background-color: #1E293B !important;
             color: #C5A059 !important;
             border-left: 4px solid #C5A059 !important;
-        }
-
-        /* Hover Etkisi */
-        div[data-testid="stSidebar"] div.stButton > button:hover {
-            color: #F8FAFC !important;
             background-color: #1E293B !important;
         }
 
-        /* Genel Kart Tasarımı */
+        /* 4. Genel Kartlar (Premium Dark) */
         [data-testid="stVerticalBlockBorderWrapper"] { 
             background-color: #1E293B !important; 
             border-radius: 12px !important; 
             border: 1px solid #334155 !important; 
         }
+
+        /* 5. Yazı Renkleri */
+        h1, h2, h3, h4, p, span, div { color: #F8FAFC !important; }
+        
+        /* 6. Input Alanları */
+        .stTextInput input, .stTextArea textarea { 
+            background-color: #0F172A !important; 
+            color: #F8FAFC !important; 
+            border: 1px solid #334155 !important; 
+        }
     </style>
 """, unsafe_allow_html=True)
+# -----------------------------------------------------------
 
 # ==========================================
 # 🔐 API VE MOTORLAR
