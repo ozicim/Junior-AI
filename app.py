@@ -37,22 +37,26 @@ from hesap_engine import HesapEngine
 import os
 from firebase_admin import credentials
 
+
+
 @st.cache_resource
 def get_db():
-    # 1. ADIM: Secrets'taki Project ID'yi işletim sistemine zorla tanıtıyoruz
-    if "GOOGLE_CLOUD_PROJECT" in st.secrets:
-        os.environ["GOOGLE_CLOUD_PROJECT"] = st.secrets["GOOGLE_CLOUD_PROJECT"]
-        
     if not firebase_admin._apps:
-        # 2. ADIM: Eğer secrets içine Firebase Service Account JSON verisini 
-        # "firebase" başlığıyla eklediysen bunu kullanır (Tam yetkili ve en güvenli yol)
-        if "firebase" in st.secrets:
-            cred = credentials.Certificate(dict(st.secrets["firebase"]))
-            firebase_admin.initialize_app(cred)
-        # Sadece Project ID eklendiyse varsayılan şekilde başlatır
-        else:
-            firebase_admin.initialize_app()
+        # 1. Secrets içindeki [firebase] bölümünü bir sözlüğe (dict) çeviriyoruz
+        firebase_config = dict(st.secrets["firebase"])
+        
+        # 2. Firebase, GOOGLE_CLOUD_PROJECT değerini JSON'un içinde 'project_id' olarak arar.
+        # Senin secrets'ında GOOGLE_CLOUD_PROJECT yazıyor, 
+        # kütüphanenin bunu tanıması için bunu JSON'un içine 'project_id' olarak da kopyalıyoruz.
+        if "project_id" not in firebase_config and "GOOGLE_CLOUD_PROJECT" in firebase_config:
+            firebase_config["project_id"] = firebase_config["GOOGLE_CLOUD_PROJECT"]
             
+        # 3. Kimlik bilgisini oluştur
+        cred = credentials.Certificate(firebase_config)
+        
+        # 4. Uygulamayı başlat
+        firebase_admin.initialize_app(cred)
+        
     return firestore.client()
 
 # ==========================================
