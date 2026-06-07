@@ -335,64 +335,48 @@ if not st.session_state.logged_in:
                         st.rerun()
     st.stop()
 # ==========================================
-# 🧭 SIDEBAR (SADECE MODÜLLERDE GÖRÜNÜR)
+# 🧭 SIDEBAR (GÖRSEL ODAKLI PREMIUM NAV)
 # ==========================================
-try:
-    AkademikEngine.veritabanini_baslat()
-except Exception as e:
-    pass
-
 if st.session_state.aktif_ekran != "Ana Ekran":
     with st.sidebar:
-        st.markdown(f"### 🧑‍💻 Hoş geldin, {st.session_state.aktif_kullanici}")
-        st.caption(f"Senin ID'n: **{st.session_state.aktif_kullanici_id}**")
-        
-        if st.button("🏠 Ana Menüye Dön", use_container_width=True):
-            st.session_state.aktif_ekran = "Ana Ekran"
-            st.rerun()
+        # Üst Bilgi
+        st.markdown(f"### 🧑‍💻 {st.session_state.aktif_kullanici}")
+        st.caption(f"ID: **{st.session_state.aktif_kullanici_id}**")
+        st.divider()
+
+        # Navigasyon Butonları (İkon + İsim)
+        nav_items = {
+            "🏠 Ana Menü": "Ana Ekran",
+            "🏛️ Adliye": "Adliye (Mevzuat Sorgu)",
+            "🎓 Akademi": "Akademik Asistan",
+            "📝 Dilekçe": "Dilekçe Merkezi",
+            "⚖️ İçtihat": "İçtihat Sorgulama",
+            "🧮 Hesaplama": "Pratik Hesaplamalar",
+            "💬 Chat": "💬 JUNILEX Chat",
+            "👥 Ağ": "👥 Junilex Ağı"
+        }
+
+        for label, screen in nav_items.items():
+            if st.button(label, use_container_width=True, type="secondary" if st.session_state.aktif_ekran != screen else "primary"):
+                st.session_state.aktif_ekran = screen
+                st.rerun()
+
         st.divider()
         
-        # GÜNCELLEME: "🧮 Pratik Hesaplamalar" listeye eklendi
-        secenekler = [
-            "Ana Ekran", 
-            "Adliye (Mevzuat Sorgu)", 
-            "Akademik Asistan", 
-            "Dilekçe Merkezi", 
-            "İçtihat Sorgulama",
-            "Pratik Hesaplamalar", 
-            "💬 JUNILEX Chat", 
-            "👥 Junilex Ağı"
-            
-        ]
-        
-        if st.session_state.aktif_ekran not in secenekler:
-            st.session_state.aktif_ekran = secenekler[1]
-            
-        current_index = secenekler.index(st.session_state.aktif_ekran)
-        secilen = st.radio("Departman:", secenekler, index=current_index)
-        
-        if secilen != st.session_state.aktif_ekran:
-            st.session_state.aktif_ekran = secilen
-            st.rerun()
-            
-        st.divider()
-        with st.expander("📊 Çalışma Verileri", expanded=False):
+        # Çalışma Verileri (Daha kompakt)
+        with st.expander("📊 Veri Paneli"):
             try:
                 db = get_db()
-                arsiv_ref = db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).get()
-                pdf_ref = db.collection("ders_notlari").get()
-                col1, col2 = st.columns(2)
-                col1.metric("Arşiv", len(arsiv_ref))
-                col2.metric("PDF", len(pdf_ref))
-            except Exception:
-                st.caption("Veriler yükleniyor...")
+                arsiv_c = len(list(db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream()))
+                st.metric("Arşivlenen Evrak", arsiv_c)
+            except: st.caption("Veriler yükleniyor...")
                 
-        st.divider()
+        st.write("##")
         if st.button("🚪 Çıkış Yap", use_container_width=True):
             st.session_state.logged_in = False
-            st.session_state.aktif_kullanici = ""
             st.rerun()
-        st.info("Ozan Şahin Sicim | JUNILEX AI v2.2")
+        
+        st.caption("Ozan Şahin Sicim | JUNILEX v2.2")
 
 # ==========================================
 # 🏠 DASHBOARD (ANA EKRAN)
