@@ -51,7 +51,16 @@ def get_db():
 # 🎨 CSS VE TASARIM (PREMIUM DARK SAAS)
 # ==========================================
 if st.session_state.get("aktif_ekran", "Ana Ekran") == "Ana Ekran":
-    st.markdown("""<style>[data-testid="stSidebar"] { display: none; }</style>""", unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+        /* Sidebar'ı görseldeki gibi daralt */
+        [data-testid="stSidebar"] { 
+            min-width: 200px !important; 
+            max-width: 200px !important; 
+            background-color: #0F172A !important; 
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -345,7 +354,6 @@ if st.session_state.aktif_ekran != "Ana Ekran":
         # İkon odaklı tasarım için metni azalttık
         st.markdown(f"### ⚖️ JUNILEX")
         st.markdown(f"**{st.session_state.aktif_kullanici.split()[0]}**")
-        [data-testid="stSidebar"] { min-width: 200px !important; max-width: 200px !important; background-color: #0F172A !important; }
         st.caption(f"ID: `{st.session_state.aktif_kullanici_id}`")
         st.divider()
 
