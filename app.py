@@ -72,11 +72,11 @@ st.markdown("""
             display: none !important;
         }
 
-        /* Sidebar butonları — kare ikon kutusu */
-        div[data-testid="stSidebar"] div.stButton {
+        /* Sidebar butonları — SADECE sidebar içindeki dar butonlar */
+        [data-testid="stSidebar"] div.stButton {
             margin: 3px 8px !important;
         }
-        div[data-testid="stSidebar"] div.stButton > button {
+        [data-testid="stSidebar"] div.stButton > button {
             background-color: transparent !important;
             border: none !important;
             border-radius: 14px !important;
@@ -90,24 +90,50 @@ st.markdown("""
             justify-content: center !important;
             transition: background 0.15s, color 0.15s !important;
         }
-        div[data-testid="stSidebar"] div.stButton > button:hover {
+        [data-testid="stSidebar"] div.stButton > button:hover {
             background-color: #1E293B !important;
             color: #C5A059 !important;
         }
         /* Aktif ekran butonu — gold */
-        div[data-testid="stSidebar"] div.stButton > button[kind="primary"] {
+        [data-testid="stSidebar"] div.stButton > button[kind="primary"] {
             background-color: #C5A059 !important;
             color: #0F172A !important;
             border: none !important;
         }
         /* Çıkış butonu — kırmızımsı hover */
-        div[data-testid="stSidebar"] div.stButton:last-of-type > button {
+        [data-testid="stSidebar"] div.stButton:last-of-type > button {
             background-color: transparent !important;
             color: #475569 !important;
         }
-        div[data-testid="stSidebar"] div.stButton:last-of-type > button:hover {
+        [data-testid="stSidebar"] div.stButton:last-of-type > button:hover {
             color: #EF4444 !important;
             background-color: #1E293B !important;
+        }
+
+        /* Fly-out panel butonları — sidebar stilini ezmez */
+        div[data-testid="stColumn"] div.stButton > button {
+            background-color: #1a2540 !important;
+            border: 1px solid #263354 !important;
+            border-radius: 10px !important;
+            color: #94A3B8 !important;
+            text-align: left !important;
+            justify-content: flex-start !important;
+            padding: 10px 16px !important;
+            font-size: 14px !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 44px !important;
+        }
+        div[data-testid="stColumn"] div.stButton > button:hover {
+            background-color: #263354 !important;
+            color: #E2E8F0 !important;
+            border-color: #C5A059 !important;
+        }
+        div[data-testid="stColumn"] div.stButton > button[kind="primary"] {
+            background-color: rgba(197,160,89,0.15) !important;
+            border: 1px solid rgba(197,160,89,0.5) !important;
+            color: #C5A059 !important;
+            font-weight: 700 !important;
         }
 
         /* 3. Kartlar */
@@ -131,7 +157,36 @@ st.markdown("""
         [data-testid="collapsedControl"] { display: none !important; }
         button[data-testid="baseButton-headerNoPadding"] { display: none !important; }
 
-        /* 7. İkinci Panel (Fly-out Menü) */
+        /* 7. Fly-out panel butonları — sidebar butonlarından BAĞIMSIZ */
+        /* Fly-out kolonundaki butonlar için özel stil */
+        div[data-testid="stHorizontalBlock"] div.stButton > button,
+        div[data-testid="stVerticalBlock"] div.stButton > button {
+            /* Ana içerik alanındaki butonlar — sidebar override'ını engelle */
+        }
+
+        /* Fly-out'a özel: column içindeki secondary butonlar */
+        .flyout-wrapper div.stButton > button {
+            background-color: transparent !important;
+            border: 1px solid #263354 !important;
+            border-radius: 10px !important;
+            color: #94A3B8 !important;
+            text-align: left !important;
+            padding: 10px 14px !important;
+            font-size: 14px !important;
+            width: 100% !important;
+            height: auto !important;
+            justify-content: flex-start !important;
+        }
+        .flyout-wrapper div.stButton > button:hover {
+            background-color: #263354 !important;
+            color: #E2E8F0 !important;
+            border-color: #C5A059 !important;
+        }
+        .flyout-wrapper div.stButton > button[kind="primary"] {
+            background-color: rgba(197,160,89,0.15) !important;
+            border: 1px solid rgba(197,160,89,0.4) !important;
+            color: #C5A059 !important;
+        }
         .flyout-panel {
             background-color: #1a2540;
             border-right: 1px solid #263354;
@@ -514,27 +569,41 @@ if panel_acik and col_flyout is not None:
     with col_flyout:
         # Kullanıcı kartı
         st.markdown(f"""
-        <div class="flyout-panel">
-            <div class="flyout-kullanici">
-                <div class="flyout-kullanici-isim">
-                    {st.session_state.aktif_kullanici.split()[0]}
-                </div>
-                <div class="flyout-kullanici-id">
-                    {st.session_state.aktif_kullanici_id}
-                </div>
+        <div style="
+            background: rgba(197,160,89,0.08);
+            border: 1px solid rgba(197,160,89,0.25);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            margin-top: 8px;
+        ">
+            <div style="color:#E2E8F0;font-weight:700;font-size:16px;">
+                {st.session_state.aktif_kullanici.split()[0]}
             </div>
-            <div class="flyout-baslik">MODÜLLER</div>
+            <div style="color:#C5A059;font-size:12px;margin-top:2px;">
+                {st.session_state.aktif_kullanici_id}
+            </div>
         </div>
+        <div style="
+            color:#C5A059;
+            font-size:11px;
+            font-weight:700;
+            letter-spacing:2px;
+            text-transform:uppercase;
+            margin-bottom:12px;
+            padding-bottom:8px;
+            border-bottom:1px solid #263354;
+        ">MODÜLLER</div>
         """, unsafe_allow_html=True)
 
+        # Modül butonları
         for item in flyout_menu:
             is_active = st.session_state.aktif_ekran == item["ekran"]
-            btn_style = "primary" if is_active else "secondary"
             if st.button(
                 f"{item['ikon']}  {item['label']}",
                 key=f"flyout_{item['ekran']}",
                 use_container_width=True,
-                type=btn_style
+                type="primary" if is_active else "secondary"
             ):
                 st.session_state.aktif_ekran = item["ekran"]
                 st.session_state.menu_panel_acik = False
