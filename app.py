@@ -37,8 +37,8 @@ from hesap_engine import HesapEngine
 @st.cache_resource
 def get_db():
     if not firebase_admin._apps:
-        # 1. Yöntem: Sadece Project ID'yi options olarak vermek
-        # (Secrets'taki değişken adının GOOGLE_CLOUD_PROJECT olduğunu varsayıyoruz)
+        anahtar_bilgileri = dict(st.secrets["private_key"])
+        cred = credentials.Certificate(anahtar_bilgileri)
         firebase_admin.initialize_app(options={
             'projectId': st.secrets["GOOGLE_CLOUD_PROJECT"]
         })
