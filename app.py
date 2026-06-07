@@ -359,7 +359,7 @@ if st.session_state.aktif_ekran != "Ana Ekran":
         }
 
         for label, screen in nav_items.items():
-            # Aktif ise "primary" görünür, değilse "secondary" (görünmez)
+            # Sidebar içindeki butonları secondary yap, CSS zaten onların stilini değiştirecek
             if st.button(label, use_container_width=True, type="primary" if st.session_state.aktif_ekran == screen else "secondary"):
                 st.session_state.aktif_ekran = screen
                 st.rerun()
