@@ -34,14 +34,25 @@ from chat_engine import ChatEngine
 from ag_engine import AgEngine
 from hesap_engine import HesapEngine
 
+import os
+from firebase_admin import credentials
+
 @st.cache_resource
 def get_db():
+    # 1. ADIM: Secrets'taki Project ID'yi işletim sistemine zorla tanıtıyoruz
+    if "GOOGLE_CLOUD_PROJECT" in st.secrets:
+        os.environ["GOOGLE_CLOUD_PROJECT"] = st.secrets["GOOGLE_CLOUD_PROJECT"]
+        
     if not firebase_admin._apps:
-        anahtar_bilgileri = dict(st.secrets["private_key"])
-        cred = credentials.Certificate(anahtar_bilgileri)
-        firebase_admin.initialize_app(options={
-            'projectId': st.secrets["GOOGLE_CLOUD_PROJECT"]
-        })
+        # 2. ADIM: Eğer secrets içine Firebase Service Account JSON verisini 
+        # "firebase" başlığıyla eklediysen bunu kullanır (Tam yetkili ve en güvenli yol)
+        if "firebase" in st.secrets:
+            cred = credentials.Certificate(dict(st.secrets["firebase"]))
+            firebase_admin.initialize_app(cred)
+        # Sadece Project ID eklendiyse varsayılan şekilde başlatır
+        else:
+            firebase_admin.initialize_app()
+            
     return firestore.client()
 
 # ==========================================
