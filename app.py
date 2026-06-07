@@ -47,62 +47,46 @@ def get_db():
         firebase_admin.initialize_app()
     return firestore.client()
 
-# ==========================================
-# 🎨 CSS VE TASARIM (PREMIUM DARK SAAS)
-# ==========================================
-if st.session_state.get("aktif_ekran", "Ana Ekran") == "Ana Ekran":
-    st.markdown("""
-    <style>
-        /* Sidebar'ı görseldeki gibi daralt */
-        [data-testid="stSidebar"] { 
-            min-width: 200px !important; 
-            max-width: 200px !important; 
-            background-color: #0F172A !important; 
-        }
-    </style>
-""", unsafe_allow_html=True)
-
 st.markdown("""
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Ana Renkler */
-        :root {
-            --bg-color: #0F172A;
-            --card-bg: #1E293B;
-            --text-color: #F8FAFC;
-            --accent-color: #C5A059;
+        /* Sidebar Genişliği ve Renk */
+        [data-testid="stSidebar"] { 
+            background-color: #0F172A !important; 
+            border-right: 1px solid #1E293B;
         }
         
-        html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; background-color: var(--bg-color) !important; color: var(--text-color) !important; }
+        /* Menü Butonlarını Flat (Düz) Yap */
+        div[data-testid="stSidebar"] div.stButton > button {
+            background-color: transparent !important;
+            border: none !important;
+            color: #94A3B8 !important;
+            text-align: left !important;
+            padding-left: 20px !important;
+            font-size: 15px !important;
+            font-weight: 500 !important;
+            border-radius: 0 !important;
+            transition: all 0.2s ease !important;
+        }
         
-        /* Kart Tasarımları */
+        /* Aktif Menü Ögesi */
+        div[data-testid="stSidebar"] div.stButton > button[kind="primary"] {
+            background-color: #1E293B !important;
+            color: #C5A059 !important;
+            border-left: 4px solid #C5A059 !important;
+        }
+
+        /* Hover Etkisi */
+        div[data-testid="stSidebar"] div.stButton > button:hover {
+            color: #F8FAFC !important;
+            background-color: #1E293B !important;
+        }
+
+        /* Genel Kart Tasarımı */
         [data-testid="stVerticalBlockBorderWrapper"] { 
-            background-color: var(--card-bg) !important; 
+            background-color: #1E293B !important; 
             border-radius: 12px !important; 
             border: 1px solid #334155 !important; 
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important; 
         }
-        
-        /* Butonlar */
-        button[kind="primary"] { background-color: var(--accent-color) !important; color: #000 !important; border: none !important; }
-        button[kind="secondary"] { background-color: #334155 !important; color: white !important; border: none !important; }
-        button:hover { filter: brightness(1.2); }
-
-        /* Input Alanları */
-        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] { 
-            background-color: #0F172A !important; 
-            color: white !important; 
-            border: 1px solid #334155 !important; 
-            border-radius: 8px !important; 
-        }
-
-        /* Başlıklar */
-        h1, h2, h3, h4 { color: #F8FAFC !important; }
-        
-        /* İçerik Kutuları */
-        .madde-kutusu { background-color: #0F172A !important; padding: 30px; border-radius: 12px; border: 1px solid #334155; margin: 20px 0; }
-        .madde-baslik { color: var(--accent-color) !important; font-weight: 700; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px; }
-        .hoca-anlatim-kutusu { background-color: #1E293B !important; padding: 25px; border-radius: 12px; border-left: 6px solid var(--accent-color); color: #E2E8F0 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -351,12 +335,13 @@ if not st.session_state.logged_in:
     st.stop()
 if st.session_state.aktif_ekran != "Ana Ekran":
     with st.sidebar:
-        # İkon odaklı tasarım için metni azalttık
-        st.markdown(f"### ⚖️ JUNILEX")
+        # Minimalist Başlık
+        st.markdown("### ⚖️ JUNILEX")
         st.markdown(f"**{st.session_state.aktif_kullanici.split()[0]}**")
         st.caption(f"ID: `{st.session_state.aktif_kullanici_id}`")
-        st.divider()
+        st.write("---")
 
+        # Navigasyon Listesi
         nav_items = {
             "🏠 Ana Menü": "Ana Ekran",
             "🏛️ Adliye": "Adliye (Mevzuat Sorgu)",
@@ -369,22 +354,23 @@ if st.session_state.aktif_ekran != "Ana Ekran":
         }
 
         for label, screen in nav_items.items():
-            # type="secondary" ile butonun arka planını sidebar ile bütünleştirdik
+            # Aktif ise "primary" görünür, değilse "secondary" (görünmez)
             if st.button(label, use_container_width=True, type="primary" if st.session_state.aktif_ekran == screen else "secondary"):
                 st.session_state.aktif_ekran = screen
                 st.rerun()
 
         st.divider()
         
-        # Kompakt veri paneli
-        with st.expander("📊 Veri"):
+        # Kompakt Veri Paneli (Sidebar'ın altına şık bir bilgi)
+        with st.expander("📊 Veri Paneli"):
             try:
                 db = get_db()
                 arsiv_c = len(list(db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream()))
-                st.metric("Arşiv", arsiv_c)
-            except: st.caption("Yükleniyor...")
+                st.metric("Arşivlenen", arsiv_c)
+            except: st.caption("Veriler yükleniyor...")
                 
-        if st.button("🚪 Çıkış", use_container_width=True):
+        st.write("##")
+        if st.button("🚪 Çıkış Yap", use_container_width=True):
             st.session_state.logged_in = False
             st.rerun()
 # ==========================================
