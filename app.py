@@ -340,50 +340,45 @@ if not st.session_state.logged_in:
                         st.session_state.onay_bekleyen = None
                         st.rerun()
     st.stop()
-# ==========================================
-# 🧭 SIDEBAR (GÖRSEL ODAKLI PREMIUM NAV)
-# ==========================================
 if st.session_state.aktif_ekran != "Ana Ekran":
     with st.sidebar:
-        # Üst Bilgi
-        st.markdown(f"### 🧑‍💻 {st.session_state.aktif_kullanici}")
-        st.caption(f"ID: **{st.session_state.aktif_kullanici_id}**")
+        # İkon odaklı tasarım için metni azalttık
+        st.markdown(f"### ⚖️ JUNILEX")
+        st.markdown(f"**{st.session_state.aktif_kullanici.split()[0]}**")
+        [data-testid="stSidebar"] { min-width: 200px !important; max-width: 200px !important; background-color: #0F172A !important; }
+        st.caption(f"ID: `{st.session_state.aktif_kullanici_id}`")
         st.divider()
 
-        # Navigasyon Butonları (İkon + İsim)
         nav_items = {
             "🏠 Ana Menü": "Ana Ekran",
             "🏛️ Adliye": "Adliye (Mevzuat Sorgu)",
             "🎓 Akademi": "Akademik Asistan",
             "📝 Dilekçe": "Dilekçe Merkezi",
-            "⚖️ İçtihat": "İçtihat Sorgulama",
+            "⚖️ İçtihat": "İçtihat Analizi",
             "🧮 Hesaplama": "Pratik Hesaplamalar",
             "💬 Chat": "💬 JUNILEX Chat",
             "👥 Ağ": "👥 Junilex Ağı"
         }
 
         for label, screen in nav_items.items():
-            if st.button(label, use_container_width=True, type="secondary" if st.session_state.aktif_ekran != screen else "primary"):
+            # type="secondary" ile butonun arka planını sidebar ile bütünleştirdik
+            if st.button(label, use_container_width=True, type="primary" if st.session_state.aktif_ekran == screen else "secondary"):
                 st.session_state.aktif_ekran = screen
                 st.rerun()
 
         st.divider()
         
-        # Çalışma Verileri (Daha kompakt)
-        with st.expander("📊 Veri Paneli"):
+        # Kompakt veri paneli
+        with st.expander("📊 Veri"):
             try:
                 db = get_db()
                 arsiv_c = len(list(db.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream()))
-                st.metric("Arşivlenen Evrak", arsiv_c)
-            except: st.caption("Veriler yükleniyor...")
+                st.metric("Arşiv", arsiv_c)
+            except: st.caption("Yükleniyor...")
                 
-        st.write("##")
-        if st.button("🚪 Çıkış Yap", use_container_width=True):
+        if st.button("🚪 Çıkış", use_container_width=True):
             st.session_state.logged_in = False
             st.rerun()
-        
-        st.caption("Ozan Şahin Sicim | JUNILEX v2.2")
-
 # ==========================================
 # 🏠 DASHBOARD (ANA EKRAN)
 # ==========================================
