@@ -520,39 +520,39 @@ with st.sidebar:
 st.markdown('<div style="padding: 10px 25px; min-height: 80vh;">', unsafe_allow_html=True)
 
 # ==========================================
-    # 🏠 DASHBOARD (ANA EKRAN)
-    # ==========================================
-    if st.session_state.aktif_ekran == "Ana Ekran":
-        st.markdown(f"""
-            <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
-            <p style="color: #94A3B8; font-size: 1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
+# 🏠 DASHBOARD (ANA EKRAN)
+# ==========================================
+if st.session_state.aktif_ekran == "Ana Ekran":
+    st.markdown(f"""
+        <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
+        <p style="color: #94A3B8; font-size: 1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
+    """, unsafe_allow_html=True)
+        
+    col1, col2, col3 = st.columns(3)
+        
+    with col1:
+        st.markdown("""
+        <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #3B82F6; height: 140px; margin-bottom: 15px;">
+            <h3 style="margin-top: 0; font-size: 1.1rem;">🏛️ Adliye</h3>
+            <p style="color: #94A3B8; font-size: 13px;">Mevzuatta gezin ve AI ile analiz et.</p>
+        </div>
         """, unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.markdown("""
-            <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #3B82F6; height: 140px; margin-bottom: 15px;">
-                <h3 style="margin-top: 0; font-size: 1.1rem;">🏛️ Adliye</h3>
-                <p style="color: #94A3B8; font-size: 13px;">Mevzuatta gezin ve AI ile analiz et.</p>
-            </div>
-            """, unsafe_allow_html=True)
-            if st.button("Adliyeye Git", key="hm_adliye", use_container_width=True): 
-                st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"
-                st.rerun()
+        if st.button("Adliyeye Git", key="hm_adliye", use_container_width=True): 
+            st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"
+            st.rerun()
                 
-        with col2:
-            st.markdown("""
-            <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #10B981; height: 140px; margin-bottom: 15px;">
-                <h3 style="margin-top: 0; font-size: 1.1rem;">🎓 Akademi</h3>
-                <p style="color: #94A3B8; font-size: 13px;">PDF notlarını yükle, sınavlara hazırlan.</p>
-            </div>
-            """, unsafe_allow_html=True)
-            if st.button("Akademiye Git", key="hm_akademi", use_container_width=True): 
-                st.session_state.aktif_ekran = "Akademik Asistan"
-                st.rerun()
+    with col2:
+        st.markdown("""
+        <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #10B981; height: 140px; margin-bottom: 15px;">
+            <h3 style="margin-top: 0; font-size: 1.1rem;">🎓 Akademi</h3>
+            <p style="color: #94A3B8; font-size: 13px;">PDF notlarını yükle, sınavlara hazırlan.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Akademiye Git", key="hm_akademi", use_container_width=True): 
+            st.session_state.aktif_ekran = "Akademik Asistan"
+            st.rerun()
                 
-        with col3:
+    with col3:
             st.markdown("""
             <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #F59E0B; height: 140px; margin-bottom: 15px;">
                 <h3 style="margin-top: 0; font-size: 1.1rem;">📝 Dilekçe</h3>
