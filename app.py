@@ -164,22 +164,34 @@ st.markdown("""
         .jx-item.active { background:rgba(201,168,76,0.11); color:var(--gold); font-weight:600; }
         .jx-item-icon { font-size:16px; width:20px; text-align:center; flex-shrink:0; }
 
-        /* fly-out içindeki Streamlit butonları: şeffaf, HTML üstüne biner */
-        [data-testid="stColumn"]:first-child div.stButton > button {
-            position:relative !important;
-            margin-top:-44px !important;
-            height:42px !important;
-            background:transparent !important;
-            border:none !important;
-            color:transparent !important;
-            width:100% !important;
-            cursor:pointer !important;
-            border-radius:10px !important;
-            z-index:10 !important;
-            font-size:1px !important;
+        /* fly-out kolonu (panel açıkken ilk kolon) — butonlar sol hizalı */
+        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) div.stButton > button {
+            text-align: left !important;
+            justify-content: flex-start !important;
+            padding: 10px 14px !important;
+            height: auto !important;
+            min-height: 42px !important;
+            font-size: 13.5px !important;
+            font-weight: 500 !important;
+            border-radius: 10px !important;
+            width: 100% !important;
         }
-        [data-testid="stColumn"]:first-child div.stButton > button:hover {
-            background:rgba(255,255,255,0.03) !important;
+        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) div.stButton > button[kind="secondary"] {
+            background: transparent !important;
+            border: none !important;
+            color: #5C7A94 !important;
+        }
+        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) div.stButton > button[kind="secondary"]:hover {
+            background: rgba(255,255,255,0.04) !important;
+            color: #E8DCC8 !important;
+            border: none !important;
+        }
+        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) div.stButton > button[kind="primary"] {
+            background: rgba(201,168,76,0.12) !important;
+            border: 1px solid rgba(201,168,76,0.3) !important;
+            color: #C9A84C !important;
+            font-weight: 600 !important;
+            box-shadow: none !important;
         }
 
         /* ── KARTLAR ── */
@@ -595,32 +607,38 @@ else:
 
 if panel_acik and col_fo is not None:
     with col_fo:
-        isim  = st.session_state.aktif_kullanici.split()[0]
-        uid   = st.session_state.aktif_kullanici_id
-        ekran = st.session_state.aktif_ekran
+        isim = st.session_state.aktif_kullanici.split()[0]
+        uid  = st.session_state.aktif_kullanici_id
 
-        items_html = ""
-        for item in flyout_menu:
-            cls = "jx-item active" if ekran == item["ekran"] else "jx-item"
-            items_html += f"""
-            <div class="{cls}">
-                <span class="jx-item-icon">{item['ikon']}</span>
-                <span>{item['label']}</span>
-            </div>"""
-
+        # Kullanıcı kartı
         st.markdown(f"""
-        <div class="jx-fo">
-            <div class="jx-user">
-                <p class="jx-user-name">{isim}</p>
-                <p class="jx-user-id">{uid}</p>
-            </div>
-            <p class="jx-sec">Modüller</p>
-            {items_html}
-        </div>""", unsafe_allow_html=True)
+        <div style="
+            background:rgba(201,168,76,0.07);
+            border:1px solid rgba(201,168,76,0.2);
+            border-radius:12px;
+            padding:14px 16px;
+            margin-bottom:18px;
+            margin-top:4px;
+        ">
+            <div style="font-family:'DM Sans',sans-serif;font-weight:700;
+                        font-size:15px;color:#E8DCC8;">{isim}</div>
+            <div style="font-family:'DM Sans',sans-serif;font-size:11px;
+                        color:#C9A84C;margin-top:3px;letter-spacing:.06em;">{uid}</div>
+        </div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:9px;font-weight:700;
+                    letter-spacing:.22em;text-transform:uppercase;color:#5C7A94;
+                    margin:0 0 10px 4px;">MODÜLLER</div>
+        """, unsafe_allow_html=True)
 
-        # Şeffaf tıklanabilir butonlar — HTML div'lerin üstüne biner
+        # Menü butonları — CSS ile stilize
         for item in flyout_menu:
-            if st.button(item["label"], key=f"fo_{item['ekran']}", use_container_width=True):
+            is_active = st.session_state.aktif_ekran == item["ekran"]
+            if st.button(
+                f"{item['ikon']}  {item['label']}",
+                key=f"fo_{item['ekran']}",
+                use_container_width=True,
+                type="primary" if is_active else "secondary"
+            ):
                 st.session_state.aktif_ekran = item["ekran"]
                 st.session_state.menu_panel_acik = False
                 st.rerun()
