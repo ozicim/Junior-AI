@@ -563,22 +563,22 @@ if st.session_state.aktif_ekran == "Ana Ekran":
                 st.session_state.aktif_ekran = "Dilekçe Merkezi"
                 st.rerun()
 
-        st.markdown('<div style="margin: 30px 0; border-top: 1px solid #334155;"></div>', unsafe_allow_html=True)
-        st.subheader("📊 Kişisel İstatistikler")
-        try:
-            db_fs = get_db()
-            tum_kayitlar = list(db_fs.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
-            toplam_islem = len(tum_kayitlar)
-            mevzuat_sayisi = sum(1 for d in tum_kayitlar if "Mevzuat" in d.to_dict().get("kategori", ""))
-            dilekce_sayisi = sum(1 for d in tum_kayitlar if "Dilekçe" in d.to_dict().get("kategori", ""))
-            ictihat_sayisi = sum(1 for d in tum_kayitlar if "İçtihat" in d.to_dict().get("kategori", ""))
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Toplam İşlem", toplam_islem)
-            m2.metric("Mevzuat Şerhi", mevzuat_sayisi)
-            m3.metric("Dilekçe", dilekce_sayisi)
-            m4.metric("İçtihat Analizi", ictihat_sayisi)
-        except:
-            st.caption("Veriler yükleniyor...")
+    st.markdown('<div style="margin: 30px 0; border-top: 1px solid #334155;"></div>', unsafe_allow_html=True)
+    st.subheader("📊 Kişisel İstatistikler")
+    try:
+        db_fs = get_db()
+        tum_kayitlar = list(db_fs.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
+        toplam_islem = len(tum_kayitlar)
+        mevzuat_sayisi = sum(1 for d in tum_kayitlar if "Mevzuat" in d.to_dict().get("kategori", ""))
+        dilekce_sayisi = sum(1 for d in tum_kayitlar if "Dilekçe" in d.to_dict().get("kategori", ""))
+        ictihat_sayisi = sum(1 for d in tum_kayitlar if "İçtihat" in d.to_dict().get("kategori", ""))
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Toplam İşlem", toplam_islem)
+        m2.metric("Mevzuat Şerhi", mevzuat_sayisi)
+        m3.metric("Dilekçe", dilekce_sayisi)
+        m4.metric("İçtihat Analizi", ictihat_sayisi)
+    except:
+        st.caption("Veriler yükleniyor...")
             
     # ==========================================
     # 👤 PROFİL EKRANI
