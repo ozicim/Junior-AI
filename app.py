@@ -59,8 +59,6 @@ def get_db():
 # ==========================================
 st.set_page_config(layout="wide", page_title="JUNILEX AI", initial_sidebar_state="collapsed")
 
-import streamlit as st
-
 # ==========================================================
 # 🎨 JUNILEX AI - YENİ NESİL KOMPAKT SAAS TASARIMI (DARK MODE)
 # ==========================================================
@@ -146,51 +144,61 @@ st.markdown("""
             color: #C5A059 !important;
         }
 
-        /* --- 🎯 KOMPAKT SOL NAVİGASYON BUTONLARI (FOTOĞRAFTAKİ YAPI) --- */
-        .nav-btn {
-            margin-bottom: 12px;
-            padding: 2px 0;
-            display: flex;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-
-        /* Kapsayıcı içindeki Streamlit butonunu sıfırlayıp sadece ikona odaklama */
-        .nav-btn > button {
+        /* --- 🎯 STREAMLIT GÖRÜNMEZ BUTON AYARI (HİLE ALANI) --- */
+        /* Sol sütundaki gerçek gri butonları tamamen şeffaf yapıp HTML kutularımızın üstüne oturtuyoruz */
+        [data-testid="stColumn"]:nth-child(1) button {
+            position: absolute !important;
+            height: 48px !important;
+            margin-top: -54px !important;
             background-color: transparent !important;
             border: none !important;
-            color: #64748B !important; /* Pasif ikon rengi */
-            font-size: 22px !important; /* Görseldeki ideal ikon boyutu */
-            padding: 12px 0 !important;
-            border-radius: 0px !important;
-            width: 100% !important;
-            transition: all 0.2s ease !important;
+            color: transparent !important;
+            cursor: pointer !important;
+            z-index: 10 !important;
+        }
+        [data-testid="stColumn"]:nth-child(1) button:hover {
+            background-color: transparent !important;
+            border: none !important;
+            color: transparent !important;
+        }
+
+        /* --- KUSURSUZ GÖRSEL HTML MENÜ KUTULARI (FOTOĞRAFTAKİ YAPI) --- */
+        .custom-nav-item {
             display: flex !important;
             justify-content: center !important;
             align-items: center !important;
+            height: 48px;
+            width: 48px;
+            margin: 0 auto 12px auto;
+            border-radius: 8px;
+            color: #64748B;
+            font-size: 20px;
+            transition: all 0.2s ease;
+            position: relative;
         }
 
-        /* İkonların üzerine gelindiğinde (Hover) tepki */
-        .nav-btn > button:hover {
-            color: #F8FAFC !important;
-            background-color: rgba(255, 255, 255, 0.03) !important;
+        .custom-nav-item:hover {
+            color: #F8FAFC;
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
         /* 👑 AKTİF SAYFA: Sol dikey altın şerit ve hafif arka plan ışığı */
-        .nav-btn.active {
+        .custom-nav-item.active {
+            background-color: rgba(197, 160, 89, 0.08) !important;
+            color: #C5A059 !important;
             border-left: 3px solid #C5A059 !important;
-            background-color: rgba(197, 160, 89, 0.06) !important;
-        }
-
-        .nav-btn.active > button {
-            color: #C5A059 !important; /* Aktif ikon altın rengi olur */
-            font-weight: bold !important;
+            border-radius: 0px 8px 8px 0px;
         }
         
-        /* Çıkış Butonuna Özel Alt Alan Yapısı */
-        .logout-btn > button:hover {
-            color: #EF4444 !important; /* Çıkış butonuna özel kırmızı hover */
-            background-color: rgba(239, 68, 68, 0.05) !important;
+        .sidebar-logo {
+            text-align: center;
+            padding-top: 10px;
+        }
+        
+        .sidebar-divider {
+            margin: 15px auto;
+            width: 60%;
+            border-top: 1px solid #334155;
         }
 
         /* --- METRİKLER (İSTATİSTİK ALANI) --- */
@@ -445,62 +453,64 @@ if not st.session_state.logged_in:
     st.stop()
 
 
-import streamlit as st
-
 # ==========================================================
 # 🗂️ ANA YERLEŞİM (İKİ SÜTUNLU YENİ NESİL SAAS ADAPTASYONU)
 # ==========================================================
 
-# Sol navigasyonu olabildiğince daraltıp sağ tarafa geniş alan bırakıyoruz
-col_nav, col_main = st.columns([0.4, 4.6])
+# Sol navigasyonu kompakt tutmak için ideal 0.5 oranına çekiyoruz
+col_nav, col_main = st.columns([0.5, 9.5])
 
-# ── SOL NAVİGASYON (SADECE İKONLAR VE ŞIK GEÇİŞLER) ──
+# ── SOL NAVİGASYON (HTML TABANLI İKON YERLEŞİMİ) ──
 with col_nav:
-    # Logo Alanı (Kompakt ve Merkezlenmiş)
+    # Logo Alanı
     st.markdown("""
-        <div style="text-align: center; padding: 15px 0 30px 0;">
-            <span style="font-size: 24px; cursor: default;" title="JUNILEX AI">🏛️</span>
-            <div style="color: #C5A059; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px;">JNLEX</div>
+        <div class="sidebar-logo">
+            <span style="font-size: 22px; cursor: default;">🏛️</span>
+            <div style="color: #C5A059; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px;">JUNILE X</div>
         </div>
+        <div style="height: 15px;"></div>
     """, unsafe_allow_html=True)
     
-    # Menü Fonksiyonu (Fotoğraftaki gibi sadece ikon tabanlı, şık aktif kutuları oluşturur)
-    def render_nav_item(icon, label, screen_name):
+    # Hileli HTML Menü Elemanı Oluşturucu
+    def render_html_nav_item(icon, label, screen_name):
         is_active = st.session_state.aktif_ekran == screen_name
-        # Aktif olan butona sol çizgi ve arka plan vurgusu eklemek için dinamik class
-        cls_name = "nav-btn active" if is_active else "nav-btn"
+        cls_name = "custom-nav-item active" if is_active else "custom-nav-item"
         
-        st.markdown(f'<div class="{cls_name}" title="{label}">', unsafe_allow_html=True)
-        # Sadece ikon gösteriyoruz, label parametresini hover (title) yardımıyla ipucu olarak veriyoruz
-        if st.button(f"{icon}", key=f"nav_{screen_name}", use_container_width=True):
+        # Kusursuz HTML kutusunu ekrana basıyoruz
+        st.markdown(f"""
+            <div class="{cls_name}" title="{label}">
+                <span>{icon}</span>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Tam üstüne binen görünmez butonu basıp Python tetiklemesi yapıyoruz
+        if st.button("", key=f"btn_nav_click_{screen_name}", use_container_width=True):
             st.session_state.aktif_ekran = screen_name
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
     # Üst Menü Grubu
-    render_nav_item("🏠", "Ana Ekran", "Ana Ekran")
-    render_nav_item("🏛️", "Adliye (Mevzuat Sorgu)", "Adliye (Mevzuat Sorgu)")
-    render_nav_item("🎓", "Akademik Asistan", "Akademik Asistan")
-    render_nav_item("📝", "Dilekçe Merkezi", "Dilekçe Merkezi")
-    render_nav_item("⚖️", "İçtihat Sorgulama", "İçtihat Sorgulama")
-    render_nav_item("🧮", "Pratik Hesaplamalar", "Pratik Hesaplamalar")
+    render_html_nav_item("🏠", "Ana Ekran", "Ana Ekran")
+    render_html_nav_item("🏛️", "Adliye (Mevzuat Sorgu)", "Adliye (Mevzuat Sorgu)")
+    render_html_nav_item("🎓", "Akademik Asistan", "Akademik Asistan")
+    render_html_nav_item("📝", "Dilekçe Merkezi", "Dilekçe Merkezi")
+    render_html_nav_item("⚖️", "İçtihat Sorgulama", "İçtihat Sorgulama")
+    render_html_nav_item("🧮", "Pratik Hesaplamalar", "Pratik Hesaplamalar")
     
-    # Ayırıcı Boşluk ve İletişim Grubu
-    st.markdown('<div style="margin: 20px 0; border-top: 1px solid #334155;"></div>', unsafe_allow_html=True)
+    # Ayırıcı Çizgi
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     
-    render_nav_item("💬", "Junilex Chat", "💬 JUNILEX Chat")
-    render_nav_item("👥", "Junilex Ağı", "👥 Junilex Ağı")
-    render_nav_item("👤", "Profilim", "Profil")
+    # Alt İletişim Grubu
+    render_html_nav_item("💬", "Junilex Chat", "💬 JUNILEX Chat")
+    render_html_nav_item("👥", "Junilex Ağı", "👥 Junilex Ağı")
+    render_html_nav_item("👤", "Profilim", "Profil")
     
-    # Alt tarafa itmek için boşluk bırakma ve Çıkış Butonu
-    st.write("##")
-    st.write("##")
+    # Alt tarafa itme boşluğu ve Çıkış Butonu
+    st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="nav-btn logout-btn" title="Çıkış Yap">', unsafe_allow_html=True)
-    if st.button("🚪", key="btn_cikis_sol", use_container_width=True):
+    st.markdown('<div class="custom-nav-item logout-btn" title="Çıkış Yap"><span>🚪</span></div>', unsafe_allow_html=True)
+    if st.button("", key="btn_logout_hidden_sol", use_container_width=True):
         st.session_state.logged_in = False
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ── SAĞ İÇERİK ALANI (col_main) ──
@@ -1071,7 +1081,7 @@ with col_main:
             st.markdown("""
             <div style="background-color: #1E293B; padding: 20px; border-radius: 8px; border-left: 4px solid #3B82F6; margin-bottom: 15px;">
                 <h4 style="margin-top: 0; color: #E2E8F0; font-size: 16px;">🔍 Doğrudan Madde Çağır</h4>
-                <p style="color: #94A3B8; font-size: 13px; margin-bottom: 0;">Maddenin numarasını girerek tam metne ve yapay zeka analizine ulaşın.</p>
+                <p style="color: #94A3B8; font-size: 13px; margin-bottom: 0;">Maddenin numarasını girerek tam metne and yapay zeka analizine ulaşın.</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -1527,7 +1537,8 @@ with col_main:
                             if secim_cvp == soru_data['cevap']:
                                 st.success("Doğru!")
                             else:
-                                st.error(f"Yanlış! Doğru Cevap: {soru_data['cevap']}")
+                                r_cevap = soru_data['cevap']
+                                st.error(f"Yanlış! Doğru Cevap: {r_cevap}")
                         st.write("##")
                     else:
                         cevap = st.text_area("Hukuki Nitelemenizi Yazın:", key=f"ans_{i}", height=150)
@@ -1543,7 +1554,7 @@ with col_main:
                         st.write("---")
 
     # ==========================================
-    # ARZUHAL MODÜLÜ (Dilekçe Merkezi)
+    # 📝 DİLEKÇE MERKEZİ MODÜLÜ
     # ==========================================
     elif st.session_state.aktif_ekran == "Dilekçe Merkezi":
         st.header("📝 Dilekçe Marketi")
