@@ -473,10 +473,8 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================================
-# 🗂️ ANA YERLEŞİM (SABİT SIDEBAR İLE YENİ NESİL SAAS ADAPTASYONU)
+# 🗂️ ANA YERLEŞİM (SABİT SIDEBAR)
 # ==========================================================
-
-# ── SOL NAVİGASYON (Sidebar'a taşıdık, artık kayma yapmaz!) ──
 with st.sidebar:
     st.markdown("""
         <div class="sidebar-logo">
@@ -516,7 +514,6 @@ with st.sidebar:
         st.rerun()
 
 # ── SAĞ İÇERİK ALANI ──
-# Artık sütunlar yerine doğrudan ana konteynerı kullanıyoruz
 st.markdown('<div style="padding: 10px 25px; min-height: 80vh;">', unsafe_allow_html=True)
 
 # ==========================================
@@ -527,9 +524,9 @@ if st.session_state.aktif_ekran == "Ana Ekran":
         <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
         <p style="color: #94A3B8; font-size: 1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
     """, unsafe_allow_html=True)
-        
+    
     col1, col2, col3 = st.columns(3)
-        
+    
     with col1:
         st.markdown("""
         <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #3B82F6; height: 140px; margin-bottom: 15px;">
@@ -540,7 +537,7 @@ if st.session_state.aktif_ekran == "Ana Ekran":
         if st.button("Adliyeye Git", key="hm_adliye", use_container_width=True): 
             st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"
             st.rerun()
-                
+            
     with col2:
         st.markdown("""
         <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #10B981; height: 140px; margin-bottom: 15px;">
@@ -551,17 +548,17 @@ if st.session_state.aktif_ekran == "Ana Ekran":
         if st.button("Akademiye Git", key="hm_akademi", use_container_width=True): 
             st.session_state.aktif_ekran = "Akademik Asistan"
             st.rerun()
-                
+            
     with col3:
-            st.markdown("""
-            <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #F59E0B; height: 140px; margin-bottom: 15px;">
-                <h3 style="margin-top: 0; font-size: 1.1rem;">📝 Dilekçe</h3>
-                <p style="color: #94A3B8; font-size: 13px;">Profesyonel dilekçe ve sözleşme taslakları.</p>
-            </div>
-            """, unsafe_allow_html=True)
-            if st.button("Dilekçe Marketi", key="hm_dilekce", use_container_width=True): 
-                st.session_state.aktif_ekran = "Dilekçe Merkezi"
-                st.rerun()
+        st.markdown("""
+        <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #F59E0B; height: 140px; margin-bottom: 15px;">
+            <h3 style="margin-top: 0; font-size: 1.1rem;">📝 Dilekçe</h3>
+            <p style="color: #94A3B8; font-size: 13px;">Profesyonel dilekçe ve sözleşme taslakları.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Dilekçe Marketi", key="hm_dilekce", use_container_width=True): 
+            st.session_state.aktif_ekran = "Dilekçe Merkezi"
+            st.rerun()
 
     st.markdown('<div style="margin: 30px 0; border-top: 1px solid #334155;"></div>', unsafe_allow_html=True)
     st.subheader("📊 Kişisel İstatistikler")
@@ -579,36 +576,22 @@ if st.session_state.aktif_ekran == "Ana Ekran":
         m4.metric("İçtihat Analizi", ictihat_sayisi)
     except:
         st.caption("Veriler yükleniyor...")
-            
-    # ==========================================
-    # 👤 PROFİL EKRANI
-    # ==========================================
-    elif st.session_state.aktif_ekran == "Profil":
-        st.header("👤 Profilim")
-        benim_mailim = st.session_state.aktif_kullanici_email
-        db_json = veritabani_yukle()
-        benim_verim = db_json.get(benim_mailim, {})
-        st.markdown(f"""
-        <div style="background-color: #1E293B; padding: 30px; border-radius: 12px; border-left: 5px solid #C5A059; margin-bottom: 20px;">
-            <h2 style="margin: 0; color: #F8FAFC;">{benim_verim.get('isim', 'Bilinmiyor')}</h2>
-            <p style="color: #94A3B8; font-size: 16px; margin-top: 5px;">{benim_verim.get('unvan', 'Üye')} | {benim_verim.get('kurum', '')}</p>
-            <div style="display: flex; gap: 20px; margin-top: 20px;">
-                <div style="background-color: #0F172A; padding: 10px 15px; border-radius: 6px;">
-                    <span style="color: #64748B; font-size: 12px;">JUNILEX ID</span><br>
-                    <span style="color: #C5A059; font-weight: bold; font-size: 18px;">{benim_verim.get('id', '')}</span>
-                </div>
-                <div style="background-color: #0F172A; padding: 10px 15px; border-radius: 6px;">
-                    <span style="color: #64748B; font-size: 12px;">E-Posta</span><br>
-                    <span style="color: #E2E8F0; font-weight: bold; font-size: 16px;">{benim_mailim}</span>
-                </div>
-                 <div style="background-color: #0F172A; padding: 10px 15px; border-radius: 6px;">
-                    <span style="color: #64748B; font-size: 12px;">Kayıt Tarihi</span><br>
-                    <span style="color: #E2E8F0; font-weight: bold; font-size: 16px;">{benim_verim.get('kayit_tarihi', 'Bilinmiyor')}</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.info("Bu alanda gelecekte profil bilgilerini düzenleme ve şifre değiştirme özellikleri yer alacaktır.")
+
+# ==========================================
+# 👤 PROFİL EKRANI
+# ==========================================
+elif st.session_state.aktif_ekran == "Profil":
+    st.header("👤 Profilim")
+    benim_mailim = st.session_state.aktif_kullanici_email
+    db_json = veritabani_yukle()
+    benim_verim = db_json.get(benim_mailim, {})
+    st.markdown(f"""
+    <div style="background-color: #1E293B; padding: 30px; border-radius: 12px; border-left: 5px solid #C5A059; margin-bottom: 20px;">
+        <h2 style="margin: 0; color: #F8FAFC;">{benim_verim.get('isim', 'Bilinmiyor')}</h2>
+        <p style="color: #94A3B8; font-size: 16px; margin-top: 5px;">{benim_verim.get('unvan', 'Üye')} | {benim_verim.get('kurum', '')}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    st.info("Bu alanda gelecekte profil bilgilerini düzenleme özellikleri yer alacaktır.")
 
     # ==========================================
     # 👥 JUNILEX AĞI (GÖRSELDEKİ BİREBİR TASARIM)
