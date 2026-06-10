@@ -520,14 +520,16 @@ with st.sidebar:
 st.markdown('<div style="padding: 10px 25px; min-height: 80vh;">', unsafe_allow_html=True)
 
 # ==========================================
-# 🏠 DASHBOARD (ANA EKRAN)
-# ==========================================
-if st.session_state.aktif_ekran == "Ana Ekran":
-    st.markdown(f"""
-        <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
-        <p style="color: #94A3B8; font-size: 1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
-    """, unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
+    # 🏠 DASHBOARD (ANA EKRAN)
+    # ==========================================
+    if st.session_state.aktif_ekran == "Ana Ekran":
+        st.markdown(f"""
+            <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
+            <p style="color: #94A3B8; font-size: 1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns(3)
+        
         with col1:
             st.markdown("""
             <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #3B82F6; height: 140px; margin-bottom: 15px;">
@@ -538,6 +540,7 @@ if st.session_state.aktif_ekran == "Ana Ekran":
             if st.button("Adliyeye Git", key="hm_adliye", use_container_width=True): 
                 st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"
                 st.rerun()
+                
         with col2:
             st.markdown("""
             <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #10B981; height: 140px; margin-bottom: 15px;">
@@ -548,6 +551,7 @@ if st.session_state.aktif_ekran == "Ana Ekran":
             if st.button("Akademiye Git", key="hm_akademi", use_container_width=True): 
                 st.session_state.aktif_ekran = "Akademik Asistan"
                 st.rerun()
+                
         with col3:
             st.markdown("""
             <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #F59E0B; height: 140px; margin-bottom: 15px;">
@@ -558,6 +562,7 @@ if st.session_state.aktif_ekran == "Ana Ekran":
             if st.button("Dilekçe Marketi", key="hm_dilekce", use_container_width=True): 
                 st.session_state.aktif_ekran = "Dilekçe Merkezi"
                 st.rerun()
+
         st.markdown('<div style="margin: 30px 0; border-top: 1px solid #334155;"></div>', unsafe_allow_html=True)
         st.subheader("📊 Kişisel İstatistikler")
         try:
