@@ -59,44 +59,47 @@ def get_db():
 # ==========================================
 st.set_page_config(layout="wide", page_title="JUNILEX AI", initial_sidebar_state="collapsed")
 
-# ==========================================
-# 🎨 YENİ NESİL SAAS TASARIMI (DARK MODE)
-# ==========================================
+import streamlit as st
+
+# ==========================================================
+# 🎨 JUNILEX AI - YENİ NESİL KOMPAKT SAAS TASARIMI (DARK MODE)
+# ==========================================================
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
+        /* --- GENEL SAYFA VE FONT AYARLARI --- */
         * { font-family: 'Inter', sans-serif !important; }
-
-        /* Ana Arka Plan */
         .stApp { background-color: #0F172A !important; }
         
-        /* Varsayılan Sidebar'ı Tamamen Gizle */
+        /* Varsayılan Geniş Streamlit Kontrollerini Gizle */
         [data-testid="stSidebar"] { display: none !important; }
         [data-testid="collapsedControl"] { display: none !important; }
 
-        /* Yazı Renkleri */
-        h1, h2, h3, h4, h5, h6, p, span, div, label { color: #F8FAFC !important; }
-        .stMarkdown p, .stMarkdown span { color: #94A3B8 !important; }
+        /* --- METİN VE BAŞLIK RENKLERİ (OKUNABİLİRLİK OPTİMİZASYONU) --- */
+        h1, h2, h3, h4, h5, h6 { color: #F8FAFC !important; font-weight: 600; }
+        .stMarkdown p { color: #94A3B8 !important; }
+        .stMarkdown strong { color: #F8FAFC !important; }
+        label [data-testid="stMarkdownContainer"] p { color: #F8FAFC !important; font-weight: 500; }
 
-        /* Kart ve Kutu Tasarımları */
+        /* --- KARTLAR VE KUTULAR (MAIN PANEL) --- */
         [data-testid="stVerticalBlockBorderWrapper"] {
             background-color: #1E293B !important;
             border-radius: 12px !important;
             border: 1px solid #334155 !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-            padding: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+            padding: 18px !important;
         }
 
-        /* Expander */
+        /* Expander Yapısı */
         [data-testid="stExpander"] {
             background-color: #1E293B !important;
             border: 1px solid #334155 !important;
             border-radius: 8px !important;
         }
 
-        /* Input Alanları */
-        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"], .stNumberInput input {
+        /* --- GİRDİ ALANLARI (INPUT & SELECTBOX) --- */
+        .stTextInput input, .stTextArea textarea, .stNumberInput input {
             background-color: #0F172A !important;
             color: #F8FAFC !important;
             border: 1px solid #334155 !important;
@@ -107,7 +110,17 @@ st.markdown("""
             box-shadow: 0 0 0 1px #C5A059 !important;
         }
 
-        /* Butonlar */
+        /* Selectbox Dropdown Ayarları */
+        .stSelectbox div[data-baseweb="select"] {
+            background-color: #0F172A !important;
+            border: 1px solid #334155 !important;
+            border-radius: 8px !important;
+        }
+        .stSelectbox div[data-baseweb="select"] div {
+            color: #F8FAFC !important;
+        }
+
+        /* --- STANDART BUTONLAR (SAĞ PANEL İÇİNDEKİLER) --- */
         button[kind="primary"] {
             background-color: #C5A059 !important;
             color: #0F172A !important;
@@ -116,7 +129,10 @@ st.markdown("""
             border-radius: 8px !important;
             transition: all 0.2s ease !important;
         }
-        button[kind="primary"]:hover { filter: brightness(1.1) !important; transform: translateY(-1px); }
+        button[kind="primary"]:hover { 
+            filter: brightness(1.1) !important; 
+            transform: translateY(-1px); 
+        }
         
         button[kind="secondary"] {
             background-color: #334155 !important;
@@ -125,39 +141,71 @@ st.markdown("""
             border-radius: 8px !important;
             transition: all 0.2s ease !important;
         }
-        button[kind="secondary"]:hover { background-color: #475569 !important; }
+        button[kind="secondary"]:hover { 
+            background-color: #475569 !important; 
+            color: #C5A059 !important;
+        }
 
-        /* --- ÖZEL SOL NAVİGASYON (BUTONLARI LİNKE ÇEVİRME) --- */
+        /* --- 🎯 KOMPAKT SOL NAVİGASYON BUTONLARI (FOTOĞRAFTAKİ YAPI) --- */
+        .nav-btn {
+            margin-bottom: 12px;
+            padding: 2px 0;
+            display: flex;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        /* Kapsayıcı içindeki Streamlit butonunu sıfırlayıp sadece ikona odaklama */
         .nav-btn > button {
             background-color: transparent !important;
             border: none !important;
-            color: #94A3B8 !important;
-            text-align: left !important;
-            padding: 12px 15px !important;
-            font-size: 15px !important;
-            font-weight: 500 !important;
-            border-radius: 8px !important;
-            transition: all 0.2s ease !important;
+            color: #64748B !important; /* Pasif ikon rengi */
+            font-size: 22px !important; /* Görseldeki ideal ikon boyutu */
+            padding: 12px 0 !important;
+            border-radius: 0px !important;
             width: 100% !important;
-            justify-content: flex-start !important;
+            transition: all 0.2s ease !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
         }
+
+        /* İkonların üzerine gelindiğinde (Hover) tepki */
         .nav-btn > button:hover {
             color: #F8FAFC !important;
-            background-color: rgba(255,255,255,0.05) !important;
+            background-color: rgba(255, 255, 255, 0.03) !important;
         }
-        .nav-btn.active > button {
-            background-color: #1E293B !important;
-            color: #C5A059 !important;
+
+        /* 👑 AKTİF SAYFA: Sol dikey altın şerit ve hafif arka plan ışığı */
+        .nav-btn.active {
             border-left: 3px solid #C5A059 !important;
-            font-weight: 600 !important;
+            background-color: rgba(197, 160, 89, 0.06) !important;
+        }
+
+        .nav-btn.active > button {
+            color: #C5A059 !important; /* Aktif ikon altın rengi olur */
+            font-weight: bold !important;
         }
         
-        /* Metrikler */
-        [data-testid="stMetricValue"] { color: #C5A059 !important; font-size: 24px !important;}
+        /* Çıkış Butonuna Özel Alt Alan Yapısı */
+        .logout-btn > button:hover {
+            color: #EF4444 !important; /* Çıkış butonuna özel kırmızı hover */
+            background-color: rgba(239, 68, 68, 0.05) !important;
+        }
+
+        /* --- METRİKLER (İSTATİSTİK ALANI) --- */
+        [data-testid="stMetricValue"] { 
+            color: #C5A059 !important; 
+            font-size: 26px !important;
+            font-weight: 700 !important;
+        }
+        [data-testid="stMetricLabel"] p {
+            color: #94A3B8 !important;
+            font-size: 14px !important;
+        }
         
     </style>
 """, unsafe_allow_html=True)
-
 
 # ==========================================
 # 🔐 API VE MOTORLAR
