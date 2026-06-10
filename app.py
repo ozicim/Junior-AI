@@ -397,76 +397,76 @@ if not st.session_state.logged_in:
     st.stop()
 
 
-# ==========================================
-# 🗂️ ANA YERLEŞİM (İKİ SÜTUNLU SAAS)
-# ==========================================
-col_nav, col_main = st.columns([1, 4])
+import streamlit as st
 
-# ── SOL NAVİGASYON (SİDEBAR YERİNE) ──
+# ==========================================================
+# 🗂️ ANA YERLEŞİM (İKİ SÜTUNLU YENİ NESİL SAAS ADAPTASYONU)
+# ==========================================================
+
+# Sol navigasyonu olabildiğince daraltıp sağ tarafa geniş alan bırakıyoruz
+col_nav, col_main = st.columns([0.4, 4.6])
+
+# ── SOL NAVİGASYON (SADECE İKONLAR VE ŞIK GEÇİŞLER) ──
 with col_nav:
+    # Logo Alanı (Kompakt ve Merkezlenmiş)
     st.markdown("""
-        <div style="padding-bottom: 20px;">
-            <h2 style="color: #C5A059 !important; font-weight: 800; margin-bottom: 0;">🏛️ JUNILEX</h2>
-            <span style="color: #64748b; font-size: 12px; letter-spacing: 1px;">LEGAL INTELLIGENCE</span>
+        <div style="text-align: center; padding: 15px 0 30px 0;">
+            <span style="font-size: 24px; cursor: default;" title="JUNILEX AI">🏛️</span>
+            <div style="color: #C5A059; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px;">JNLEX</div>
         </div>
     """, unsafe_allow_html=True)
     
-    # Kullanıcı Profili (Küçük Kart)
-    st.markdown(f"""
-        <div style="background-color: #1E293B; border-radius: 8px; padding: 12px; margin-bottom: 20px; border: 1px solid #334155; cursor: pointer;" onclick="document.getElementById('btn_profil_gizli').click();">
-            <div style="font-weight: 600; color: #E2E8F0; font-size: 14px;">{st.session_state.aktif_kullanici}</div>
-            <div style="color: #C5A059; font-size: 12px;">{st.session_state.aktif_kullanici_id}</div>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Menü Fonksiyonu (CSS ile şekillendiriyoruz)
+    # Menü Fonksiyonu (Fotoğraftaki gibi sadece ikon tabanlı, şık aktif kutuları oluşturur)
     def render_nav_item(icon, label, screen_name):
         is_active = st.session_state.aktif_ekran == screen_name
+        # Aktif olan butona sol çizgi ve arka plan vurgusu eklemek için dinamik class
         cls_name = "nav-btn active" if is_active else "nav-btn"
-        st.markdown(f'<div class="{cls_name}">', unsafe_allow_html=True)
-        if st.button(f"{icon}   {label}", key=f"nav_{screen_name}", use_container_width=True):
+        
+        st.markdown(f'<div class="{cls_name}" title="{label}">', unsafe_allow_html=True)
+        # Sadece ikon gösteriyoruz, label parametresini hover (title) yardımıyla ipucu olarak veriyoruz
+        if st.button(f"{icon}", key=f"nav_{screen_name}", use_container_width=True):
             st.session_state.aktif_ekran = screen_name
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.caption("MENÜ")
+    # Üst Menü Grubu
     render_nav_item("🏠", "Ana Ekran", "Ana Ekran")
-    render_nav_item("🏛️", "Adliye", "Adliye (Mevzuat Sorgu)")
-    render_nav_item("🎓", "Akademi", "Akademik Asistan")
+    render_nav_item("🏛️", "Adliye (Mevzuat Sorgu)", "Adliye (Mevzuat Sorgu)")
+    render_nav_item("🎓", "Akademik Asistan", "Akademik Asistan")
     render_nav_item("📝", "Dilekçe Merkezi", "Dilekçe Merkezi")
-    render_nav_item("⚖️", "İçtihat Bulucu", "İçtihat Sorgulama")
-    render_nav_item("🧮", "Hesaplamalar", "Pratik Hesaplamalar")
+    render_nav_item("⚖️", "İçtihat Sorgulama", "İçtihat Sorgulama")
+    render_nav_item("🧮", "Pratik Hesaplamalar", "Pratik Hesaplamalar")
     
-    st.write("##")
-    st.caption("AĞ & İLETİŞİM")
+    # Ayırıcı Boşluk ve İletişim Grubu
+    st.markdown('<div style="margin: 20px 0; border-top: 1px solid #334155;"></div>', unsafe_allow_html=True)
+    
     render_nav_item("💬", "Junilex Chat", "💬 JUNILEX Chat")
     render_nav_item("👥", "Junilex Ağı", "👥 Junilex Ağı")
     render_nav_item("👤", "Profilim", "Profil")
     
-    st.write("---")
-    if st.button("🚪 Çıkış Yap", use_container_width=True):
+    # Alt tarafa itmek için boşluk bırakma ve Çıkış Butonu
+    st.write("##")
+    st.write("##")
+    
+    st.markdown('<div class="nav-btn logout-btn" title="Çıkış Yap">', unsafe_allow_html=True)
+    if st.button("🚪", key="btn_cikis_sol", use_container_width=True):
         st.session_state.logged_in = False
-        st.rerun()
-        
-    # Profil Tıklaması İçin Gizli Buton (HTML kartından tetiklenecek)
-    st.markdown('<div style="display:none;">', unsafe_allow_html=True)
-    if st.button("GizliProfil", key="btn_profil_gizli"):
-        st.session_state.aktif_ekran = "Profil"
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ── SAĞ İÇERİK ALANI (col_main) ──
 with col_main:
-    st.markdown('<div style="padding: 10px 30px;">', unsafe_allow_html=True) # İçerik kenar boşluğu
+    # Sayfa içeriğini sarmalayan ana div ve padding ayarı
+    st.markdown('<div style="padding: 10px 25px; min-height: 80vh;">', unsafe_allow_html=True)
 
     # ==========================================
     # 🏠 DASHBOARD (ANA EKRAN)
     # ==========================================
     if st.session_state.aktif_ekran == "Ana Ekran":
         st.markdown(f"""
-            <h1 style="font-size: 2.5rem; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
-            <p style="color: #94A3B8; font-size: 1.1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
+            <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
+            <p style="color: #94A3B8; font-size: 1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
         """, unsafe_allow_html=True)
 
         # Hızlı Erişim Kartları
@@ -474,31 +474,37 @@ with col_main:
         with col1:
             st.markdown("""
             <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #3B82F6; height: 140px; margin-bottom: 15px;">
-                <h3 style="margin-top: 0;">🏛️ Adliye</h3>
+                <h3 style="margin-top: 0; font-size: 1.1rem;">🏛️ Adliye</h3>
                 <p style="color: #94A3B8; font-size: 13px;">Mevzuatta gezin ve AI ile analiz et.</p>
             </div>
             """, unsafe_allow_html=True)
-            if st.button("Adliyeye Git", key="hm_adliye", use_container_width=True): st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"; st.rerun()
+            if st.button("Adliyeye Git", key="hm_adliye", use_container_width=True): 
+                st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"
+                st.rerun()
         
         with col2:
             st.markdown("""
             <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #10B981; height: 140px; margin-bottom: 15px;">
-                <h3 style="margin-top: 0;">🎓 Akademi</h3>
+                <h3 style="margin-top: 0; font-size: 1.1rem;">🎓 Akademi</h3>
                 <p style="color: #94A3B8; font-size: 13px;">PDF notlarını yükle, sınavlara hazırlan.</p>
             </div>
             """, unsafe_allow_html=True)
-            if st.button("Akademiye Git", key="hm_akademi", use_container_width=True): st.session_state.aktif_ekran = "Akademik Asistan"; st.rerun()
+            if st.button("Akademiye Git", key="hm_akademi", use_container_width=True): 
+                st.session_state.aktif_ekran = "Akademik Asistan"
+                st.rerun()
 
         with col3:
             st.markdown("""
             <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #F59E0B; height: 140px; margin-bottom: 15px;">
-                <h3 style="margin-top: 0;">📝 Dilekçe</h3>
+                <h3 style="margin-top: 0; font-size: 1.1rem;">📝 Dilekçe</h3>
                 <p style="color: #94A3B8; font-size: 13px;">Profesyonel dilekçe ve sözleşme taslakları.</p>
             </div>
             """, unsafe_allow_html=True)
-            if st.button("Dilekçe Marketi", key="hm_dilekce", use_container_width=True): st.session_state.aktif_ekran = "Dilekçe Merkezi"; st.rerun()
+            if st.button("Dilekçe Marketi", key="hm_dilekce", use_container_width=True): 
+                st.session_state.aktif_ekran = "Dilekçe Merkezi"
+                st.rerun()
 
-        st.write("---")
+        st.markdown('<div style="margin: 30px 0; border-top: 1px solid #334155;"></div>', unsafe_allow_html=True)
         
         # Alt İstatistik Bölümü
         st.subheader("📊 Kişisel İstatistikler")
@@ -518,7 +524,8 @@ with col_main:
             m4.metric("İçtihat Analizi", ictihat_sayisi)
         except:
             st.caption("Veriler yükleniyor...")
-
+            
+    st.markdown('</div>', unsafe_allow_html=True)
     # ==========================================
     # 👤 PROFİL EKRANI (YENİ)
     # ==========================================
