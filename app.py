@@ -473,12 +473,11 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================================
-# 🗂️ ANA YERLEŞİM (İKİ SÜTUNLU YENİ NESİL SAAS ADAPTASYONU)
+# 🗂️ ANA YERLEŞİM (SABİT SIDEBAR İLE YENİ NESİL SAAS ADAPTASYONU)
 # ==========================================================
-col_nav, col_main = st.columns([0.5, 9.5])
 
-# ── SOL NAVİGASYON ──
-with col_nav:
+# ── SOL NAVİGASYON (Sidebar'a taşıdık, artık kayma yapmaz!) ──
+with st.sidebar:
     st.markdown("""
         <div class="sidebar-logo">
             <span style="font-size: 22px; cursor: default;">🏛️</span>
@@ -517,18 +516,18 @@ with col_nav:
         st.rerun()
 
 # ── SAĞ İÇERİK ALANI ──
-with col_main:
-    st.markdown('<div style="padding: 10px 25px; min-height: 80vh;">', unsafe_allow_html=True)
+# Artık sütunlar yerine doğrudan ana konteynerı kullanıyoruz
+st.markdown('<div style="padding: 10px 25px; min-height: 80vh;">', unsafe_allow_html=True)
 
-    # ==========================================
-    # 🏠 DASHBOARD (ANA EKRAN)
-    # ==========================================
-    if st.session_state.aktif_ekran == "Ana Ekran":
-        st.markdown(f"""
-            <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
-            <p style="color: #94A3B8; font-size: 1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
-        """, unsafe_allow_html=True)
-        col1, col2, col3 = st.columns(3)
+# ==========================================
+# 🏠 DASHBOARD (ANA EKRAN)
+# ==========================================
+if st.session_state.aktif_ekran == "Ana Ekran":
+    st.markdown(f"""
+        <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
+        <p style="color: #94A3B8; font-size: 1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
+    """, unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
         with col1:
             st.markdown("""
             <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #3B82F6; height: 140px; margin-bottom: 15px;">
