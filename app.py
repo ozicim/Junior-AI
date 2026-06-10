@@ -573,7 +573,7 @@ with col_main:
         except:
             st.caption("Veriler yükleniyor...")
             
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     # ==========================================
     # 👤 PROFİL EKRANI (YENİ)
     # ==========================================
