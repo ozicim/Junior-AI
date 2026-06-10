@@ -87,7 +87,7 @@ st.markdown("""
             border-radius: 8px !important;
         }
 
-        /* --- TABS (SEKMELER) ÖZELLEŞTİRMESİ - GÖRSELDEKİ GİBİ --- */
+        /* --- TABS (SEKMELER) ÖZELLEŞTİRMESİ --- */
         div[data-testid="stTabs"] button[data-baseweb="tab"] {
             background-color: transparent !important;
             color: #94A3B8 !important;
@@ -134,7 +134,7 @@ st.markdown("""
         button[kind="primary"]:hover { filter: brightness(1.1) !important; transform: translateY(-1px); }
         
         button[kind="secondary"] {
-            background-color: #3B82F6 !important; /* Görseldeki Mavi Buton Rengi */
+            background-color: #3B82F6 !important;
             color: #F8FAFC !important;
             border: none !important;
             border-radius: 8px !important;
@@ -143,7 +143,33 @@ st.markdown("""
         }
         button[kind="secondary"]:hover { filter: brightness(1.1) !important; transform: translateY(-1px); }
 
-        /* --- STREAMLIT GÖRÜNMEZ BUTON (SOL MENÜ İÇİN) --- */
+        /* --- STREAMLIT GÖRÜNMEZ BUTON VE SOL MENÜ YERLEŞİMİ --- */
+        
+        /* 👇 YENİ EKLENEN 1: SÜTUN KAYMASINI KESİNLİKLE ENGELLER 👇 */
+        div[data-testid="stHorizontalBlock"]:has(.custom-nav-item) {
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+        }
+        /* Sol menünün genişliğini sabitler ve ezilmesini önler */
+        div[data-testid="stHorizontalBlock"]:has(.custom-nav-item) > div[data-testid="stColumn"]:nth-child(1) {
+            min-width: 85px !important;
+            max-width: 85px !important;
+            flex: none !important;
+        }
+        /* Sağ menünün geri kalan tüm alanı almasını sağlar */
+        div[data-testid="stHorizontalBlock"]:has(.custom-nav-item) > div[data-testid="stColumn"]:nth-child(2) {
+            flex: 1 1 0% !important;
+            width: auto !important;
+        }
+
+        /* 👇 YENİ EKLENEN 2: GÖRÜNMEZ BUTONLARIN YARATTIĞI GİZLİ BOŞLUKLARI SİLİP ATAR 👇 */
+        div[data-testid="stHorizontalBlock"]:has(.custom-nav-item) > div[data-testid="stColumn"]:nth-child(1) div[data-testid="stButton"] {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 0px !important;
+            min-height: 0px !important;
+        }
+
         [data-testid="stColumn"]:nth-child(1) button {
             position: absolute !important;
             height: 48px !important;
