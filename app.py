@@ -472,126 +472,126 @@ if not st.session_state.logged_in:
                         st.rerun()
     st.stop()
 
-# ==========================================================
-# 🗂️ ANA YERLEŞİM (SABİT SIDEBAR)
-# ==========================================================
-with st.sidebar:
-    st.markdown("""
-        <div class="sidebar-logo">
-            <span style="font-size: 22px; cursor: default;">🏛️</span>
-            <div style="color: #C5A059; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px;">JUNILE X</div>
-        </div>
-        <div style="height: 15px;"></div>
-    """, unsafe_allow_html=True)
-    
-    def render_html_nav_item(icon, label, screen_name):
-        is_active = st.session_state.aktif_ekran == screen_name
-        cls_name = "custom-nav-item active" if is_active else "custom-nav-item"
-        st.markdown(f"""
-            <div class="{cls_name}" title="{label}">
-                <span>{icon}</span>
+    # ==========================================================
+    # 🗂️ ANA YERLEŞİM (SABİT SIDEBAR)
+    # ==========================================================
+    with st.sidebar:
+        st.markdown("""
+            <div class="sidebar-logo">
+                <span style="font-size: 22px; cursor: default;">🏛️</span>
+                <div style="color: #C5A059; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px;">JUNILE X</div>
             </div>
+            <div style="height: 15px;"></div>
         """, unsafe_allow_html=True)
-        if st.button("", key=f"btn_nav_click_{screen_name}", use_container_width=True):
-            st.session_state.aktif_ekran = screen_name
+        
+        def render_html_nav_item(icon, label, screen_name):
+            is_active = st.session_state.aktif_ekran == screen_name
+            cls_name = "custom-nav-item active" if is_active else "custom-nav-item"
+            st.markdown(f"""
+                <div class="{cls_name}" title="{label}">
+                    <span>{icon}</span>
+                </div>
+            """, unsafe_allow_html=True)
+            if st.button("", key=f"btn_nav_click_{screen_name}", use_container_width=True):
+                st.session_state.aktif_ekran = screen_name
+                st.rerun()
+    
+        render_html_nav_item("🏠", "Ana Ekran", "Ana Ekran")
+        render_html_nav_item("🏛️", "Adliye (Mevzuat Sorgu)", "Adliye (Mevzuat Sorgu)")
+        render_html_nav_item("🎓", "Akademik Asistan", "Akademik Asistan")
+        render_html_nav_item("📝", "Dilekçe Merkezi", "Dilekçe Merkezi")
+        render_html_nav_item("⚖️", "İçtihat Sorgulama", "İçtihat Sorgulama")
+        render_html_nav_item("🧮", "Pratik Hesaplamalar", "Pratik Hesaplamalar")
+        st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+        render_html_nav_item("💬", "Junilex Chat", "💬 JUNILEX Chat")
+        render_html_nav_item("👥", "Junilex Ağı", "👥 Junilex Ağı")
+        render_html_nav_item("👤", "Profilim", "Profil")
+        
+        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="custom-nav-item logout-btn" title="Çıkış Yap"><span>🚪</span></div>', unsafe_allow_html=True)
+        if st.button("", key="btn_logout_hidden_sol", use_container_width=True):
+            st.session_state.logged_in = False
             st.rerun()
-
-    render_html_nav_item("🏠", "Ana Ekran", "Ana Ekran")
-    render_html_nav_item("🏛️", "Adliye (Mevzuat Sorgu)", "Adliye (Mevzuat Sorgu)")
-    render_html_nav_item("🎓", "Akademik Asistan", "Akademik Asistan")
-    render_html_nav_item("📝", "Dilekçe Merkezi", "Dilekçe Merkezi")
-    render_html_nav_item("⚖️", "İçtihat Sorgulama", "İçtihat Sorgulama")
-    render_html_nav_item("🧮", "Pratik Hesaplamalar", "Pratik Hesaplamalar")
-    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
-    render_html_nav_item("💬", "Junilex Chat", "💬 JUNILEX Chat")
-    render_html_nav_item("👥", "Junilex Ağı", "👥 Junilex Ağı")
-    render_html_nav_item("👤", "Profilim", "Profil")
     
-    st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="custom-nav-item logout-btn" title="Çıkış Yap"><span>🚪</span></div>', unsafe_allow_html=True)
-    if st.button("", key="btn_logout_hidden_sol", use_container_width=True):
-        st.session_state.logged_in = False
-        st.rerun()
-
-# ── SAĞ İÇERİK ALANI ──
-st.markdown('<div style="padding: 10px 25px; min-height: 80vh;">', unsafe_allow_html=True)
-
-# ==========================================
-# 🏠 DASHBOARD (ANA EKRAN)
-# ==========================================
-if st.session_state.aktif_ekran == "Ana Ekran":
-    st.markdown(f"""
-        <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
-        <p style="color: #94A3B8; font-size: 1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
-    """, unsafe_allow_html=True)
+    # ── SAĞ İÇERİK ALANI ──
+    st.markdown('<div style="padding: 10px 25px; min-height: 80vh;">', unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns(3)
+    # ==========================================
+    # 🏠 DASHBOARD (ANA EKRAN)
+    # ==========================================
+    if st.session_state.aktif_ekran == "Ana Ekran":
+        st.markdown(f"""
+            <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 5px;">Hoş geldin, {st.session_state.aktif_kullanici.split(' ')[0]} 👋</h1>
+            <p style="color: #94A3B8; font-size: 1rem; margin-bottom: 30px;">Bugün hangi hukuk sahasında derinleşmek istersin?</p>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("""
+            <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #3B82F6; height: 140px; margin-bottom: 15px;">
+                <h3 style="margin-top: 0; font-size: 1.1rem;">🏛️ Adliye</h3>
+                <p style="color: #94A3B8; font-size: 13px;">Mevzuatta gezin ve AI ile analiz et.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Adliyeye Git", key="hm_adliye", use_container_width=True): 
+                st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"
+                st.rerun()
+                
+        with col2:
+            st.markdown("""
+            <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #10B981; height: 140px; margin-bottom: 15px;">
+                <h3 style="margin-top: 0; font-size: 1.1rem;">🎓 Akademi</h3>
+                <p style="color: #94A3B8; font-size: 13px;">PDF notlarını yükle, sınavlara hazırlan.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Akademiye Git", key="hm_akademi", use_container_width=True): 
+                st.session_state.aktif_ekran = "Akademik Asistan"
+                st.rerun()
+                
+        with col3:
+            st.markdown("""
+            <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #F59E0B; height: 140px; margin-bottom: 15px;">
+                <h3 style="margin-top: 0; font-size: 1.1rem;">📝 Dilekçe</h3>
+                <p style="color: #94A3B8; font-size: 13px;">Profesyonel dilekçe ve sözleşme taslakları.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Dilekçe Marketi", key="hm_dilekce", use_container_width=True): 
+                st.session_state.aktif_ekran = "Dilekçe Merkezi"
+                st.rerun()
     
-    with col1:
-        st.markdown("""
-        <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #3B82F6; height: 140px; margin-bottom: 15px;">
-            <h3 style="margin-top: 0; font-size: 1.1rem;">🏛️ Adliye</h3>
-            <p style="color: #94A3B8; font-size: 13px;">Mevzuatta gezin ve AI ile analiz et.</p>
+        st.markdown('<div style="margin: 30px 0; border-top: 1px solid #334155;"></div>', unsafe_allow_html=True)
+        st.subheader("📊 Kişisel İstatistikler")
+        try:
+            db_fs = get_db()
+            tum_kayitlar = list(db_fs.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
+            toplam_islem = len(tum_kayitlar)
+            mevzuat_sayisi = sum(1 for d in tum_kayitlar if "Mevzuat" in d.to_dict().get("kategori", ""))
+            dilekce_sayisi = sum(1 for d in tum_kayitlar if "Dilekçe" in d.to_dict().get("kategori", ""))
+            ictihat_sayisi = sum(1 for d in tum_kayitlar if "İçtihat" in d.to_dict().get("kategori", ""))
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Toplam İşlem", toplam_islem)
+            m2.metric("Mevzuat Şerhi", mevzuat_sayisi)
+            m3.metric("Dilekçe", dilekce_sayisi)
+            m4.metric("İçtihat Analizi", ictihat_sayisi)
+        except:
+            st.caption("Veriler yükleniyor...")
+    
+    # ==========================================
+    # 👤 PROFİL EKRANI
+    # ==========================================
+    elif st.session_state.aktif_ekran == "Profil":
+        st.header("👤 Profilim")
+        benim_mailim = st.session_state.aktif_kullanici_email
+        db_json = veritabani_yukle()
+        benim_verim = db_json.get(benim_mailim, {})
+        st.markdown(f"""
+        <div style="background-color: #1E293B; padding: 30px; border-radius: 12px; border-left: 5px solid #C5A059; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #F8FAFC;">{benim_verim.get('isim', 'Bilinmiyor')}</h2>
+            <p style="color: #94A3B8; font-size: 16px; margin-top: 5px;">{benim_verim.get('unvan', 'Üye')} | {benim_verim.get('kurum', '')}</p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Adliyeye Git", key="hm_adliye", use_container_width=True): 
-            st.session_state.aktif_ekran = "Adliye (Mevzuat Sorgu)"
-            st.rerun()
-            
-    with col2:
-        st.markdown("""
-        <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #10B981; height: 140px; margin-bottom: 15px;">
-            <h3 style="margin-top: 0; font-size: 1.1rem;">🎓 Akademi</h3>
-            <p style="color: #94A3B8; font-size: 13px;">PDF notlarını yükle, sınavlara hazırlan.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Akademiye Git", key="hm_akademi", use_container_width=True): 
-            st.session_state.aktif_ekran = "Akademik Asistan"
-            st.rerun()
-            
-    with col3:
-        st.markdown("""
-        <div style="background-color: #1E293B; padding: 20px; border-radius: 12px; border: 1px solid #334155; border-top: 4px solid #F59E0B; height: 140px; margin-bottom: 15px;">
-            <h3 style="margin-top: 0; font-size: 1.1rem;">📝 Dilekçe</h3>
-            <p style="color: #94A3B8; font-size: 13px;">Profesyonel dilekçe ve sözleşme taslakları.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Dilekçe Marketi", key="hm_dilekce", use_container_width=True): 
-            st.session_state.aktif_ekran = "Dilekçe Merkezi"
-            st.rerun()
-
-    st.markdown('<div style="margin: 30px 0; border-top: 1px solid #334155;"></div>', unsafe_allow_html=True)
-    st.subheader("📊 Kişisel İstatistikler")
-    try:
-        db_fs = get_db()
-        tum_kayitlar = list(db_fs.collection("junilex_arsiv").where("kullanici", "==", st.session_state.aktif_kullanici).stream())
-        toplam_islem = len(tum_kayitlar)
-        mevzuat_sayisi = sum(1 for d in tum_kayitlar if "Mevzuat" in d.to_dict().get("kategori", ""))
-        dilekce_sayisi = sum(1 for d in tum_kayitlar if "Dilekçe" in d.to_dict().get("kategori", ""))
-        ictihat_sayisi = sum(1 for d in tum_kayitlar if "İçtihat" in d.to_dict().get("kategori", ""))
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Toplam İşlem", toplam_islem)
-        m2.metric("Mevzuat Şerhi", mevzuat_sayisi)
-        m3.metric("Dilekçe", dilekce_sayisi)
-        m4.metric("İçtihat Analizi", ictihat_sayisi)
-    except:
-        st.caption("Veriler yükleniyor...")
-
-# ==========================================
-# 👤 PROFİL EKRANI
-# ==========================================
-elif st.session_state.aktif_ekran == "Profil":
-    st.header("👤 Profilim")
-    benim_mailim = st.session_state.aktif_kullanici_email
-    db_json = veritabani_yukle()
-    benim_verim = db_json.get(benim_mailim, {})
-    st.markdown(f"""
-    <div style="background-color: #1E293B; padding: 30px; border-radius: 12px; border-left: 5px solid #C5A059; margin-bottom: 20px;">
-        <h2 style="margin: 0; color: #F8FAFC;">{benim_verim.get('isim', 'Bilinmiyor')}</h2>
-        <p style="color: #94A3B8; font-size: 16px; margin-top: 5px;">{benim_verim.get('unvan', 'Üye')} | {benim_verim.get('kurum', '')}</p>
-    </div>
-    """, unsafe_allow_html=True)
-    st.info("Bu alanda gelecekte profil bilgilerini düzenleme özellikleri yer alacaktır.")
+        st.info("Bu alanda gelecekte profil bilgilerini düzenleme özellikleri yer alacaktır.")
 
     # ==========================================
     # 👥 JUNILEX AĞI (GÖRSELDEKİ BİREBİR TASARIM)
