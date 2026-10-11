@@ -1,0 +1,27 @@
+{
+    "ozan@junilex.com": {
+        "sifre": "123456",
+        "isim": "Ozan Şahin Sicim",
+        "id": "#00001",
+        "arkadaslar": [],
+        "gelen_istekler": []
+    },
+    "ozan.scm@gmail.com": {
+        "sifre": "3210943isa",
+        "isim": "Ozan Şahin Sicim",
+        "id": "#82662",
+        "sehir": "Çankırı",
+        "unvan": "Hukuk Fakültesi Öğrencisi",
+        "kurum": "Çankırı Karatekin Üniversitesi",
+        "kayit_tarihi": "09.10.2026",
+        "arkadaslar": [],
+        "gelen_istekler": [],
+        "bulten_tercihleri": {
+            "aktif": false,
+            "rg": true,
+            "emsal": true,
+            "sinav": false,
+            "terim": true
+        }
+    }
+}
