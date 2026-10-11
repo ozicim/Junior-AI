@@ -1,6 +1,8 @@
 streamlit
+streamlit-option-menu
 google-generativeai>=0.8.0
 firebase-admin
+google-cloud-firestore
 PyPDF2
 beautifulsoup4
 requests
@@ -14,9 +16,10 @@ pydantic
 langchain
 langchain-community
 faiss-cpu
-sentence-transformers
 langchain-huggingface
 torchvision
 torch
 streamlit-lottie
-requests
+gTTS
+pandas
+weasyprint
