@@ -309,9 +309,17 @@ if "aktif_dosya" not in st.session_state:
 # ==========================================
 if not st.session_state.logged_in:
     st.markdown(
-        """<style>[data-testid="collapsedControl"] {display: none;} [data-testid="stSidebar"] {display: none;}</style>""",
-        unsafe_allow_html=True,
-    )
+    """<style>
+    [data-testid="collapsedControl"], [data-testid="stSidebar"] {display: none;}
+    .stApp {background: #FAF6F0;}
+    [data-testid="stWidgetLabel"] p, label p {color: #1B2A41 !important;}
+    button[data-baseweb="tab"] p {color: #5B6B80 !important;}
+    button[data-baseweb="tab"][aria-selected="true"] p {color: #1B2A41 !important;}
+    input {color: #1B2A41 !important;}
+    input::placeholder {color: #8A94A3 !important;}
+    </style>""",
+    unsafe_allow_html=True,
+)
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
 
@@ -332,10 +340,10 @@ if not st.session_state.logged_in:
             </div>
 
             <div style="text-align: center; margin-bottom: 24px;">
-                <div style="padding: 8px 18px; border-bottom: 1px solid #232B3E; display: inline-block;">
-                    <span style="color: #8A99AD; font-size: 12px;">Geliştirici:</span>
-                    <span style="color: #E2E8F0; font-size: 12px; font-weight: 600;">Ozan Şahin Sicim</span>
-                    <span style="color: #8A99AD; font-size: 11px; display: block; margin-top: 2px;">Çankırı Karatekin Üniversitesi Hukuk Fakültesi</span>
+                <div style="padding: 8px 18px; border-bottom: 1px solid #D9D2C3; display: inline-block;">
+                    <span style="color: #5B6B80; font-size: 12px;">Geliştirici:</span>
+                    <span style="color: #1B2A41; font-size: 12px; font-weight: 600;">Ozan Şahin Sicim</span>
+                    <span style="color: #5B6B80; font-size: 11px; display: block; margin-top: 2px;">Çankırı Karatekin Üniversitesi Hukuk Fakültesi</span>
                 </div>
             </div>
             """,
@@ -542,7 +550,7 @@ if not st.session_state.logged_in:
                     <div style="padding: 4px 0 12px 0; border-bottom: 1px solid #232B3E; margin-bottom: 16px;">
                         <h4 style="margin:0 0 6px 0; color: #E2E8F0; font-size: 15px; font-weight: 600;">E-Posta Doğrulama</h4>
                         <p style="color: #8A99AD; font-size: 12px; margin: 0;">
-                            <strong style="color:#C9A84C;">{st.session_state.onay_bekleyen['email']}</strong> adresine gönderilen 6 haneli kodu girin.
+                            <strong style="color:#9A7B2F;">{st.session_state.onay_bekleyen['email']}</strong> adresine gönderilen 6 haneli kodu girin.
                         </p>
                     </div>
                     """,
