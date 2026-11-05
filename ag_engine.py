@@ -2,6 +2,7 @@ import random
 import threading
 from firebase_admin import firestore
 
+
 class AgEngine:
     @staticmethod
     def kisi_ara(db_json, aranan_id):
@@ -14,7 +15,17 @@ class AgEngine:
     @staticmethod
     def arkadaslik_istegi_gonder(db_json, gonderen_mail, alan_mail):
         """Karşı tarafın gelen_istekler listesine göndereni ekler."""
-        db_json[alan_mail].setdefault("gelen_istekler", []).append(gonderen_mail)
+        if alan_mail not in db_json:
+            return db_json
+        alan = db_json[alan_mail]
+        alan.setdefault("gelen_istekler", [])
+        alan.setdefault("arkadaslar", [])
+        # Zaten istek gönderilmişse veya zaten arkadaşsa tekrar ekleme
+        if (
+            gonderen_mail not in alan["gelen_istekler"]
+            and gonderen_mail not in alan["arkadaslar"]
+        ):
+            alan["gelen_istekler"].append(gonderen_mail)
         return db_json
 
     @staticmethod
@@ -34,12 +45,14 @@ class AgEngine:
             ortaklar = benim_arkadaslarim.intersection(aday_arkadaslar)
             ortak_sayisi = len(ortaklar)
 
-            oneriler.append({
-                "mail": mail,
-                "isim": data.get("isim", "İsimsiz Hukukçu"),
-                "unvan": data.get("unvan", "Junilex Kullanıcısı"), 
-                "ortak_sayisi": ortak_sayisi
-            })
+            oneriler.append(
+                {
+                    "mail": mail,
+                    "isim": data.get("isim", "İsimsiz Hukukçu"),
+                    "unvan": data.get("unvan", "Junilex Kullanıcısı"),
+                    "ortak_sayisi": ortak_sayisi,
+                }
+            )
 
         # Ortak arkadaş sayısına göre en yüksekten en düşüğe sırala
         oneriler.sort(key=lambda x: x["ortak_sayisi"], reverse=True)
@@ -48,18 +61,26 @@ class AgEngine:
         sonuclar = []
         for o in oneriler[:limit]:
             # Eğer ortak bağlantı varsa ünvan yerine bunu vurgula
-            alt_metin = f"🔗 {o['ortak_sayisi']} Ortak Bağlantı" if o['ortak_sayisi'] > 0 else o['unvan']
-            sonuclar.append({
-                "isim": o["isim"],
-                "unvan": alt_metin
-            })
+            alt_metin = (
+                f"🔗 {o['ortak_sayisi']} Ortak Bağlantı"
+                if o["ortak_sayisi"] > 0
+                else o["unvan"]
+            )
+            sonuclar.append({"isim": o["isim"], "unvan": alt_metin})
 
         return sonuclar
+
     @staticmethod
     def istek_kabul_et(db_json, benim_mailim, karsi_mail):
         """İsteği kabul eder ve karşılıklı arkadaş olarak ekler."""
-        db_json[benim_mailim].setdefault("arkadaslar", []).append(karsi_mail)
-        db_json[karsi_mail].setdefault("arkadaslar", []).append(benim_mailim)
+        if benim_mailim not in db_json or karsi_mail not in db_json:
+            return db_json
+        benim_liste = db_json[benim_mailim].setdefault("arkadaslar", [])
+        karsi_liste = db_json[karsi_mail].setdefault("arkadaslar", [])
+        if karsi_mail not in benim_liste:
+            benim_liste.append(karsi_mail)
+        if benim_mailim not in karsi_liste:
+            karsi_liste.append(benim_mailim)
         if karsi_mail in db_json[benim_mailim].get("gelen_istekler", []):
             db_json[benim_mailim]["gelen_istekler"].remove(karsi_mail)
         return db_json
@@ -84,20 +105,26 @@ class AgEngine:
     def ekip_kur(db_fs, ekip_adi, kurucu_mail, kurucu_isim):
         """Yeni bir ekip kurup Firestore'a kaydeder."""
         ekip_id = "#E-" + str(random.randint(10000, 99999))
-        db_fs.collection("junilex_ekipler").add({
-            "isim": ekip_adi, 
-            "ekip_id": ekip_id,
-            "kurucu": kurucu_mail,
-            "uyeler_mail": [kurucu_mail],
-            "uyeler_isim": [kurucu_isim],
-            "istekler": []
-        })
+        db_fs.collection("junilex_ekipler").add(
+            {
+                "isim": ekip_adi,
+                "ekip_id": ekip_id,
+                "kurucu": kurucu_mail,
+                "uyeler_mail": [kurucu_mail],
+                "uyeler_isim": [kurucu_isim],
+                "istekler": [],
+            }
+        )
         return ekip_id
 
     @staticmethod
     def ekibe_katilma_istegi_gonder(db_fs, girilen_ekip_id, benim_mailim):
         """Ekip ID'sine göre ekibi bulup istek atar. Bulunursa True döner."""
-        ekip_sorgu = db_fs.collection("junilex_ekipler").where("ekip_id", "==", girilen_ekip_id).stream()
+        ekip_sorgu = (
+            db_fs.collection("junilex_ekipler")
+            .where("ekip_id", "==", girilen_ekip_id)
+            .stream()
+        )
         bulundu = False
         for doc in ekip_sorgu:
             doc.reference.update({"istekler": firestore.ArrayUnion([benim_mailim])})
@@ -107,111 +134,159 @@ class AgEngine:
     @staticmethod
     def ekip_istek_onayla(doc_ref, istek_mail, istek_isim):
         """Kurucunun onayladığı kişiyi ekibe katar."""
-        doc_ref.update({
-            "uyeler_mail": firestore.ArrayUnion([istek_mail]),
-            "uyeler_isim": firestore.ArrayUnion([istek_isim]),
-            "istekler": firestore.ArrayRemove([istek_mail])
-        })
+        doc_ref.update(
+            {
+                "uyeler_mail": firestore.ArrayUnion([istek_mail]),
+                "uyeler_isim": firestore.ArrayUnion([istek_isim]),
+                "istekler": firestore.ArrayRemove([istek_mail]),
+            }
+        )
 
     @staticmethod
     def ekiplerimi_getir(db_fs, benim_mailim):
         """Kullanıcının üye olduğu ekiplerin dokümanlarını döner."""
-        return list(db_fs.collection("junilex_ekipler").where("uyeler_mail", "array_contains", benim_mailim).stream())
+        return list(
+            db_fs.collection("junilex_ekipler")
+            .where("uyeler_mail", "array_contains", benim_mailim)
+            .stream()
+        )
 
     @staticmethod
     def ekip_ortak_arsiv_getir(db_fs, sorgu_isimleri):
         """Ekip üyelerinin arşive kaydettiği belgeleri getirir."""
-        if not sorgu_isimleri: return []
-        sorgu = db_fs.collection("junilex_arsiv").where("kullanici", "in", sorgu_isimleri).order_by("tarih", direction=firestore.Query.DESCENDING).limit(50).stream()
+        if not sorgu_isimleri:
+            return []
+        sorgu = (
+            db_fs.collection("junilex_arsiv")
+            .where("kullanici", "in", sorgu_isimleri)
+            .order_by("tarih", direction=firestore.Query.DESCENDING)
+            .limit(50)
+            .stream()
+        )
         return list(sorgu)
 
     @staticmethod
     def sohbet_mesajlarini_getir(db_fs, aktif_ekip_id):
         """Belirli bir ekibin mesaj geçmişini tarihe göre sıralı getirir."""
-        sorgu = db_fs.collection("junilex_ekip_sohbet").where("ekip_id", "==", aktif_ekip_id).order_by("tarih", direction=firestore.Query.ASCENDING).limit(100).stream()
+        sorgu = (
+            db_fs.collection("junilex_ekip_sohbet")
+            .where("ekip_id", "==", aktif_ekip_id)
+            .order_by("tarih", direction=firestore.Query.ASCENDING)
+            .limit(100)
+            .stream()
+        )
         return [m.to_dict() for m in sorgu]
 
     @staticmethod
     def arka_planda_mesaj_gonder(ekip_id, isim, mesaj):
         """Mesajı arayüzü kitlemeden arka planda (Thread) Firebase'e yollar."""
+
         def gonder_thread():
             try:
                 import firebase_admin
                 from firebase_admin import firestore as thread_fs
+
                 if not firebase_admin._apps:
                     firebase_admin.initialize_app()
                 db_thread = thread_fs.client()
-                db_thread.collection("junilex_ekip_sohbet").add({
-                    "ekip_id": ekip_id,
-                    "isim": isim,
-                    "mesaj": mesaj,
-                    "tarih": thread_fs.SERVER_TIMESTAMP
-                })
+                db_thread.collection("junilex_ekip_sohbet").add(
+                    {
+                        "ekip_id": ekip_id,
+                        "isim": isim,
+                        "mesaj": mesaj,
+                        "tarih": thread_fs.SERVER_TIMESTAMP,
+                    }
+                )
             except Exception:
                 pass
-        
+
         threading.Thread(target=gonder_thread).start()
+
     @staticmethod
-    def gorev_ekle(db_fs, ekip_id, baslik, aciklama, atanan_kisi, olusturan, ekip_uyeleri_mail):
+    def gorev_ekle(
+        db_fs, ekip_id, baslik, aciklama, atanan_kisi, olusturan, ekip_uyeleri_mail
+    ):
         """Yeni bir görevi veritabanına ekler ve ekibe bildirim yollar."""
-        db_fs.collection("junilex_gorevler").add({
-            "ekip_id": ekip_id,
-            "baslik": baslik,
-            "aciklama": aciklama,
-            "atanan": atanan_kisi,
-            "olusturan": olusturan,
-            "durum": "Yapılacak",
-            "tarih": firestore.SERVER_TIMESTAMP
-        })
+        db_fs.collection("junilex_gorevler").add(
+            {
+                "ekip_id": ekip_id,
+                "baslik": baslik,
+                "aciklama": aciklama,
+                "atanan": atanan_kisi,
+                "olusturan": olusturan,
+                "durum": "Yapılacak",
+                "tarih": firestore.SERVER_TIMESTAMP,
+            }
+        )
         # Yeni! -> Bildirim tetikleyici
         mesaj = f"📌 {olusturan}, '{baslik}' görevini {atanan_kisi}'ye atadı."
         AgEngine.bildirim_gonder(db_fs, ekip_uyeleri_mail, mesaj)
 
     @staticmethod
-    def gorev_durumu_guncelle(db_fs, gorev_id, yeni_durum, baslik, yapan_kisi, ekip_uyeleri_mail):
+    def gorev_durumu_guncelle(
+        db_fs, gorev_id, yeni_durum, baslik, yapan_kisi, ekip_uyeleri_mail
+    ):
         """Görevin durumunu günceller ve bildirim yollar."""
-        db_fs.collection("junilex_gorevler").document(gorev_id).update({"durum": yeni_durum})
-        
+        db_fs.collection("junilex_gorevler").document(gorev_id).update(
+            {"durum": yeni_durum}
+        )
+
         # Yeni! -> Bildirim tetikleyici
         if yeni_durum == "Tamamlandı":
             mesaj = f"✅ {yapan_kisi}, '{baslik}' görevini tamamladı!"
             AgEngine.bildirim_gonder(db_fs, ekip_uyeleri_mail, mesaj)
-   
-    
+
     @staticmethod
     def gorevleri_getir(db_fs, ekip_id):
         """Ekibe ait görevleri ID'leri ile birlikte getirir."""
-        sorgu = db_fs.collection("junilex_gorevler").where("ekip_id", "==", ekip_id).order_by("tarih", direction=firestore.Query.DESCENDING).stream()
+        sorgu = (
+            db_fs.collection("junilex_gorevler")
+            .where("ekip_id", "==", ekip_id)
+            .order_by("tarih", direction=firestore.Query.DESCENDING)
+            .stream()
+        )
         return [{"id": d.id, **d.to_dict()} for d in sorgu]
-    
-            
+
     @staticmethod
     def gorev_sil(db_fs, gorev_id):
         """İptal edilen veya biten görevi tamamen siler."""
         db_fs.collection("junilex_gorevler").document(gorev_id).delete()
+
     @staticmethod
     def bildirim_gonder(db_fs, alicilar_mail_listesi, mesaj):
         """Belirtilen kullanıcılara sistem bildirimi gönderir."""
-        if not alicilar_mail_listesi: return
-        db_fs.collection("junilex_bildirimler").add({
-            "alicilar": alicilar_mail_listesi,
-            "mesaj": mesaj,
-            "tarih": firestore.SERVER_TIMESTAMP
-        })
+        if not alicilar_mail_listesi:
+            return
+        db_fs.collection("junilex_bildirimler").add(
+            {
+                "alicilar": alicilar_mail_listesi,
+                "mesaj": mesaj,
+                "tarih": firestore.SERVER_TIMESTAMP,
+            }
+        )
+
     @staticmethod
     def evrak_yukle(db_fs, ekip_id, baslik, metin, kullanici):
         """Ekip arşivine yeni evrak ekler."""
-        db_fs.collection("junilex_arsiv").add({
-            "ekip_id": ekip_id,
-            "baslik": baslik,
-            "metin": metin,
-            "kullanici": kullanici,
-            "kategori": "Ortak Evrak",
-            "tarih": firestore.SERVER_TIMESTAMP
-        })
+        db_fs.collection("junilex_arsiv").add(
+            {
+                "ekip_id": ekip_id,
+                "baslik": baslik,
+                "metin": metin,
+                "kullanici": kullanici,
+                "kategori": "Ortak Evrak",
+                "tarih": firestore.SERVER_TIMESTAMP,
+            }
+        )
 
     @staticmethod
     def bildirimleri_getir(db_fs, benim_mailim):
         """Kullanıcının bildirimlerini en yeniden eskiye doğru getirir."""
-        sorgu = db_fs.collection("junilex_bildirimler").where("alicilar", "array_contains", benim_mailim).order_by("tarih", direction=firestore.Query.DESCENDING).limit(15).stream()
+        sorgu = (
+            db_fs.collection("junilex_bildirimler")
+            .where("alicilar", "array_contains", benim_mailim)
+            .order_by("tarih", direction=firestore.Query.DESCENDING)
+            .limit(15)
+            .stream()
+        )
         return [d.to_dict() for d in sorgu]

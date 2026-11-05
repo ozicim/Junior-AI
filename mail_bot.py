@@ -3,19 +3,34 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import datetime
 import json
-from turtle import st
+import streamlit as st
+import os
 import google.generativeai as genai
+
 
 # ==========================================
 # ⚙️ AYARLAR VE YAPILANDIRMA
 # ==========================================
-API_KEY = "GEMINI_API_KEY_BURAYA"
-genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash")
+def _gizli_oku(anahtar):
+    """Önce ortam değişkenine, yoksa Streamlit secrets'a bakar."""
+    deger = os.environ.get(anahtar)
+    if deger:
+        return deger
+    try:
+        import streamlit as st
 
-# Junilex gönderici e-posta bilgileri (Gmail önerilir)
-GONDERICI_EMAIL = (st.secrets["GMAIL_MAIL"],)
-GONDERICI_SIFRE = (st.secrets["GMAIL_SIFRE"],)  # Gmail uygulama şifresi
+        return st.secrets[anahtar]
+    except Exception:
+        return None
+
+
+API_KEY = _gizli_oku("GEMINI_API_KEY")
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel("models/gemini-2.5-flash")
+
+# Junilex gönderici e-posta bilgileri
+GONDERICI_EMAIL = _gizli_oku("GMAIL_MAIL")
+GONDERICI_SIFRE = _gizli_oku("GMAIL_SIFRE")  # Gmail uygulama şifresi
 
 
 # ==========================================
@@ -72,7 +87,7 @@ def uret_latince_terim():
 # ==========================================
 def veritabani_yukle():
     try:
-        with open("db.json", "r", encoding="utf-8") as f:
+        with open("kullanicilar.json", "r", encoding="utf-8") as f:
             return json.load(f)
     except:
         return {}
@@ -84,7 +99,6 @@ def bultenleri_gonder():
         print("⚠️ Veritabanı okunamadı.")
         return
 
-    # Sadece mail almak isteyen ("aktif": True) birileri var mı diye kontrol edelim ki boşuna API çağrısı yapmayalım
     mail_isteyen_var_mi = any(
         v.get("bulten_tercihleri", {}).get("aktif", True) for k, v in db_json.items()
     )
@@ -95,7 +109,7 @@ def bultenleri_gonder():
         )
         return
 
-    tarih = datetime.datetime.now().strftime("%d %B %Y")
+    tarih = datetime.datetime.now().strftime("%d.%m.%Y")
     print("⏳ AI içerikler üretiliyor...")
     icerik_rg = uret_resmi_gazete()
     icerik_emsal = uret_emsal_karar()
@@ -121,7 +135,6 @@ def bultenleri_gonder():
                 },
             )
 
-            # ANA ŞALTER KONTROLÜ: Şalter kapalıysa direkt sonraki kişiye geç
             if not tercih.get("aktif", True):
                 print(f"⏭️ Atlandı: {email} (Abonelik Kapalı)")
                 continue
@@ -150,6 +163,7 @@ def bultenleri_gonder():
                 govde += icerik_terim
 
             govde += """</div><div style="background-color: #0B0E14; padding: 15px; text-align: center; border-top: 1px solid #232B3E;">
+                        <p style="color: #666; font-size: 12px;">Bu içerikler yapay zeka tarafından üretilmiştir; karar ve mevzuat bilgilerini resmi kaynaklardan doğrulayınız. Hukuki tavsiye niteliği taşımaz.</p>
                         <p style="color: #666; font-size: 12px;">Tercihlerinizi uygulamanın Ayarlar sekmesinden değiştirebilirsiniz.</p>
                     </div></div></body></html>"""
 
@@ -161,9 +175,13 @@ def bultenleri_gonder():
             )
             msg.attach(MIMEText(govde, "html"))
 
-            server.sendmail(GONDERICI_EMAIL, email, msg.as_string())
-            print(f"📧 Gönderildi: {email}")
-            gonderilen_sayi += 1
+            try:
+                server.sendmail(GONDERICI_EMAIL, email, msg.as_string())
+                print(f"📧 Gönderildi: {email}")
+                gonderilen_sayi += 1
+            except Exception as mail_hatasi:
+                print(f"⚠️ Gönderilemedi: {email} -> {mail_hatasi}")
+                continue
 
         server.quit()
         print(

@@ -8,6 +8,7 @@ import os
 import urllib.request
 import json
 import datetime
+import time
 import google.generativeai as genai
 from fpdf import FPDF
 import gc
@@ -49,96 +50,86 @@ def get_db():
 # ⚙️ AYARLAR VE BELLEK YÖNETİMİ
 # ==========================================
 st.set_page_config(layout="wide", page_title="JUNILEX AI")
-
-
 st.markdown(
     """
-    <style>
-        /* ── DESIGN TOKENS & TEMA SIFIRLAMA ── */
-        :root {
-            --bg-main: #0B0E14;
-            --bg-card: #131822;
-            --bg-card-hover: #1A212E;
-            --bg-input: #171D2A;
-            --border: #232B3E;
-            --border-highlight: rgba(201, 168, 76, 0.3);
-            --text-main: #E2E8F0;
-            --text-muted: #8A99AD;
-            --gold-primary: #C9A84C;
-            --gold-light: #E5C974;
-            --gold-glow: rgba(201, 168, 76, 0.15);
-            --radius-lg: 14px;
-            --radius-md: 10px;
-            --radius-sm: 6px;
-        }
+<style>
+:root {
+    --bg-main: #FAF7F2;
+    --bg-card: #FFFFFF;
+    --bg-input: #FFFFFF;
+    --border: #D9D2C3;
+    --text-main: #1F2933;
+    --text-muted: #6B7280;
+    --navy: #1B2A41;
+    --burgundy: #7A1F2B;
+}
 
-        /* ── GENEL ARKA PLAN ── */
-        .stApp {
-            background-color: var(--bg-main) !important;
-            color: var(--text-main) !important;
-            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
+.stApp {
+    background-color: var(--bg-main) !important;
+    color: var(--text-main) !important;
+}
 
-        /* ── OPTION MENU HOVER EFEKTİ SÜPER ZORLAMA (SPECIFICITY FIX) ── */
-        div[id^="option-menu"] .nav-link:hover,
-        .stSidebar .nav-link:hover,
-        [data-testid="stSidebar"] .nav-link:hover {
-            background-color: rgba(201, 168, 76, 0.12) !important;
-            border-left: 3px solid #C9A84C !important;
-            color: #C9A84C !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-        }
+/* Yan menü (option menu) */
+div[id^="option-menu"] .nav-link,
+[data-testid="stSidebar"] .nav-link {
+    border-radius: 3px !important;
+    color: #EDE8DD !important;
+}
+div[id^="option-menu"] .nav-link:hover,
+[data-testid="stSidebar"] .nav-link:hover {
+    background-color: rgba(237, 232, 221, 0.10) !important;
+    border-left: 3px solid #EDE8DD !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+}
+div[id^="option-menu"] .nav-link:hover i,
+div[id^="option-menu"] .nav-link:hover span {
+    color: #FFFFFF !important;
+}
 
-        div[id^="option-menu"] .nav-link:hover i,
-        div[id^="option-menu"] .nav-link:hover span,
-        .stSidebar .nav-link:hover i,
-        .stSidebar .nav-link:hover span {
-            color: #C9A84C !important;
-        }
+/* Kartlar: düz, ince çerçeve, gölgesiz */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 3px !important;
+    box-shadow: none !important;
+}
 
-        /* ── KARTLAR & KONTEYNERLAR ── */
-        [data-testid="stVerticalBlockBorderWrapper"] {
-            background: linear-gradient(180deg, var(--bg-card) 0%, rgba(19, 24, 34, 0.7) 100%) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: var(--radius-lg) !important;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
-            backdrop-filter: blur(10px) !important;
-            transition: border-color 0.2s ease, transform 0.2s ease !important;
-        }
+/* Giriş alanları */
+.stTextInput input, .stTextArea textarea, .stNumberInput input {
+    background: var(--bg-input) !important;
+    color: var(--text-main) !important;
+    border: 1px solid #C9C1B0 !important;
+    border-radius: 3px !important;
+    font-size: 14px !important;
+    padding: 10px 12px !important;
+}
 
-        /* ── FORM GİRDİLERİ (INPUT, TEXTAREA, SELECT) ── */
-        .stTextInput input, .stTextArea textarea, .stNumberInput input {
-            background: var(--bg-input) !important;
-            color: var(--text-main) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: var(--radius-md) !important;
-            font-family: 'DM Sans', sans-serif !important;
-            font-size: 14px !important;
-            padding: 10px 14px !important;
-        }
+/* Metrikler */
+[data-testid="stMetricValue"] {
+    color: var(--navy) !important;
+    font-family: 'Newsreader', Georgia, serif !important;
+    font-size: 28px !important;
+    font-weight: 600 !important;
+}
+[data-testid="stMetricLabel"] p {
+    color: var(--text-muted) !important;
+    font-size: 13px !important;
+}
 
-        /* ── METRİK KARTLARI ── */
-        [data-testid="stMetricValue"] {
-            color: var(--gold-primary) !important;
-            font-size: 26px !important;
-            font-weight: 700 !important;
-        }
-        [data-testid="stMetricLabel"] p {
-            color: var(--text-muted) !important;
-            font-size: 13px !important;
-        }
+/* Kaydırma çubuğu */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-main); }
+::-webkit-scrollbar-thumb { background: #C9C1B0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--navy); }
 
-        /* ── SCROLLBAR ── */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-main); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--gold-primary); }
-
-        hr { border-color: var(--border) !important; opacity: 0.6; }
-    </style>
+hr { border-color: var(--border) !important; opacity: 1; }
+</style>
 """,
     unsafe_allow_html=True,
 )
+
+
 # -----------------------------------------------------------
 
 # ==========================================
@@ -224,15 +215,15 @@ def junilex_arsive_kaydet(kategori, baslik, metin):
 
 
 def onay_kodu_gonder(alici_mail, kod):
-    gonderici_mail = st.secrets["GMAIL_MAIL"],
-    uygulama_sifresi = st.secrets["GMAIL_SIFRE"],
+    gonderici_mail = st.secrets["GMAIL_MAIL"]
+    uygulama_sifresi = st.secrets["GMAIL_SIFRE"]
     msg = MIMEText(
         f"JUNILEX'e hoş geldin!\n\nKayıt işlemini tamamlamak için doğrulama kodun: {kod}\n\nBu kodu kimseyle paylaşmayın.",
         "plain",
         "utf-8",
     )
     msg["Subject"] = "JUNILEX Doğrulama Kodu"
-    msg["From"] = "JUNILEX Asistan"
+    msg["From"] = f"JUNILEX Asistan <{gonderici_mail}>"
     msg["To"] = alici_mail
     try:
         server = smtplib.SMTP("smtp.gmail.com", 587)
@@ -1642,8 +1633,6 @@ with col_icerik:
                                 st.text(e_data.get("metin"))
                             st.markdown("</div>", unsafe_allow_html=True)
 
-                import time
-
                 # ── SUB TAB 2: EKİP İÇİ SOHBET ────────────────────────────────
                 with alt_tab_sohbet:
                     st.markdown(
@@ -2032,9 +2021,7 @@ with col_icerik:
             ["🔢 Madde Numarası İle Arama", "🔤 Kelime / Kavram İle Tarama"]
         )
 
-        api_key = st.session_state.get(
-            "gemini_api_key", MY_API_KEY if "MY_API_KEY" in globals() else ""
-        )
+        api_key = st.session_state.get("gemini_api_key", MY_API_KEY)
 
         # ── TAB 1: MADDE NUMARASI İLE ARAMA ──
         with arama_sekmeleri[0]:
@@ -2523,9 +2510,7 @@ with col_icerik:
         from akademik_engine import AkademikEngine
         from akademik_sinav_modu import AkademikSinavEngine
 
-        api_key = st.session_state.get(
-            "gemini_api_key", MY_API_KEY if "MY_API_KEY" in globals() else ""
-        )
+        api_key = st.session_state.get("gemini_api_key", MY_API_KEY)
 
         # 6 BAĞIMSIZ SEKME EKLENDİ
         akademi_sekmeleri = st.tabs(

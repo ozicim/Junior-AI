@@ -1,8 +1,6 @@
 streamlit
-streamlit-option-menu
 google-generativeai>=0.8.0
 firebase-admin
-google-cloud-firestore
 PyPDF2
 beautifulsoup4
 requests
@@ -20,6 +18,5 @@ langchain-huggingface
 torchvision
 torch
 streamlit-lottie
+streamlit-option-menu
 gTTS
-pandas
-weasyprint

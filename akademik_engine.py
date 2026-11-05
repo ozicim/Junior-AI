@@ -114,7 +114,7 @@ class AkademikEngine:
     @classmethod
     def get_ders_notu_icerik(cls, ders_id, konu_id):
         veriler = {
-            "hukuk_giris": {
+            "hukuk_baslangici": {
                 "normlar_hiyerarsisi": "Normlar hiyerarşisi, hukuk kurallarının derece ve kuvvetini belirleyen alt-üst ilişkisidir...",
                 "hak_ehliyeti": "Hak ehliyeti, her insanın sağ ve tam doğmak şartıyla kazandığı bir yetenektir...",
             }
@@ -184,7 +184,7 @@ class AkademikEngine:
                     metin += t + "\n"
             return metin
         else:
-            return str(yuklenen_dosya.read(), "utf-8")
+            return yuklenen_dosya.read().decode("utf-8", errors="ignore")
 
     @classmethod
     def notlarla_ai_hoca_anlat(cls, api_key, konu_adi, ders_notu_metni):
@@ -428,8 +428,6 @@ class AkademikEngine:
         Seçilen hukuki konudan Anki tarzı flashcard (ezber kartı) verilerini JSON formatında üretir.
         """
         try:
-            import json
-            import re
 
             model = cls._modeli_hazirla(api_key)
             prompt = f"""
@@ -468,3 +466,30 @@ class AkademikEngine:
 
         except Exception as e:
             return {"hata": str(e)}
+
+    @staticmethod
+    def metni_sese_cevir(metin):
+        """Metni Türkçe sese çevirir ve mp3 verisini (bytes) döndürür."""
+        try:
+            from gtts import gTTS
+        except ImportError:
+            return b"gtts_error"
+
+        try:
+            import io
+            import re
+
+            temiz = str(metin or "")
+            # Markdown işaretlerini temizle ki ses okurken "yıldız" demesin
+            temiz = re.sub(r"[*_#`>~]", "", temiz)
+            temiz = temiz.strip()
+            if not temiz:
+                return None
+
+            ses_dosyasi = io.BytesIO()
+            tts = gTTS(text=temiz, lang="tr", slow=False)
+            tts.write_to_fp(ses_dosyasi)
+            return ses_dosyasi.getvalue()
+        except Exception as e:
+            print(f"Ses sentezleme hatası: {e}")
+            return None
