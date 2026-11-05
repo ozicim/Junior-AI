@@ -305,7 +305,7 @@ if "aktif_dosya" not in st.session_state:
     st.session_state.aktif_dosya = None
 
 # ==========================================
-# 🛑 GİRİŞ VE KAYIT EKRANI (Orijinal Vektörel Logo Entegreli)
+# GİRİŞ VE KAYIT EKRANI
 # ==========================================
 if not st.session_state.logged_in:
     st.markdown(
@@ -316,36 +316,24 @@ if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        # ── BİREBİR ORİJİNAL VEKTÖREL LOGO & MARKALAMA (BÜYÜTÜLMÜŞ) ──
         st.markdown(
             """
             <div style='text-align:center; padding: 16px 0 20px 0;'>
                 <div style='display: flex; justify-content: center; margin-bottom: 12px;'>
                     <svg width="90" height="90" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Dış Altın Daire -->
                         <circle cx="50" cy="50" r="45" stroke="#C9A84C" stroke-width="3" fill="none"/>
-                        <!-- Terazi Çanağı / Eğri -->
                         <path d="M30 46C30 46 35 62 50 62C65 62 70 46 70 46" stroke="#C9A84C" stroke-width="3" fill="none" stroke-linecap="round"/>
-                        <!-- Dikey Direk -->
                         <path d="M50 20V80" stroke="#C9A84C" stroke-width="3" stroke-linecap="round"/>
-                        <!-- Yatay Koyu Çizgi -->
                         <path d="M28 34H72" stroke="#2D2820" stroke-width="4.5" stroke-linecap="round"/>
                     </svg>
                 </div>
                 <div style='color:#C9A84C; font-family:"DM Sans", sans-serif; font-size:26px; font-weight:800; letter-spacing:2px;'>JUNILEX AI</div>
                 <div style='color:#8A99AD; font-size:11px; font-weight:700; letter-spacing:1.5px; margin-top:4px;'>LEGAL INTELLIGENCE & ACADEMY</div>
             </div>
-            
-            <!-- Geliştirici Künyesi (Ortalı ve Şık Rozet) -->
+
             <div style="text-align: center; margin-bottom: 24px;">
-                <div style="
-                    background: #131822; 
-                    padding: 8px 18px; 
-                    border-radius: 20px; 
-                    border: 1px solid #232B3E; 
-                    display: inline-block;
-                ">
-                    <span style="color: #8A99AD; font-size: 12px;">Geliştirici:</span> 
+                <div style="padding: 8px 18px; border-bottom: 1px solid #232B3E; display: inline-block;">
+                    <span style="color: #8A99AD; font-size: 12px;">Geliştirici:</span>
                     <span style="color: #E2E8F0; font-size: 12px; font-weight: 600;">Ozan Şahin Sicim</span>
                     <span style="color: #8A99AD; font-size: 11px; display: block; margin-top: 2px;">Çankırı Karatekin Üniversitesi Hukuk Fakültesi</span>
                 </div>
@@ -354,22 +342,15 @@ if not st.session_state.logged_in:
             unsafe_allow_html=True,
         )
 
-        tab_giris, tab_kayit = st.tabs(["🔐 Giriş Yap", "📝 Yeni Kayıt"])
+        tab_giris, tab_kayit = st.tabs(["Giriş Yap", "Yeni Kayıt"])
 
         # ── 1. TAB: GİRİŞ YAP ────────────────────────────────────────────────
         with tab_giris:
             st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
             st.markdown(
                 """
-                <div style="
-                    background: #131822; 
-                    padding: 16px 20px; 
-                    border-radius: 12px; 
-                    border: 1px solid #232B3E; 
-                    border-left: 4px solid #C9A84C; 
-                    margin-bottom: 16px;
-                ">
-                    <h4 style="margin:0 0 4px 0; color: #E2E8F0; font-size: 15px; font-weight: 600;">👋 Hoş Geldiniz</h4>
+                <div style="padding: 4px 0 12px 0; border-bottom: 1px solid #232B3E; margin-bottom: 16px;">
+                    <h4 style="margin:0 0 4px 0; color: #E2E8F0; font-size: 15px; font-weight: 600;">Hoş Geldiniz</h4>
                     <p style="color: #8A99AD; font-size: 12px; margin: 0;">Hesabınıza erişmek için e-posta ve şifrenizi girin.</p>
                 </div>
                 """,
@@ -384,9 +365,7 @@ if not st.session_state.logged_in:
             )
 
             st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-            if st.button(
-                "🚀 Sisteme Giriş Yap", use_container_width=True, type="primary"
-            ):
+            if st.button("Giriş Yap", use_container_width=True, type="primary"):
                 st.session_state.kullanici_veritabani = veritabani_yukle()
                 if (
                     giris_email in st.session_state.kullanici_veritabani
@@ -403,7 +382,7 @@ if not st.session_state.logged_in:
                     )
                     st.rerun()
                 else:
-                    st.error("❌ E-posta adresi veya şifre hatalı!")
+                    st.error("E-posta adresi veya şifre hatalı.")
 
         # ── 2. TAB: YENİ KAYIT ───────────────────────────────────────────────
         with tab_kayit:
@@ -411,15 +390,8 @@ if not st.session_state.logged_in:
             if st.session_state.onay_bekleyen is None:
                 st.markdown(
                     """
-                    <div style="
-                        background: #131822; 
-                        padding: 16px 20px; 
-                        border-radius: 12px; 
-                        border: 1px solid #232B3E; 
-                        border-left: 4px solid #C9A84C; 
-                        margin-bottom: 16px;
-                    ">
-                        <h4 style="margin:0 0 4px 0; color: #E2E8F0; font-size: 15px; font-weight: 600;">✨ Hesap Oluşturun</h4>
+                    <div style="padding: 4px 0 12px 0; border-bottom: 1px solid #232B3E; margin-bottom: 16px;">
+                        <h4 style="margin:0 0 4px 0; color: #E2E8F0; font-size: 15px; font-weight: 600;">Hesap Oluşturun</h4>
                         <p style="color: #8A99AD; font-size: 12px; margin: 0;">Junilex Ağından faydalanmak ve yapay zeka asistanını kullanmak için kaydolun.</p>
                     </div>
                     """,
@@ -454,14 +426,8 @@ if not st.session_state.logged_in:
                 st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
                 st.markdown(
                     """
-                    <div style="
-                        background: #0B0E14; 
-                        padding: 10px 14px; 
-                        border-radius: 8px; 
-                        border-left: 3px solid #C9A84C; 
-                        margin-bottom: 12px;
-                    ">
-                        <span style="color: #E2E8F0; font-size: 13px; font-weight: 600;">🤝 Ağ Profili (Gelişmiş Eşleşme İçin)</span>
+                    <div style="padding: 6px 0; border-bottom: 1px solid #232B3E; margin-bottom: 12px;">
+                        <span style="color: #E2E8F0; font-size: 13px; font-weight: 600;">Ağ Profili (Gelişmiş Eşleşme İçin)</span>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -528,25 +494,25 @@ if not st.session_state.logged_in:
 
                 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
                 if st.button(
-                    "📝 Kayıt Ol ve Doğrulama Kodu Al",
+                    "Kayıt Ol ve Doğrulama Kodu Al",
                     use_container_width=True,
                     type="primary",
                 ):
                     st.session_state.kullanici_veritabani = veritabani_yukle()
                     if len(kayit_isim.strip()) < 3:
-                        st.warning("⚠️ Lütfen geçerli bir İsim Soyisim giriniz!")
+                        st.warning("Lütfen geçerli bir İsim Soyisim giriniz.")
                     elif "@" not in kayit_email or "." not in kayit_email:
-                        st.warning("⚠️ Lütfen geçerli bir e-posta adresi giriniz!")
+                        st.warning("Lütfen geçerli bir e-posta adresi giriniz.")
                     elif kayit_email in st.session_state.kullanici_veritabani:
-                        st.warning("⚠️ Bu e-posta adresi zaten sisteme kayıtlı!")
+                        st.warning("Bu e-posta adresi zaten sisteme kayıtlı.")
                     elif kayit_sifre != kayit_sifre_tekrar:
-                        st.error("❌ Şifreler uyuşmuyor!")
+                        st.error("Şifreler uyuşmuyor.")
                     elif len(kayit_sifre) < 6:
-                        st.warning("⚠️ Şifre en az 6 karakter olmalıdır.")
+                        st.warning("Şifre en az 6 karakter olmalıdır.")
                     elif (
                         secilen_sehir == "Seçiniz..." or secilen_meslek == "Seçiniz..."
                     ):
-                        st.warning("⚠️ Lütfen Şehir ve Meslek bilgilerinizi seçiniz!")
+                        st.warning("Lütfen Şehir ve Meslek bilgilerinizi seçiniz.")
                     else:
                         uretilen_kod = str(random.randint(100000, 999999))
                         with st.spinner("Doğrulama kodu e-postanıza gönderiliyor..."):
@@ -563,27 +529,18 @@ if not st.session_state.logged_in:
                                 "unvan": secilen_meslek,
                                 "kurum": alt_bilgi,
                             }
-                            st.success(
-                                "✅ Kod gönderildi! Lütfen e-postanızı kontrol edin."
-                            )
+                            st.success("Kod gönderildi. Lütfen e-postanızı kontrol edin.")
                             st.rerun()
                         else:
                             st.error(
-                                f"E-posta gönderilemedi! Teknik detay: {hata_mesaji}"
+                                f"E-posta gönderilemedi. Teknik detay: {hata_mesaji}"
                             )
             else:
                 # ── DOĞRULAMA KODU (OTP) EKRANI ─────────────────────────────
                 st.markdown(
                     f"""
-                    <div style="
-                        background: #131822; 
-                        padding: 18px 22px; 
-                        border-radius: 12px; 
-                        border: 1px solid #232B3E; 
-                        border-left: 4px solid #C9A84C; 
-                        margin-bottom: 16px;
-                    ">
-                        <h4 style="margin:0 0 6px 0; color: #E2E8F0; font-size: 15px; font-weight: 600;">📧 E-Posta Doğrulama</h4>
+                    <div style="padding: 4px 0 12px 0; border-bottom: 1px solid #232B3E; margin-bottom: 16px;">
+                        <h4 style="margin:0 0 6px 0; color: #E2E8F0; font-size: 15px; font-weight: 600;">E-Posta Doğrulama</h4>
                         <p style="color: #8A99AD; font-size: 12px; margin: 0;">
                             <strong style="color:#C9A84C;">{st.session_state.onay_bekleyen['email']}</strong> adresine gönderilen 6 haneli kodu girin.
                         </p>
@@ -603,9 +560,7 @@ if not st.session_state.logged_in:
                 col_onay1, col_onay2, col_onay3 = st.columns(3)
 
                 with col_onay1:
-                    if st.button(
-                        "✅ Kodu Doğrula", use_container_width=True, type="primary"
-                    ):
+                    if st.button("Kodu Doğrula", use_container_width=True, type="primary"):
                         if girilen_kod == st.session_state.onay_bekleyen["kod"]:
                             import datetime
 
@@ -629,16 +584,13 @@ if not st.session_state.logged_in:
                             }
                             veritabani_kaydet(st.session_state.kullanici_veritabani)
                             st.session_state.onay_bekleyen = None
-                            st.balloons()
                             st.success(
-                                "🎉 Kayıt başarılı! Şimdi 'Giriş Yap' sekmesine geçerek JUNILEX'i kullanmaya başlayabilirsiniz."
+                                "Kayıt başarılı. Şimdi 'Giriş Yap' sekmesine geçerek JUNILEX'i kullanmaya başlayabilirsiniz."
                             )
                         else:
-                            st.error(
-                                "❌ Doğrulama kodu hatalı! Lütfen tekrar kontrol edin."
-                            )
+                            st.error("Doğrulama kodu hatalı. Lütfen tekrar kontrol edin.")
                 with col_onay2:
-                    if st.button("🔄 Tekrar Kod Gönder", use_container_width=True):
+                    if st.button("Tekrar Kod Gönder", use_container_width=True):
                         yeni_kod = str(random.randint(100000, 999999))
                         with st.spinner("Yeni kod hazırlanıyor..."):
                             basarili, mesaj = onay_kodu_gonder(
@@ -646,11 +598,11 @@ if not st.session_state.logged_in:
                             )
                         if basarili:
                             st.session_state.onay_bekleyen["kod"] = yeni_kod
-                            st.toast("✅ Yeni kod başarıyla gönderildi!", icon="📧")
+                            st.toast("Yeni kod gönderildi.")
                         else:
                             st.error(f"Kod gönderimi başarısız: {mesaj}")
                 with col_onay3:
-                    if st.button("⬅️ Düzenle", use_container_width=True):
+                    if st.button("Düzenle", use_container_width=True):
                         st.session_state.onay_bekleyen = None
                         st.rerun()
     st.stop()
